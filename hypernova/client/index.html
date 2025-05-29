@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mini EV Nova Multiplayer (Restructured)</title>
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas> <!-- Canvas size will be set by Renderer -->
+    <div id="ui"></div>
+
+    <!-- Make sure this path is correct for your Replit environment -->
+    <!-- If you installed socket.io locally, it might be /node_modules/socket.io/client-dist/socket.io.js -->
+    <!-- Or use the CDN -->
+    <script src="/socket.io/socket.io.js"></script> 
+
+    <!-- Game Client Modules -->
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

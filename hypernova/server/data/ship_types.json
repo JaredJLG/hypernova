@@ -1,0 +1,50 @@
+[
+    {
+        "name": "Scout",
+        "price": 0,
+        "speedMult": 1.1,
+        "rotMult": 1.5,
+        "revMult": 2.5,
+        "maxCargo": 10,
+        "maxHealth": 100,
+        "imageFile": "scout_ship.png",
+        "imgWidth": 32,
+        "imgHeight": 32
+    },
+    {
+        "name": "Trader",
+        "price": 2000,
+        "speedMult": 1.0,
+        "rotMult": 1.0,
+        "revMult": 2.0,
+        "maxCargo": 30,
+        "maxHealth": 100
+    },
+    {
+        "name": "Freighter",
+        "price": 5000,
+        "speedMult": 0.7,
+        "rotMult": 0.7,
+        "revMult": 1.5,
+        "maxCargo": 60,
+        "maxHealth": 100
+    },
+    {
+        "name": "Interceptor",
+        "price": 1500,
+        "speedMult": 1.8,
+        "rotMult": 1.8,
+        "revMult": 2.2,
+        "maxCargo": 5,
+        "maxHealth": 120
+    },
+    {
+        "name": "Heavy Freighter",
+        "price": 10000,
+        "speedMult": 0.5,
+        "rotMult": 0.5,
+        "revMult": 1.0,
+        "maxCargo": 100,
+        "maxHealth": 150
+    }
+]

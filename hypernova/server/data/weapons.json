@@ -1,0 +1,39 @@
+{
+    "Laser": {
+        "name": "Laser",
+        "price": 500,
+        "damage": 10,
+        "range": 140,
+        "rpm": 300,
+        "color": "#f00",
+        "beam": 0.3
+    },
+    "Plasma": {
+        "name": "Plasma",
+        "price": 1500,
+        "damage": 25,
+        "range": 200,
+        "rpm": 180,
+        "color": "#0ff",
+        "beam": 0.3
+    },
+    "Railgun": {
+        "name": "Railgun",
+        "price": 3000,
+        "damage": 40,
+        "range": 280,
+        "rpm": 120,
+        "color": "#ff0",
+        "beam": 0.2
+    },
+    "FusionGun": {
+        "name": "FusionGun",
+        "price": 8000,
+        "damage": 70,
+        "range": 350,
+        "rpm": 60,
+        "color": "#f0f",
+        "beam": 0.15
+    }
+}
+
