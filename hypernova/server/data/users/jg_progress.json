@@ -1,0 +1,52 @@
+{
+  "username": "jg",
+  "lastSaved": "2025-05-30T19:36:09.573Z",
+  "shipData": {
+    "x": 140,
+    "y": 120,
+    "angle": 3.675,
+    "vx": 0,
+    "vy": 0,
+    "type": 0,
+    "credits": 500,
+    "cargo": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "maxCargo": 10,
+    "health": 100,
+    "maxHealth": 100,
+    "weapons": [
+      "Laser"
+    ],
+    "activeWeapon": "Laser",
+    "system": 1,
+    "activeMissions": []
+  },
+  "dockedAtDetails": {
+    "systemIndex": 1,
+    "planetIndex": 0,
+    "planetName": "Sol",
+    "systemName": "Roman",
+    "buyPrices": {
+      "Food": 15,
+      "Ore": 74,
+      "Medicine": 74,
+      "Electronics": 147
+    },
+    "sellPrices": {
+      "Food": 13,
+      "Ore": 67,
+      "Medicine": 67,
+      "Electronics": 133
+    },
+    "stock": {
+      "Food": 500,
+      "Ore": 500,
+      "Medicine": 2000,
+      "Electronics": 2000
+    }
+  }
+}

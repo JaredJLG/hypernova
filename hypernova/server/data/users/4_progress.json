@@ -1,0 +1,50 @@
+{
+  "username": "4",
+  "lastSaved": "2025-05-30T20:00:41.611Z",
+  "shipData": {
+    "x": 512.901438147398,
+    "y": 324.42927937987577,
+    "angle": -9.765000000000022,
+    "vx": 0.2594287311400006,
+    "vy": -0.04470997317265447,
+    "type": 0,
+    "credits": 1000,
+    "cargo": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "maxCargo": 10,
+    "health": 100,
+    "maxHealth": 100,
+    "weapons": [],
+    "activeWeapon": null,
+    "system": 0,
+    "activeMissions": []
+  },
+  "dockedAtDetails": {
+    "systemIndex": 0,
+    "planetIndex": 1,
+    "planetName": "Delta",
+    "systemName": "Greek",
+    "buyPrices": {
+      "Food": 11,
+      "Ore": 37,
+      "Medicine": 147,
+      "Electronics": 210
+    },
+    "sellPrices": {
+      "Food": 10,
+      "Ore": 33,
+      "Medicine": 133,
+      "Electronics": 190
+    },
+    "stock": {
+      "Food": 1000,
+      "Ore": 2000,
+      "Medicine": 500,
+      "Electronics": 1000
+    }
+  }
+}

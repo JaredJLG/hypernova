@@ -1,5 +1,6 @@
 // hypernova/client/js/game_state.js
 export const gameState = {
+    currentUser: null, // NEW: Will store { username: "string" } after login
     socket: null, // Will be set by network.js
     myId: null,
     allShips: {}, // Store all ship objects, including myShip
@@ -13,19 +14,19 @@ export const gameState = {
 
     // Game data received from server
     clientGameData: {
-        systems: [], // { name, planets: [{ name, x, y, imageFile }, ...] }
-        tradeGoods: [], // { name, basePrice, mass }
-        weapons: {}, // { name: { price, damage, ... } }
-        shipTypes: [], // { name, price, speedMult, ..., maxCargo, imageFile, imgWidth, imgHeight }
-        MISSION_TYPES: {}, // { CARGO_DELIVERY: "CARGO_DELIVERY", ... }
+        systems: [],
+        tradeGoods: [],
+        weapons: {},
+        shipTypes: [],
+        MISSION_TYPES: {},
     },
-    clientPlanetEconomies: [], // Array of system economies [{ planets: [{ stock, buyPrices, sellPrices }] }]
+    clientPlanetEconomies: [],
 
     // UI related state
     docked: false,
-    dockedAtDetails: null, // { systemIndex, planetIndex, planetName, systemName, buyPrices, sellPrices, stock }
-    isMenuOpen: false, // General flag for UIManager
-    activeSubMenu: null, // 'trade', 'shipyard', etc.
+    dockedAtDetails: null,
+    isMenuOpen: false,
+    activeSubMenu: null,
 
     // Selection indices for menus
     selectedTradeIndex: 0,
@@ -43,38 +44,54 @@ export const gameState = {
         decelerating: false,
     },
 
-    // Helper to update a specific ship's data
     updateShipData(id, data) {
+        // console.log(`game_state.js/updateShipData called for ID: ${id}, with data:`, JSON.stringify(data));
         if (!this.allShips[id]) {
-            this.allShips[id] = {}; // Initialize if new
+            // console.log(`game_state.js/updateShipData: Ship ${id} not found, creating.`);
+            this.allShips[id] = {};
         }
         Object.assign(this.allShips[id], data);
+        // console.log(`game_state.js/updateShipData: Ship ${id} after assign:`, JSON.stringify(this.allShips[id]));
 
-        // Ensure critical properties exist after update, especially for new ships
         if (this.allShips[id]) {
+            // Ensure ship exists before calling defaultShipProps
+            // console.log(`game_state.js/updateShipData: Calling defaultShipProps for ship ${id}. Current gameState.docked: ${this.docked}`);
             this.defaultShipProps(this.allShips[id]);
         }
     },
 
-    // Helper to set default properties on a ship object
     defaultShipProps(ship) {
-        if (!ship) return;
-        const currentShipType = this.clientGameData.shipTypes[ship.type || 0];
+        if (!ship) {
+            // console.warn("game_state.js/defaultShipProps: Called with null/undefined ship.");
+            return;
+        }
+        // console.log(`game_state.js/defaultShipProps called for ship (type: ${ship.type}). Current ship state: ${JSON.stringify(ship)}. Current gameState.docked: ${this.docked}`);
+
+        const currentShipTypeData =
+            this.clientGameData.shipTypes &&
+            ship.type !== undefined &&
+            ship.type !== null
+                ? this.clientGameData.shipTypes[ship.type]
+                : null;
+        // console.log("game_state.js/defaultShipProps: currentShipTypeData:", JSON.stringify(currentShipTypeData));
 
         if (ship.system === undefined) ship.system = 0;
+        // dockedAtPlanetIdentifier is specific to the ship object, not the global gameState.docked
         if (ship.dockedAtPlanetIdentifier === undefined)
             ship.dockedAtPlanetIdentifier = null;
 
-        if (currentShipType) {
-            if (!ship.maxHealth)
-                ship.maxHealth = currentShipType.maxHealth || 100;
-            if (!ship.health || ship.health > ship.maxHealth)
+        if (currentShipTypeData) {
+            if (ship.maxHealth === undefined)
+                ship.maxHealth = currentShipTypeData.maxHealth || 100;
+            if (ship.health === undefined || ship.health > ship.maxHealth)
                 ship.health = ship.maxHealth;
-            if (!ship.maxCargo) ship.maxCargo = currentShipType.maxCargo || 10;
+            if (ship.maxCargo === undefined)
+                ship.maxCargo = currentShipTypeData.maxCargo || 10;
         } else {
-            if (!ship.maxHealth) ship.maxHealth = 100;
-            if (!ship.health) ship.health = 100;
-            if (!ship.maxCargo) ship.maxCargo = 10;
+            // console.warn("game_state.js/defaultShipProps: No currentShipTypeData found for ship type:", ship.type, "Using generic defaults.");
+            if (ship.maxHealth === undefined) ship.maxHealth = 100;
+            if (ship.health === undefined) ship.health = 100;
+            if (ship.maxCargo === undefined) ship.maxCargo = 10;
         }
 
         if (ship.credits === undefined) ship.credits = 0;
@@ -87,11 +104,13 @@ export const gameState = {
                 !ship.cargo ||
                 ship.cargo.length !== this.clientGameData.tradeGoods.length
             ) {
+                // console.log("game_state.js/defaultShipProps: Initializing/resizing ship.cargo array.");
                 ship.cargo = new Array(
                     this.clientGameData.tradeGoods.length,
                 ).fill(0);
             }
         } else if (!ship.cargo) {
+            // console.log("game_state.js/defaultShipProps: No trade goods data, initializing ship.cargo to empty array.");
             ship.cargo = [];
         }
 
@@ -99,5 +118,7 @@ export const gameState = {
         if (!ship.activeWeapon && ship.weapons.length > 0)
             ship.activeWeapon = ship.weapons[0];
         if (!ship.activeMissions) ship.activeMissions = [];
+
+        // console.log(`game_state.js/defaultShipProps finished for ship. Ship dockedAtPlanetIdentifier: ${ship.dockedAtPlanetIdentifier}. gameState.docked REMAINS: ${this.docked}`);
     },
 };

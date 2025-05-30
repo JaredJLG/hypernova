@@ -1,0 +1,1288 @@
+
+
+/* ===== START: hypernova/client/js/main.js ===== */
+// hypernova/client/js/main.js
+console.log("main.js script started");
+
+import { gameState } from "./game_state.js";
+window.gameState = gameState; // For debugging via console
+
+import {
+    initNetwork,
+    // saveProgress, // saveProgress is called from network.js, not directly here
+    // sendControls as networkSendControls, // sendControls is called by input_handler.js
+} from "./network.js";
+import { Renderer } from "./renderer.js";
+import { initInputListeners, processInputs } from "./input_handler.js";
+import { UIManager } from "./ui_manager.js";
+
+async function loadImages(imagePaths) {
+    console.log("main.js/loadImages function called with paths:", imagePaths);
+    const imagePromises = imagePaths.map((path) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const filename = path.substring(path.lastIndexOf("/") + 1);
+                gameState.loadedImages[filename] = img;
+                resolve(img);
+            };
+            img.onerror = (err) => {
+                console.error(`Failed to load image: ${path}`, err);
+                reject(new Error(`Failed to load image: ${path}`));
+            };
+            img.src = path;
+        });
+    });
+
+    try {
+        await Promise.all(imagePromises);
+        console.log(
+            "main.js/loadImages: All images to be loaded have been processed.",
+        );
+    } catch (error) {
+        console.error(
+            "main.js/loadImages: Error during image loading process:",
+            error,
+        );
+    }
+}
+
+async function handleLoginSubmit(username, password) {
+    console.log(`main.js/handleLoginSubmit called for user: ${username}`);
+    const loginErrorEl = document.getElementById("login-error");
+    const loginMessageEl = document.getElementById("login-message");
+    loginErrorEl.textContent = "";
+    loginMessageEl.textContent = "";
+
+    try {
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+        });
+        const result = await response.json();
+        console.log("main.js/handleLoginSubmit: Login API response:", result);
+
+        if (response.ok && result.success) {
+            loginMessageEl.textContent = result.message || "Success!";
+            gameState.currentUser = { username: result.username };
+            console.log(
+                "main.js/handleLoginSubmit: Set gameState.currentUser to:",
+                JSON.stringify(gameState.currentUser),
+            );
+
+            document.getElementById("login-screen").classList.add("hidden");
+            document
+                .getElementById("game-container")
+                .classList.remove("hidden");
+            console.log(
+                "main.js/handleLoginSubmit: Login screen hidden, game container shown. Calling initNetwork.",
+            );
+
+            initNetwork(async () => {
+                // This is the onReadyCallback for initNetwork
+                console.log(
+                    "main.js/onReadyCallback (from initNetwork): START. Current gameState.docked:",
+                    gameState.docked,
+                    "currentUser:",
+                    JSON.stringify(gameState.currentUser),
+                    "myId:",
+                    gameState.myId,
+                );
+                if (
+                    gameState.imagePathsToLoad &&
+                    gameState.imagePathsToLoad.length > 0
+                ) {
+                    await loadImages(gameState.imagePathsToLoad);
+                    console.log(
+                        "main.js/onReadyCallback: Image loading process complete.",
+                    );
+                } else {
+                    console.log(
+                        "main.js/onReadyCallback: No images to load (or imagePathsToLoad not populated).",
+                    );
+                }
+
+                console.log(
+                    "main.js/onReadyCallback: Calling loadProgress(). Current gameState.docked:",
+                    gameState.docked,
+                );
+                await loadProgress(); // This will now potentially emit "clientLoadedDockedState"
+                console.log(
+                    "main.js/onReadyCallback: AFTER loadProgress() call. gameState.docked:",
+                    gameState.docked,
+                    "myShip:",
+                    JSON.stringify(gameState.myShip),
+                );
+
+                if (gameState.myId && !gameState.myShip) {
+                    console.warn(
+                        "main.js/onReadyCallback: myId exists but myShip is missing! Creating and applying defaults. gameState.docked:",
+                        gameState.docked,
+                    );
+                    gameState.allShips[gameState.myId] =
+                        gameState.allShips[gameState.myId] || {};
+                    gameState.defaultShipProps(gameState.myShip);
+                    console.log(
+                        "main.js/onReadyCallback: Initialized myShip with defaults (was missing). gameState.docked:",
+                        gameState.docked,
+                        "myShip:",
+                        JSON.stringify(gameState.myShip),
+                    );
+                } else if (
+                    gameState.myId &&
+                    gameState.myShip &&
+                    (gameState.myShip.type === undefined ||
+                        gameState.myShip.type === null)
+                ) {
+                    console.warn(
+                        "main.js/onReadyCallback: myShip exists but seems uninitialized (e.g. type missing). Applying default props. gameState.docked:",
+                        gameState.docked,
+                    );
+                    gameState.defaultShipProps(gameState.myShip);
+                    console.log(
+                        "main.js/onReadyCallback: Applied default props to existing myShip. gameState.docked:",
+                        gameState.docked,
+                        "myShip:",
+                        JSON.stringify(gameState.myShip),
+                    );
+                }
+
+                console.log(
+                    "main.js/onReadyCallback: Starting game loop. Final gameState.docked before loop:",
+                    gameState.docked,
+                    "currentUser:",
+                    !!gameState.currentUser,
+                    "myId:",
+                    gameState.myId,
+                    "myShip:",
+                    !!gameState.myShip,
+                );
+                const canvas = document.getElementById("gameCanvas");
+                if (canvas) {
+                    canvas.focus();
+                    console.log(
+                        "main.js/onReadyCallback: Attempted to focus canvas.",
+                    );
+                }
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            });
+        } else {
+            loginErrorEl.textContent =
+                result.message || "Login/Registration failed.";
+            console.warn(
+                "main.js/handleLoginSubmit: Login/Registration failed. Server message:",
+                result.message,
+            );
+        }
+    } catch (error) {
+        console.error(
+            "main.js/handleLoginSubmit: Login request fetch failed:",
+            error,
+        );
+        loginErrorEl.textContent = "Login request error. Check console.";
+    }
+}
+
+async function loadProgress() {
+    console.log("main.js/loadProgress: Function called.");
+    if (!gameState.currentUser || !gameState.currentUser.username) {
+        console.log(
+            "main.js/loadProgress: No current user or username, returning.",
+        );
+        return;
+    }
+    console.log(
+        `main.js/loadProgress: Attempting to load progress for ${gameState.currentUser.username}. Current myId: ${gameState.myId}`,
+    );
+    try {
+        const response = await fetch(
+            `/load-progress?username=${gameState.currentUser.username}`,
+        );
+        if (response.ok) {
+            const progress = await response.json();
+            console.log(
+                "main.js/loadProgress: Received progress from server:",
+                JSON.stringify(progress),
+            );
+
+            if (progress && progress.shipData) {
+                console.log(
+                    "main.js/loadProgress: Progress and shipData found. Applying... Current myId:",
+                    gameState.myId,
+                );
+
+                if (gameState.myId) {
+                    if (!gameState.allShips[gameState.myId]) {
+                        console.log(
+                            "main.js/loadProgress: myShip object for myId didn't exist, creating it before applying progress.",
+                        );
+                        gameState.allShips[gameState.myId] = {};
+                    }
+                    gameState.updateShipData(gameState.myId, progress.shipData);
+                    console.log(
+                        "main.js/loadProgress: After updateShipData. myShip:",
+                        JSON.stringify(gameState.myShip),
+                    );
+
+                    if (
+                        gameState.myShip &&
+                        progress.shipData.system !== undefined
+                    ) {
+                        gameState.myShip.system = progress.shipData.system;
+                        console.log(
+                            "main.js/loadProgress: Set gameState.myShip.system to",
+                            gameState.myShip.system,
+                        );
+                    }
+
+                    if (progress.dockedAtDetails) {
+                        gameState.docked = true;
+                        gameState.dockedAtDetails = progress.dockedAtDetails;
+                        console.log(
+                            "main.js/loadProgress: SETTING gameState.docked = true from progress.dockedAtDetails. Details:",
+                            JSON.stringify(gameState.dockedAtDetails),
+                        );
+                        // ***** NEW: Inform server about loaded docked state *****
+                        if (gameState.socket) {
+                            console.log(
+                                "main.js/loadProgress: Emitting 'clientLoadedDockedState' to server with details:",
+                                JSON.stringify(gameState.dockedAtDetails),
+                            );
+                            gameState.socket.emit(
+                                "clientLoadedDockedState",
+                                gameState.dockedAtDetails,
+                            );
+                        }
+                        // *******************************************************
+                    } else {
+                        gameState.docked = false;
+                        gameState.dockedAtDetails = null;
+                        console.log(
+                            "main.js/loadProgress: SETTING gameState.docked = false (no dockedAtDetails in loaded progress)",
+                        );
+                    }
+                    console.log(
+                        "main.js/loadProgress: Applied loaded progress directly. gameState.docked is now:",
+                        gameState.docked,
+                        "myShip:",
+                        JSON.stringify(gameState.myShip),
+                    );
+                } else {
+                    gameState.pendingProgressToApply = progress;
+                    console.warn(
+                        "main.js/loadProgress: My ID not set YET. Progress stored in pendingProgressToApply. gameState.docked NOT YET SET from this path.",
+                    );
+                }
+            } else {
+                console.log(
+                    "main.js/loadProgress: No saved progress found (or progress was null/no shipData). Ensuring gameState.docked is false.",
+                );
+                if (gameState.myId && gameState.myShip) {
+                    console.log(
+                        "main.js/loadProgress: (No progress file) myShip exists. Its state after defaults (if any applied elsewhere):",
+                        JSON.stringify(gameState.myShip),
+                    );
+                }
+                gameState.docked = false;
+                gameState.dockedAtDetails = null;
+            }
+        } else {
+            console.error(
+                "main.js/loadProgress: Fetch to /load-progress failed with status:",
+                response.statusText,
+            );
+            gameState.docked = false;
+            gameState.dockedAtDetails = null;
+        }
+    } catch (error) {
+        console.error(
+            "main.js/loadProgress: Error during fetch/processing in loadProgress:",
+            error,
+        );
+        gameState.docked = false;
+        gameState.dockedAtDetails = null;
+    }
+    console.log(
+        "main.js/loadProgress: Function finished. Final gameState.docked:",
+        gameState.docked,
+    );
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("main.js/DOMContentLoaded event fired");
+    const canvas = document.getElementById("gameCanvas");
+    const uiContainer = document.getElementById("ui");
+    const gameContainer = document.getElementById("game-container");
+
+    if (!canvas || !uiContainer || !gameContainer) {
+        console.error(
+            "main.js/DOMContentLoaded: Required HTML elements (canvas, ui, game-container) not found!",
+        );
+        return;
+    }
+    if (canvas) {
+        if (!canvas.hasAttribute("tabindex")) {
+            canvas.setAttribute("tabindex", "0");
+            console.log(
+                "main.js/DOMContentLoaded: Added tabindex=0 to canvas for focus.",
+            );
+        }
+    }
+
+    Renderer.init(canvas);
+    UIManager.init(uiContainer);
+    initInputListeners(canvas);
+
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            console.log("main.js/DOMContentLoaded: Login form submitted.");
+            const usernameInput = document.getElementById("username");
+            const passwordInput = document.getElementById("password");
+            if (usernameInput && passwordInput) {
+                const username = usernameInput.value;
+                const password = passwordInput.value;
+                await handleLoginSubmit(username, password);
+            } else {
+                console.error(
+                    "main.js/DOMContentLoaded: Username or password input field not found in login form.",
+                );
+            }
+        });
+    } else {
+        console.error(
+            "main.js/DOMContentLoaded: Login form #login-form not found!",
+        );
+    }
+});
+
+let gameLoopFrameCount = 0;
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    gameLoopFrameCount++;
+    const deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
+
+    const canvas = document.getElementById("gameCanvas");
+
+    if (gameLoopFrameCount < 5 || gameLoopFrameCount % 300 === 0) {
+        console.log(
+            `GameLoop Check (Frame ${gameLoopFrameCount}): deltaTime: ${deltaTime.toFixed(2)}ms, currentUser: ${!!gameState.currentUser}, myId: ${gameState.myId}, myShip Exists: ${!!gameState.myShip}, myShip Content: ${JSON.stringify(gameState.myShip)}, docked: ${gameState.docked}`,
+        );
+    }
+
+    if (gameState.currentUser && gameState.myId && gameState.myShip) {
+        if (!gameState.docked) {
+            processInputs(canvas);
+        }
+        Renderer.draw();
+    } else {
+        if (gameLoopFrameCount < 5 || gameLoopFrameCount % 300 === 0) {
+            console.warn(
+                `GameLoop: Main condition FAILED. currentUser: ${!!gameState.currentUser}, myId: ${gameState.myId}, myShip Exists: ${!!gameState.myShip}`,
+            );
+        }
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+/* ===== END: hypernova/client/js/main.js ===== */
+
+
+/* ===== START: hypernova/server/server.js ===== */
+// hypernova/server/server.js
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const path = require("path");
+const fs = require("fs").promises; // Use promises for async file operations
+const bodyParser = require("body-parser"); // To parse JSON request bodies
+
+const gameConfig = require("./config/game_config");
+const DataLoader = require("./utils/data_loader");
+
+const PlayerManager = require("./modules/player_manager");
+const WorldManager = require("./modules/world_manager");
+const EconomyManager = require("./modules/economy_manager");
+const MissionManager = require("./modules/mission_manager");
+const CombatManager = require("./modules/combat_manager");
+
+const app = express();
+const serverHttp = http.createServer(app);
+const io = new Server(serverHttp, {
+    cors: {
+        origin: "*", // Be more restrictive in production
+        methods: ["GET", "POST"],
+    },
+});
+
+app.use(bodyParser.json()); // Middleware to parse JSON request bodies
+app.use(express.static(path.join(__dirname, "../client")));
+
+app.get("/socket.io/socket.io.js", (req, res) => {
+    res.sendFile(
+        path.join(
+            __dirname,
+            "../../node_modules/socket.io/client-dist/socket.io.js",
+        ),
+    );
+});
+
+const USERS_DIR = path.join(__dirname, "data/users");
+
+async function ensureUsersDir() {
+    try {
+        await fs.mkdir(USERS_DIR, { recursive: true });
+        console.log("Users directory ensured:", USERS_DIR);
+    } catch (error) {
+        console.error("Failed to create users directory:", error);
+    }
+}
+ensureUsersDir(); // Call this to ensure directory exists on server startup
+
+// --- Authentication and User Data ---
+async function findUser(username) {
+    const filePath = path.join(USERS_DIR, `${username}.json`);
+    try {
+        const data = await fs.readFile(filePath, "utf-8");
+        return JSON.parse(data);
+    } catch (error) {
+        if (error.code === "ENOENT") return null; // User file not found
+        console.error(`Error reading user file for ${username}:`, error);
+        throw error; // Re-throw other errors
+    }
+}
+
+async function createUser(username, password) {
+    // WARNING: Storing plain text passwords is a major security risk!
+    // Use bcrypt.hashSync(password, saltRounds) in a real app.
+    const userFilePath = path.join(USERS_DIR, `${username}.json`);
+    const userData = {
+        username,
+        password /* In a real app, store HASHED password */,
+    };
+    try {
+        await fs.writeFile(userFilePath, JSON.stringify(userData, null, 2));
+        console.log(`User ${username} created.`);
+        return userData;
+    } catch (err) {
+        console.error(`Error creating user ${username}:`, err);
+        return null; // Indicate failure
+    }
+}
+
+app.post("/login", async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "Username and password are required.",
+        });
+    }
+
+    try {
+        let user = await findUser(username);
+        if (!user) {
+            // Simplified: Auto-register if user not found
+            console.log(`User ${username} not found. Registering...`);
+            user = await createUser(username, password);
+            if (!user) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Failed to register user.",
+                });
+            }
+            // Security note: Do not send password back, even in registration success
+            return res.json({
+                success: true,
+                username: user.username,
+                message: "Registration successful. Logged in.",
+            });
+        }
+
+        // WARNING: Plain text password comparison. Insecure!
+        // In a real app: const match = await bcrypt.compare(password, user.hashedPassword);
+        if (user.password !== password) {
+            return res
+                .status(401)
+                .json({ success: false, message: "Invalid password." });
+        }
+        // Security note: Do not send password back
+        res.json({
+            success: true,
+            username: user.username,
+            message: "Login successful",
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error during login.",
+        });
+    }
+});
+
+// --- Progress Saving and Loading ---
+app.post("/save-progress", async (req, res) => {
+    // In a real app, authenticate user here (e.g., check session token from request headers)
+    const { username, shipData, dockedAtDetails } = req.body;
+    if (!username) {
+        // This check is more for direct API calls; if called by logged-in client, username should be reliable
+        // Or, better, get username from authenticated session/token on server-side
+        return res
+            .status(400)
+            .json({ success: false, message: "Username required." });
+    }
+    if (!shipData) {
+        // Basic validation
+        return res.status(400).json({
+            success: false,
+            message: "Ship data required for saving progress.",
+        });
+    }
+
+    const progressFilePath = path.join(USERS_DIR, `${username}_progress.json`);
+    const progress = {
+        username,
+        lastSaved: new Date().toISOString(),
+        shipData,
+        dockedAtDetails, // Can be null if not docked
+    };
+
+    try {
+        await fs.writeFile(progressFilePath, JSON.stringify(progress, null, 2));
+        res.json({ success: true, message: "Progress saved." });
+    } catch (error) {
+        console.error(`Error saving progress for ${username}:`, error);
+        res.status(500).json({
+            success: false,
+            message: "Server error saving progress.",
+        });
+    }
+});
+
+app.get("/load-progress", async (req, res) => {
+    // In a real app, authenticate user here
+    const { username } = req.query;
+    if (!username) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Username required." });
+    }
+
+    const progressFilePath = path.join(USERS_DIR, `${username}_progress.json`);
+    try {
+        const data = await fs.readFile(progressFilePath, "utf-8");
+        res.json(JSON.parse(data)); // Send the progress data back
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            // It's not an error if a user has no saved progress yet
+            return res.status(200).json(null); // Send null or an empty object, client should handle this
+        }
+        console.error(`Error loading progress for ${username}:`, error);
+        res.status(500).json({
+            success: false,
+            message: "Server error loading progress.",
+        });
+    }
+});
+
+async function startServer() {
+    const staticData = await DataLoader.loadAllData();
+    gameConfig.staticWeaponsData = staticData.weapons;
+
+    // Instantiate WorldManager first as PlayerManager will need it
+    const worldManager = new WorldManager(
+        io,
+        staticData.systemsBase,
+        staticData.tradeGoods,
+        gameConfig,
+    );
+
+    // Pass the worldManager instance to PlayerManager
+    const playerManager = new PlayerManager(
+        io,
+        staticData.shipTypes,
+        staticData.tradeGoods,
+        gameConfig,
+        worldManager, // <<< MODIFICATION HERE: Pass worldManager instance
+    );
+
+    // Other managers can now receive playerManager and worldManager as needed
+    const economyManager = new EconomyManager(
+        io,
+        worldManager,
+        playerManager,
+        staticData.tradeGoods,
+        gameConfig,
+    );
+    const missionManager = new MissionManager(
+        io,
+        worldManager,
+        playerManager,
+        staticData.tradeGoods,
+        gameConfig,
+    );
+    const combatManager = new CombatManager(
+        io,
+        playerManager,
+        missionManager,
+        staticData.weapons,
+        gameConfig,
+    );
+
+    // Initialize worldManager AFTER all managers it might use internally during initialization are created
+    // (though in this case, it mainly uses economyManager and missionManager passed to it)
+    worldManager.initialize(economyManager, missionManager);
+
+    setInterval(
+        () => economyManager.updateAllPlanetEconomies(),
+        gameConfig.ECONOMY_UPDATE_INTERVAL_MS,
+    );
+    setInterval(
+        () => missionManager.populateAllPlanetMissions(), // This probably needs this.systems from worldManager
+        gameConfig.MISSION_GENERATION_INTERVAL_MS,
+    );
+    setInterval(
+        () => playerManager.checkAllPlayerMissionTimeouts(missionManager),
+        gameConfig.PLAYER_MISSION_CHECK_INTERVAL_MS,
+    );
+
+    io.on("connection", (socket) => {
+        const initialWorldData = {
+            systems: worldManager.getSystemsForClient(),
+            economies: worldManager.getEconomiesForClient(),
+        };
+        // PlayerManager's handleConnection now has access to worldManager via `this.worldManager`
+        playerManager.handleConnection(socket, initialWorldData);
+
+        economyManager.registerSocketHandlers(socket);
+        missionManager.registerSocketHandlers(socket);
+        combatManager.registerSocketHandlers(socket);
+        // WorldManager registers its own handlers for 'dock' and 'undock' etc.
+        worldManager.registerSocketHandlers(socket, playerManager);
+
+        socket.on("disconnect", () => {
+            playerManager.handleDisconnect(socket);
+        });
+    });
+
+    serverHttp.listen(gameConfig.PORT, () =>
+        console.log(
+            `Server structured and listening on port ${gameConfig.PORT}`,
+        ),
+    );
+}
+
+startServer().catch((error) => {
+    console.error("Failed to start server:", error);
+    process.exit(1); // Exit if server fails to start
+});
+
+/* ===== END: hypernova/server/server.js ===== */
+
+
+/* ===== START: hypernova/server/modules/player_manager.js ===== */
+// hypernova/server/modules/player_manager.js
+const { MISSION_TYPES } = require("../config/game_config");
+
+class PlayerManager {
+    constructor(io, shipTypes, tradeGoods, gameConfig, worldManagerInstance) {
+        // Ensure worldManagerInstance is passed from server.js
+        this.io = io;
+        this.shipTypes = shipTypes;
+        this.tradeGoods = tradeGoods;
+        this.gameConfig = gameConfig;
+        this.players = {};
+        this.worldManager = worldManagerInstance; // Store worldManager
+    }
+
+    handleConnection(socket, initialWorldData = {}) {
+        const defaultShipType =
+            this.shipTypes[this.gameConfig.DEFAULT_PLAYER_SHIP_TYPE_INDEX] ||
+            this.shipTypes[0];
+        this.players[socket.id] = {
+            id: socket.id,
+            x: this.gameConfig.PLAYER_SPAWN_X || 400,
+            y: this.gameConfig.PLAYER_SPAWN_Y || 300,
+            angle: 0,
+            vx: 0,
+            vy: 0,
+            type: this.gameConfig.DEFAULT_PLAYER_SHIP_TYPE_INDEX,
+            credits: this.gameConfig.DEFAULT_PLAYER_CREDITS,
+            cargo: new Array(this.tradeGoods.length).fill(0),
+            maxCargo: defaultShipType.maxCargo,
+            health: defaultShipType.maxHealth || 100,
+            maxHealth: defaultShipType.maxHealth || 100,
+            weapons: [],
+            activeMissions: [],
+            activeWeapon: null,
+            lastShot: 0,
+            system: 0,
+            dockedAtPlanetIdentifier: null,
+            destroyed: false,
+            color:
+                "#" +
+                Math.floor(Math.random() * 0xffffff)
+                    .toString(16)
+                    .padStart(6, "0"),
+        };
+
+        console.log(
+            `Player ${socket.id} connected. Initial ship: ${defaultShipType.name}`,
+        );
+
+        socket.emit("init", {
+            id: socket.id,
+            // Send ALL players to new client, and player's own ship is among them.
+            // Client will use data.ships[data.id] for its own ship if needed.
+            ships: this.players,
+            gameData: {
+                ...initialWorldData,
+                tradeGoods: this.tradeGoods,
+                weapons: this.gameConfig.staticWeaponsData,
+                shipTypes: this.shipTypes,
+                MISSION_TYPES: this.gameConfig.MISSION_TYPES,
+            },
+        });
+
+        socket.broadcast.emit("playerJoined", {
+            id: socket.id,
+            ship: this.players[socket.id],
+        });
+
+        // Register general handlers
+        this.registerSocketHandlers(socket);
+
+        // === START: NEW EVENT LISTENER FOR DOCKED STATE SYNC ===
+        socket.on("clientLoadedDockedState", (dockedAtDetails) => {
+            console.log(
+                `PlayerManager: Received 'clientLoadedDockedState' from ${socket.id} with details:`,
+                JSON.stringify(dockedAtDetails),
+            );
+            const player = this.players[socket.id];
+
+            if (
+                player &&
+                dockedAtDetails &&
+                dockedAtDetails.systemIndex !== undefined &&
+                dockedAtDetails.planetIndex !== undefined
+            ) {
+                player.dockedAtPlanetIdentifier = {
+                    systemIndex: dockedAtDetails.systemIndex,
+                    planetIndex: dockedAtDetails.planetIndex,
+                };
+                player.system = dockedAtDetails.systemIndex;
+
+                // Get planet's actual coordinates from WorldManager to ensure player is positioned correctly
+                if (
+                    this.worldManager &&
+                    typeof this.worldManager.getPlanet === "function"
+                ) {
+                    const planet = this.worldManager.getPlanet(
+                        dockedAtDetails.systemIndex,
+                        dockedAtDetails.planetIndex,
+                    );
+                    if (planet) {
+                        player.x = planet.x;
+                        player.y = planet.y;
+                    } else {
+                        console.warn(
+                            `PlayerManager: 'clientLoadedDockedState' - Planet not found in WorldManager for system ${dockedAtDetails.systemIndex}, planet ${dockedAtDetails.planetIndex}. Player position not synced to planet.`,
+                        );
+                    }
+                } else {
+                    console.warn(
+                        `PlayerManager: 'clientLoadedDockedState' - WorldManager or getPlanet method not available. Player position not synced to planet.`,
+                    );
+                }
+
+                player.vx = 0;
+                player.vy = 0;
+
+                if (
+                    this.worldManager &&
+                    typeof this.worldManager.playerDockedAtPlanet === "function"
+                ) {
+                    this.worldManager.playerDockedAtPlanet(
+                        player,
+                        dockedAtDetails.systemIndex,
+                        dockedAtDetails.planetIndex,
+                    );
+                    console.log(
+                        `PlayerManager: Synced server state for ${socket.id} to be DOCKED at system ${dockedAtDetails.systemIndex}, planet ${dockedAtDetails.planetIndex}.`,
+                    );
+                } else {
+                    console.error(
+                        `PlayerManager: worldManager or worldManager.playerDockedAtPlanet method not found! Cannot update planet dock state on server.`,
+                    );
+                }
+
+                // Send updated state (especially position and docked status) back to the client
+                // to ensure client and server are perfectly aligned after this server-side sync.
+                this.updatePlayerState(socket.id, {
+                    x: player.x,
+                    y: player.y,
+                    vx: player.vx,
+                    vy: player.vy,
+                    system: player.system,
+                    dockedAtPlanetIdentifier: player.dockedAtPlanetIdentifier,
+                });
+            } else {
+                console.warn(
+                    `PlayerManager: Invalid data for 'clientLoadedDockedState' from ${socket.id} or player not found. Details:`,
+                    JSON.stringify(dockedAtDetails),
+                );
+            }
+        });
+        // === END: NEW EVENT LISTENER ===
+    }
+
+    handleDisconnect(socket) {
+        const player = this.getPlayer(socket.id);
+        if (
+            player &&
+            player.dockedAtPlanetIdentifier &&
+            this.worldManager &&
+            typeof this.worldManager.playerUndockedFromPlanet === "function"
+        ) {
+            console.log(
+                `PlayerManager: Player ${socket.id} disconnecting, attempting to clear dock status on server.`,
+            );
+            this.worldManager.playerUndockedFromPlanet(
+                player,
+                player.dockedAtPlanetIdentifier.systemIndex,
+                player.dockedAtPlanetIdentifier.planetIndex,
+            );
+        }
+        console.log(`Player ${socket.id} disconnected.`);
+        delete this.players[socket.id];
+        this.io.emit("playerLeft", socket.id);
+    }
+
+    getPlayer(playerId) {
+        return this.players[playerId];
+    }
+
+    updatePlayerState(playerId, updates) {
+        if (this.players[playerId]) {
+            Object.assign(this.players[playerId], updates);
+            // Emit to all, including the player who made the change, to ensure sync
+            this.io.emit("state", { [playerId]: this.players[playerId] }); // Send full player state for simplicity or specific updates
+            // console.log(`PlayerManager: Emitted state update for ${playerId}:`, JSON.stringify({ [playerId]: this.players[playerId] }));
+        }
+    }
+
+    // broadcastPlayerState not strictly needed if updatePlayerState emits to all.
+    // Kept for now if you have specific use cases for it.
+    broadcastPlayerState(playerId, specificUpdates) {
+        if (this.players[playerId]) {
+            const updateToSend = specificUpdates || this.players[playerId];
+            this.io.emit("state", { [playerId]: updateToSend });
+        }
+    }
+
+    registerSocketHandlers(socket) {
+        socket.on("control", (data) => {
+            const player = this.getPlayer(socket.id);
+            if (!player || player.dockedAtPlanetIdentifier) return; // Ignore controls if docked server-side
+
+            player.x = data.x;
+            player.y = data.y;
+            player.vx = data.vx;
+            player.vy = data.vy;
+            player.angle = data.angle;
+
+            let systemChanged = false;
+            if (data.system !== undefined && player.system !== data.system) {
+                player.system = data.system;
+                systemChanged = true; // If player changed system, they are no longer docked (should be handled by client already)
+            }
+
+            const minimalUpdate = {
+                x: player.x,
+                y: player.y,
+                vx: player.vx,
+                vy: player.vy,
+                angle: player.angle,
+                system: player.system,
+            };
+            // If system changed, client should already have cleared its docked state.
+            // Server side player.dockedAtPlanetIdentifier is cleared by "undock" or "clientLoadedDockedState" (if it comes with null)
+
+            socket.broadcast.emit("state", { [socket.id]: minimalUpdate });
+        });
+
+        socket.on("equipWeapon", ({ weapon: weaponName }) => {
+            const player = this.getPlayer(socket.id);
+            const weaponData = this.gameConfig.staticWeaponsData[weaponName];
+            if (!player || !weaponData) {
+                return socket.emit("actionFailed", {
+                    message: "Invalid weapon or player.",
+                });
+            }
+
+            if (!player.weapons.includes(weaponName)) {
+                if (player.credits >= weaponData.price) {
+                    player.credits -= weaponData.price;
+                    player.weapons.push(weaponName);
+                    player.activeWeapon = weaponName;
+                    this.updatePlayerState(socket.id, {
+                        credits: player.credits,
+                        weapons: player.weapons,
+                        activeWeapon: player.activeWeapon,
+                    });
+                    socket.emit("actionSuccess", {
+                        message: `Purchased and equipped ${weaponName}.`,
+                    });
+                } else {
+                    return socket.emit("actionFailed", {
+                        message: "Not enough credits.",
+                    });
+                }
+            } else {
+                player.activeWeapon = weaponName;
+                this.updatePlayerState(socket.id, {
+                    activeWeapon: player.activeWeapon,
+                });
+                socket.emit("actionSuccess", {
+                    message: `Equipped ${weaponName}.`,
+                });
+            }
+        });
+
+        socket.on("buyShip", ({ shipTypeIndex }) => {
+            const player = this.getPlayer(socket.id);
+            if (
+                !player ||
+                shipTypeIndex < 0 ||
+                shipTypeIndex >= this.shipTypes.length
+            ) {
+                return socket.emit("actionFailed", {
+                    message: "Invalid ship type.",
+                });
+            }
+
+            const newShipType = this.shipTypes[shipTypeIndex];
+            if (player.credits < newShipType.price) {
+                return socket.emit("actionFailed", {
+                    message: "Not enough credits.",
+                });
+            }
+
+            player.credits -= newShipType.price;
+            player.type = shipTypeIndex;
+            player.maxCargo = newShipType.maxCargo;
+            player.cargo = new Array(this.tradeGoods.length).fill(0);
+            player.maxHealth = newShipType.maxHealth || 100;
+            player.health = player.maxHealth;
+
+            this.updatePlayerState(socket.id, {
+                credits: player.credits,
+                type: player.type,
+                maxCargo: player.maxCargo,
+                cargo: player.cargo,
+                maxHealth: player.maxHealth,
+                health: player.health,
+            });
+            socket.emit("actionSuccess", {
+                message: `Successfully purchased ${newShipType.name}.`,
+            });
+        });
+    }
+
+    checkAllPlayerMissionTimeouts(missionManager) {
+        Object.values(this.players).forEach((player) => {
+            if (
+                player &&
+                !player.destroyed &&
+                player.activeMissions.length > 0
+            ) {
+                const { changed, completedOrFailed } =
+                    missionManager.checkPlayerMissionTimeouts(player);
+                if (changed) {
+                    completedOrFailed.forEach((update) =>
+                        this.io.to(player.id).emit("missionUpdate", update),
+                    );
+                    this.updatePlayerState(player.id, {
+                        credits: player.credits,
+                        activeMissions: player.activeMissions,
+                    });
+                }
+            }
+        });
+    }
+
+    getAllPlayers() {
+        return this.players;
+    }
+}
+
+module.exports = PlayerManager;
+
+/* ===== END: hypernova/server/modules/player_manager.js ===== */
+
+
+/* ===== START: hypernova/server/modules/world_manager.js ===== */
+// server/modules/world_manager.js
+class WorldManager {
+    constructor(io, systemsBase, tradeGoods, gameConfig) {
+        this.io = io;
+        this.systemsBase = systemsBase;
+        this.tradeGoods = tradeGoods;
+        this.gameConfig = gameConfig;
+        this.systems = [];
+        this.economyManager = null;
+        this.missionManager = null;
+    }
+
+    initialize(economyManager, missionManager) {
+        this.economyManager = economyManager;
+        this.missionManager = missionManager;
+        this.systems = JSON.parse(JSON.stringify(this.systemsBase));
+
+        this.systems.forEach((system) => {
+            system.planets.forEach((planet) => {
+                planet.stock = {};
+                planet.buyPrices = {};
+                planet.sellPrices = {};
+                planet.availableMissions = [];
+                planet.dockedShipId = null; // Add this to track who is docked
+            });
+        });
+
+        this.economyManager.initializeAllPlanetEconomies(this.systems);
+        this.missionManager.populateAllPlanetMissions(this.systems);
+
+        console.log("WorldManager initialized, systems processed.");
+    }
+
+    getSystem(systemIndex) {
+        return this.systems[systemIndex];
+    }
+
+    getPlanet(systemIndex, planetIndex) {
+        const system = this.getSystem(systemIndex);
+        return system ? system.planets[planetIndex] : null;
+    }
+
+    // Helper for PlayerManager to get planet coords for docking sync
+    getPlanetDetailsForDocking(systemIndex, planetIndex) {
+        const planet = this.getPlanet(systemIndex, planetIndex);
+        if (planet) {
+            return { x: planet.x, y: planet.y, name: planet.name };
+        }
+        return null;
+    }
+
+    // ***** NEW METHOD *****
+    playerDockedAtPlanet(player, systemIndex, planetIndex) {
+        if (!player) {
+            console.error(
+                "WorldManager.playerDockedAtPlanet: Player object is null/undefined.",
+            );
+            return false;
+        }
+        const planet = this.getPlanet(systemIndex, planetIndex);
+        if (!planet) {
+            console.error(
+                `WorldManager.playerDockedAtPlanet: Planet ${planetIndex} in system ${systemIndex} not found.`,
+            );
+            return false;
+        }
+
+        // Check if another player is already docked (simple single-dock model)
+        if (planet.dockedShipId && planet.dockedShipId !== player.id) {
+            console.warn(
+                `WorldManager.playerDockedAtPlanet: Planet ${planet.name} is already occupied by ${planet.dockedShipId}. Player ${player.id} cannot dock.`,
+            );
+            return false; // Docking failed, planet occupied
+        }
+
+        // If a player was previously docked elsewhere, undock them first
+        if (player.dockedAtPlanetIdentifier) {
+            if (
+                player.dockedAtPlanetIdentifier.systemIndex !== systemIndex ||
+                player.dockedAtPlanetIdentifier.planetIndex !== planetIndex
+            ) {
+                this.playerUndockedFromPlanet(
+                    player,
+                    player.dockedAtPlanetIdentifier.systemIndex,
+                    player.dockedAtPlanetIdentifier.planetIndex,
+                );
+            }
+        }
+
+        planet.dockedShipId = player.id;
+        console.log(
+            `WorldManager: Player ${player.id} server-side DOCKED at ${planet.name} (System: ${this.systems[systemIndex].name}).`,
+        );
+        return true; // Successfully docked
+    }
+
+    // ***** NEW METHOD *****
+    playerUndockedFromPlanet(player, systemIndex, planetIndex) {
+        if (!player) {
+            // console.warn("WorldManager.playerUndockedFromPlanet: Player object is null/undefined.");
+            return false;
+        }
+        const planet = this.getPlanet(systemIndex, planetIndex);
+        if (!planet) {
+            // console.warn(`WorldManager.playerUndockedFromPlanet: Planet ${planetIndex} in system ${systemIndex} not found.`);
+            return false;
+        }
+
+        if (planet.dockedShipId === player.id) {
+            planet.dockedShipId = null;
+            console.log(
+                `WorldManager: Player ${player.id} server-side UNDOCKED from ${planet.name}.`,
+            );
+            return true;
+        } else if (planet.dockedShipId) {
+            // console.warn(`WorldManager.playerUndockedFromPlanet: Player ${player.id} tried to undock from ${planet.name}, but planet is docked by ${planet.dockedShipId}.`);
+        } else {
+            // console.log(`WorldManager.playerUndockedFromPlanet: Player ${player.id} tried to undock from ${planet.name}, planet was already free.`);
+        }
+        return false; // Player wasn't the one docked, or planet was free
+    }
+
+    getSystemsForClient() {
+        return this.systems.map((s) => ({
+            name: s.name,
+            planets: s.planets.map((p) => ({
+                name: p.name,
+                x: p.x,
+                y: p.y,
+                // Optionally send dockedShipId if client needs to know for visuals
+                // dockedBy: p.dockedShipId
+            })),
+        }));
+    }
+
+    getEconomiesForClient() {
+        return this.systems.map((s) => ({
+            name: s.name,
+            planets: s.planets.map((p) => ({
+                name: p.name,
+                stock: p.stock,
+                buyPrices: p.buyPrices,
+                sellPrices: p.sellPrices,
+            })),
+        }));
+    }
+
+    registerSocketHandlers(socket, playerManager) {
+        socket.on("dock", ({ systemIndex, planetIndex }) => {
+            const player = playerManager.getPlayer(socket.id);
+            if (!player)
+                return socket.emit("actionFailed", {
+                    message: "Player not found.",
+                });
+
+            if (player.system !== systemIndex) {
+                return socket.emit("actionFailed", {
+                    message: "Cannot dock: Wrong system.",
+                });
+            }
+            const planet = this.getPlanet(systemIndex, planetIndex);
+            if (!planet) {
+                return socket.emit("actionFailed", {
+                    message: "Cannot dock: Planet not found.",
+                });
+            }
+
+            // Use the new centralized docking logic
+            if (this.playerDockedAtPlanet(player, systemIndex, planetIndex)) {
+                // Successfully docked on server
+                player.dockedAtPlanetIdentifier = { systemIndex, planetIndex };
+                player.vx = 0;
+                player.vy = 0;
+                player.x = planet.x; // Ensure player position is at planet
+                player.y = planet.y;
+
+                const missionCompletionResult =
+                    this.missionManager.checkCargoMissionCompletionOnDock(
+                        player,
+                        systemIndex,
+                        planetIndex,
+                    );
+
+                socket.emit("dockConfirmed", {
+                    systemIndex,
+                    planetIndex,
+                    planetName: planet.name,
+                    systemName: this.systems[systemIndex].name,
+                    buyPrices: planet.buyPrices,
+                    sellPrices: planet.sellPrices,
+                    stock: planet.stock,
+                    // Send player's actual coordinates after docking
+                    playerX: player.x,
+                    playerY: player.y,
+                });
+
+                const updatesForPlayer = {
+                    dockedAtPlanetIdentifier: player.dockedAtPlanetIdentifier,
+                    vx: 0,
+                    vy: 0,
+                    x: player.x,
+                    y: player.y,
+                };
+                if (missionCompletionResult.creditsChanged)
+                    updatesForPlayer.credits = player.credits;
+                if (missionCompletionResult.cargoChanged)
+                    updatesForPlayer.cargo = player.cargo;
+                if (missionCompletionResult.missionsChanged)
+                    updatesForPlayer.activeMissions = player.activeMissions;
+
+                playerManager.updatePlayerState(socket.id, updatesForPlayer);
+            } else {
+                // Docking failed (e.g., planet occupied or other server-side reason)
+                socket.emit("actionFailed", {
+                    message: "Docking failed. Planet may be occupied.",
+                });
+            }
+        });
+
+        socket.on("undock", () => {
+            const player = playerManager.getPlayer(socket.id);
+            if (!player)
+                return socket.emit("actionFailed", {
+                    message: "Player not found.",
+                });
+
+            if (!player.dockedAtPlanetIdentifier) {
+                // Check server-side docked state
+                return socket.emit("actionFailed", {
+                    message: "Not docked (according to server).",
+                });
+            }
+
+            const { systemIndex, planetIndex } =
+                player.dockedAtPlanetIdentifier;
+
+            // Use the new centralized undocking logic
+            if (
+                this.playerUndockedFromPlanet(player, systemIndex, planetIndex)
+            ) {
+                player.dockedAtPlanetIdentifier = null;
+                socket.emit("undockConfirmed");
+                playerManager.updatePlayerState(socket.id, {
+                    dockedAtPlanetIdentifier: null,
+                });
+            } else {
+                // This case should be rare if player.dockedAtPlanetIdentifier was set
+                socket.emit("actionFailed", {
+                    message: "Server undocking failed.",
+                });
+            }
+        });
+    }
+}
+
+module.exports = WorldManager;
+
+/* ===== END: hypernova/server/modules/world_manager.js ===== */

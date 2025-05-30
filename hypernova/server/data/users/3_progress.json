@@ -1,0 +1,52 @@
+{
+  "username": "3",
+  "lastSaved": "2025-05-30T20:23:19.067Z",
+  "shipData": {
+    "x": 380,
+    "y": 480,
+    "angle": 4.620000000000002,
+    "vx": 0,
+    "vy": 0,
+    "type": 0,
+    "credits": 890,
+    "cargo": [
+      10,
+      0,
+      0,
+      0
+    ],
+    "maxCargo": 10,
+    "health": 100,
+    "maxHealth": 100,
+    "weapons": [],
+    "activeWeapon": null,
+    "system": 2,
+    "activeMissions": []
+  },
+  "dockedAtDetails": {
+    "systemIndex": 2,
+    "planetIndex": 0,
+    "planetName": "Beta",
+    "systemName": "Nordic",
+    "buyPrices": {
+      "Food": 8,
+      "Ore": 37,
+      "Medicine": 147,
+      "Electronics": 294
+    },
+    "sellPrices": {
+      "Food": 7,
+      "Ore": 33,
+      "Medicine": 133,
+      "Electronics": 266
+    },
+    "stock": {
+      "Food": 2000,
+      "Ore": 2000,
+      "Medicine": 500,
+      "Electronics": 500
+    },
+    "playerX": 380,
+    "playerY": 480
+  }
+}

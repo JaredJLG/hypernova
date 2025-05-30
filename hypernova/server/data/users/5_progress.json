@@ -1,0 +1,50 @@
+{
+  "username": "5",
+  "lastSaved": "2025-05-30T20:01:02.951Z",
+  "shipData": {
+    "x": 197.55150178906274,
+    "y": 131.70620994406136,
+    "angle": 8.400000000000016,
+    "vx": -0.05036841047895928,
+    "vy": 0.11481051108792238,
+    "type": 0,
+    "credits": 1000,
+    "cargo": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "maxCargo": 10,
+    "health": 100,
+    "maxHealth": 100,
+    "weapons": [],
+    "activeWeapon": null,
+    "system": 0,
+    "activeMissions": []
+  },
+  "dockedAtDetails": {
+    "systemIndex": 0,
+    "planetIndex": 0,
+    "planetName": "Alpha",
+    "systemName": "Greek",
+    "buyPrices": {
+      "Food": 8,
+      "Ore": 53,
+      "Medicine": 105,
+      "Electronics": 294
+    },
+    "sellPrices": {
+      "Food": 7,
+      "Ore": 48,
+      "Medicine": 95,
+      "Electronics": 266
+    },
+    "stock": {
+      "Food": 2000,
+      "Ore": 1000,
+      "Medicine": 1000,
+      "Electronics": 500
+    }
+  }
+}

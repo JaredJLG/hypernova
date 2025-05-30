@@ -1,21 +1,42 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mini EV Nova Multiplayer (Restructured)</title>
-    <link rel="stylesheet" href="css/style.css">
-  </head>
-  <body>
-    <canvas id="gameCanvas"></canvas> <!-- Canvas size will be set by Renderer -->
-    <div id="ui"></div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>HyperNova Game</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <!-- Assuming you have a style.css -->
+    </head>
+    <body>
+        <div id="login-screen">
+            <h2>Login</h2>
+            <form id="login-form">
+                <div>
+                    <label for="username">Name:</label>
+                    <input type="text" id="username" name="username" required />
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                    />
+                </div>
+                <button type="submit">Login / Register</button>
+                <!-- Simple combined for now -->
+            </form>
+            <p id="login-error" style="color: red"></p>
+            <p id="login-message" style="color: lightgreen"></p>
+        </div>
 
-    <!-- Make sure this path is correct for your Replit environment -->
-    <!-- If you installed socket.io locally, it might be /node_modules/socket.io/client-dist/socket.io.js -->
-    <!-- Or use the CDN -->
-    <script src="/socket.io/socket.io.js"></script> 
+        <div id="game-container" class="hidden">
+            <canvas id="gameCanvas"></canvas>
+            <div id="ui"></div>
+        </div>
 
-    <!-- Game Client Modules -->
-    <script type="module" src="js/main.js"></script>
-  </body>
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="module" src="js/main.js"></script>
+    </body>
 </html>
