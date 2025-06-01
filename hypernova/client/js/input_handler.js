@@ -1,13 +1,15 @@
+/* ===== START: hypernova/client/js/input_handler.js ===== */
 // client/js/input_handler.js
 import { gameState } from "./game_state.js";
 import * as Network from "./network.js";
 import { UIManager } from "./ui_manager.js";
 import {
-    BASE_THRUST,
-    BASE_ROTATION_SPEED,
-    DAMPING,
+    BASE_THRUST, // Needed for processInputs
+    BASE_ROTATION_SPEED, // Needed for processInputs
+    DAMPING, // Needed for processInputs
     DOCKING_DISTANCE_SQUARED,
 } from "./client_config.js";
+// Removed: import { processInputs as gameProcessInputs } from "./process_inputs.js"; // This was incorrect
 
 function wrap(value, max) {
     return ((value % max) + max) % max; // Ensure positive result for negative inputs
@@ -16,34 +18,57 @@ function wrap(value, max) {
 export function initInputListeners(canvas) {
     // Pass canvas for wrap bounds
     window.addEventListener("keydown", (e) => {
+        const targetElement = e.target;
+        const isInputFocused =
+            targetElement &&
+            (targetElement.tagName.toUpperCase() === "INPUT" ||
+                targetElement.tagName.toUpperCase() === "TEXTAREA" ||
+                targetElement.isContentEditable);
+
+        // If an input field is focused, allow default typing behavior.
+        // The game's input handling should not interfere.
+        if (isInputFocused) {
+            // If 'Enter' is pressed in an input field, let the default browser behavior
+            // (which usually triggers form submission) occur. The form's own submit
+            // listener in main.js will handle it.
+            // For other keys, this allows normal typing.
+            return;
+        }
+
+        // If NOT in an input field, proceed with game input handling.
         const keyLower = e.key.toLowerCase();
-        // Prevent default for game-specific keys to avoid page scroll, etc.
-        if (
-            [
-                "arrowup",
-                "arrowdown",
-                "arrowleft",
-                "arrowright",
-                " ",
-                "d",
-                "h",
-                "q",
-                "e",
-                "t",
-                "y",
-                "o",
-                "m",
-                "u",
-                "b",
-                "s",
-                "a",
-                "escape",
-            ].includes(keyLower)
-        ) {
+        const gameSpecificKeys = [
+            "arrowup",
+            "arrowdown",
+            "arrowleft",
+            "arrowright",
+            " ",
+            "d",
+            "h",
+            "q",
+            "e",
+            "t",
+            "y",
+            "o",
+            "m",
+            "u",
+            "b",
+            "s",
+            "a",
+            "escape",
+        ];
+
+        // Prevent default for game-specific keys to avoid page scroll, etc.,
+        // ONLY when an input field is NOT focused.
+        if (gameSpecificKeys.includes(keyLower)) {
             e.preventDefault();
         }
 
-        if (!gameState.myShip || gameState.myShip.destroyed) return;
+        if (!gameState.myShip || gameState.myShip.destroyed) {
+            // Limited actions if no ship or destroyed (e.g., escape from a potential global menu)
+            // Currently, most actions are tied to ship state or docking.
+            return;
+        }
 
         if (!gameState.docked) {
             // Flight controls
@@ -81,12 +106,22 @@ export function initInputListeners(canvas) {
     });
 
     window.addEventListener("keyup", (e) => {
+        const targetElement = e.target;
+        const isInputFocused =
+            targetElement &&
+            (targetElement.tagName.toUpperCase() === "INPUT" ||
+                targetElement.tagName.toUpperCase() === "TEXTAREA" ||
+                targetElement.isContentEditable);
+
+        if (isInputFocused) {
+            return; // Don't process game keyup logic if an input is focused
+        }
+
         if (
             !gameState.myShip ||
             gameState.myShip.destroyed ||
             gameState.docked
         ) {
-            // Clear movement flags if docked or destroyed, even if keyup happens later
             gameState.controls.accelerating = false;
             gameState.controls.decelerating = false;
             gameState.controls.rotatingLeft = false;
@@ -140,33 +175,30 @@ function hyperJumpAction(canvas) {
     if (!gameState.myShip || gameState.clientGameData.systems.length === 0)
         return;
 
-    // If docked, emit undock first and let server handle it, then jump.
-    // However, client-side hyperjump is immediate for feel.
     if (gameState.docked) {
-        Network.undock(); // Tell server we are undocking
-        UIManager.undockCleanup(); // Clean UI immediately
+        Network.undock();
+        UIManager.undockCleanup();
     }
 
-    const oldSystem = gameState.myShip.system;
+    // const oldSystem = gameState.myShip.system; // Not used
     gameState.myShip.system =
         (gameState.myShip.system + 1) % gameState.clientGameData.systems.length;
 
     const targetSystemData =
         gameState.clientGameData.systems[gameState.myShip.system];
     if (targetSystemData && targetSystemData.planets.length > 0) {
-        const p = targetSystemData.planets[0]; // Jump to first planet of new system
+        const p = targetSystemData.planets[0];
         gameState.myShip.x = p.x;
         gameState.myShip.y = p.y;
     } else {
-        // Fallback if system has no planets or data issue
         gameState.myShip.x = canvas.width / 2;
         gameState.myShip.y = canvas.height / 2;
     }
     gameState.myShip.vx = 0;
     gameState.myShip.vy = 0;
-    gameState.myShip.dockedAtPlanetIdentifier = null; // Crucial: player is no longer docked
+    gameState.myShip.dockedAtPlanetIdentifier = null;
 
-    Network.sendControls(); // Inform server of new position and system
+    Network.sendControls();
 }
 
 function cycleWeaponAction(direction) {
@@ -182,10 +214,16 @@ function cycleWeaponAction(direction) {
             gameState.myShip.weapons.length) %
         gameState.myShip.weapons.length;
     const weaponName = gameState.myShip.weapons[gameState.weaponCycleIdx];
-    Network.equipWeapon(weaponName); // Server will set myShip.activeWeapon via "state" update
+    Network.equipWeapon(weaponName);
 }
 
 function handleMenuKeyDown(keyLower) {
+    if (!gameState.docked || !gameState.myShip) {
+        gameState.activeSubMenu = null;
+        // UIManager.closeDockMenu(); // This might be too aggressive if called by mistake
+        return;
+    }
+
     if (!gameState.activeSubMenu) {
         // Main dock menu
         switch (keyLower) {
@@ -201,7 +239,6 @@ function handleMenuKeyDown(keyLower) {
                 break;
             case "o":
                 gameState.activeSubMenu = "outfitter";
-                // Ensure selectedWeaponKey is initialized if not already
                 const weaponKeysList = Object.keys(
                     gameState.clientGameData.weapons,
                 );
@@ -216,8 +253,8 @@ function handleMenuKeyDown(keyLower) {
             case "m":
                 gameState.activeSubMenu = "missions";
                 gameState.selectedMissionIndex = 0;
-                gameState.availableMissionsForCurrentPlanet = []; // Clear old list
-                UIManager.renderMissionsMenu(); // Initial render (likely empty or loading)
+                gameState.availableMissionsForCurrentPlanet = [];
+                UIManager.renderMissionsMenu();
                 if (gameState.dockedAtDetails) {
                     Network.requestMissions(
                         gameState.dockedAtDetails.systemIndex,
@@ -265,7 +302,7 @@ function handleMenuKeyDown(keyLower) {
                         gameState.selectedWeaponKey,
                     );
                     if (currentWKeyIndex === -1 && weaponKeys.length > 0)
-                        currentWKeyIndex = 0; // Default if somehow invalid
+                        currentWKeyIndex = 0;
 
                     if (keyLower === "arrowup")
                         currentWKeyIndex = Math.max(0, currentWKeyIndex - 1);
@@ -332,18 +369,30 @@ function handleMenuKeyDown(keyLower) {
     }
 }
 
-// This function should be called in the main game loop
+// This function is called in the main game loop (from main.js)
 export function processInputs(canvas) {
+    // Ensure this function is EXPORTED
     if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked)
         return;
 
     const myShip = gameState.myShip;
-    const shipDef = gameState.clientGameData.shipTypes[myShip.type || 0];
-    if (!shipDef) return; // Ship definition not loaded
+
+    // Safety check for ship type and definition
+    if (
+        myShip.type === undefined ||
+        myShip.type === null ||
+        !gameState.clientGameData.shipTypes ||
+        myShip.type >= gameState.clientGameData.shipTypes.length ||
+        !gameState.clientGameData.shipTypes[myShip.type]
+    ) {
+        // console.warn(`processInputs: Invalid or missing ship type definition for type index: ${myShip.type}. Controls not processed.`);
+        return;
+    }
+    const shipDef = gameState.clientGameData.shipTypes[myShip.type];
 
     const thrust = BASE_THRUST * shipDef.speedMult;
     const rotSpd = BASE_ROTATION_SPEED * shipDef.rotMult;
-    const revThrust = thrust * shipDef.revMult; // Reverse thrust strength
+    const revThrust = thrust * shipDef.revMult;
 
     if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;
     if (gameState.controls.rotatingRight) myShip.angle += rotSpd;
@@ -363,10 +412,9 @@ export function processInputs(canvas) {
     myShip.x += myShip.vx;
     myShip.y += myShip.vy;
 
-    // Wrap around canvas edges
     myShip.x = wrap(myShip.x, canvas.width);
     myShip.y = wrap(myShip.y, canvas.height);
 
-    // Send controls to server (can be throttled if needed)
     Network.sendControls();
 }
+/* ===== END: hypernova/client/js/input_handler.js ===== */
