@@ -1,3 +1,4 @@
+/* ===== START: hypernova/client/js/main.js ===== */
 // hypernova/client/js/main.js
 console.log("main.js script started");
 
@@ -217,57 +218,74 @@ async function loadProgress() {
                         );
                         gameState.allShips[gameState.myId] = {};
                     }
+                    // Apply loaded data to client's gameState.myShip
+                    // updateShipData also calls defaultShipProps, which is fine as it only fills undefined fields
                     gameState.updateShipData(gameState.myId, progress.shipData);
                     console.log(
                         "main.js/loadProgress: After updateShipData. myShip:",
                         JSON.stringify(gameState.myShip),
                     );
 
-                    if (
-                        gameState.myShip &&
-                        progress.shipData.system !== undefined
-                    ) {
-                        gameState.myShip.system = progress.shipData.system;
-                        console.log(
-                            "main.js/loadProgress: Set gameState.myShip.system to",
-                            gameState.myShip.system,
-                        );
-                    }
+                    // gameState.myShip should now have the correct system from progress.shipData via updateShipData
+                    // if (gameState.myShip && progress.shipData.system !== undefined) {
+                    //     gameState.myShip.system = progress.shipData.system;
+                    // } // This should be handled by updateShipData
+
+                    // Prepare comprehensive data to sync with the server
+                    const syncData = {
+                        credits: progress.shipData.credits,
+                        cargo: progress.shipData.cargo,
+                        weapons: progress.shipData.weapons,
+                        activeWeapon: progress.shipData.activeWeapon,
+                        health: progress.shipData.health,
+                        type: progress.shipData.type, // Essential for server to know correct ship type
+                        activeMissions: progress.shipData.activeMissions || [], // Ensure it's an array
+                    };
 
                     if (progress.dockedAtDetails) {
                         gameState.docked = true;
                         gameState.dockedAtDetails = progress.dockedAtDetails;
+                        syncData.dockedAtDetails = gameState.dockedAtDetails; // Add server-known docked details
+                        // Server will use systemIndex/planetIndex from here to set player's x, y and system
                         console.log(
                             "main.js/loadProgress: SETTING gameState.docked = true from progress.dockedAtDetails. Details:",
                             JSON.stringify(gameState.dockedAtDetails),
                         );
-                        // ***** NEW: Inform server about loaded docked state *****
-                        if (gameState.socket) {
-                            console.log(
-                                "main.js/loadProgress: Emitting 'clientLoadedDockedState' to server with details:",
-                                JSON.stringify(gameState.dockedAtDetails),
-                            );
-                            gameState.socket.emit(
-                                "clientLoadedDockedState",
-                                gameState.dockedAtDetails,
-                            );
-                        }
-                        // *******************************************************
                     } else {
                         gameState.docked = false;
                         gameState.dockedAtDetails = null;
+                        syncData.dockedAtDetails = null; // Explicitly not docked
+                        // Add positional data if not docked
+                        syncData.x = progress.shipData.x;
+                        syncData.y = progress.shipData.y;
+                        syncData.angle = progress.shipData.angle;
+                        syncData.vx = progress.shipData.vx;
+                        syncData.vy = progress.shipData.vy;
+                        syncData.system = progress.shipData.system;
                         console.log(
                             "main.js/loadProgress: SETTING gameState.docked = false (no dockedAtDetails in loaded progress)",
                         );
                     }
+
+                    if (gameState.socket) {
+                        console.log(
+                            "main.js/loadProgress: Emitting 'clientLoadedDockedState' to server with syncData:",
+                            JSON.stringify(syncData),
+                        );
+                        gameState.socket.emit(
+                            "clientLoadedDockedState",
+                            syncData,
+                        );
+                    }
+
                     console.log(
-                        "main.js/loadProgress: Applied loaded progress directly. gameState.docked is now:",
+                        "main.js/loadProgress: Applied loaded progress and sent sync to server. gameState.docked is now:",
                         gameState.docked,
                         "myShip:",
                         JSON.stringify(gameState.myShip),
                     );
                 } else {
-                    gameState.pendingProgressToApply = progress;
+                    gameState.pendingProgressToApply = progress; // Store to apply once myId is known
                     console.warn(
                         "main.js/loadProgress: My ID not set YET. Progress stored in pendingProgressToApply. gameState.docked NOT YET SET from this path.",
                     );
@@ -367,9 +385,9 @@ function gameLoop(timestamp) {
     const canvas = document.getElementById("gameCanvas");
 
     if (gameLoopFrameCount < 5 || gameLoopFrameCount % 300 === 0) {
-        console.log(
-            `GameLoop Check (Frame ${gameLoopFrameCount}): deltaTime: ${deltaTime.toFixed(2)}ms, currentUser: ${!!gameState.currentUser}, myId: ${gameState.myId}, myShip Exists: ${!!gameState.myShip}, myShip Content: ${JSON.stringify(gameState.myShip)}, docked: ${gameState.docked}`,
-        );
+        // console.log( // Reduced verbosity for typical gameplay
+        //     `GameLoop Check (Frame ${gameLoopFrameCount}): deltaTime: ${deltaTime.toFixed(2)}ms, currentUser: ${!!gameState.currentUser}, myId: ${gameState.myId}, myShip Exists: ${!!gameState.myShip}, myShip Content: ${JSON.stringify(gameState.myShip)}, docked: ${gameState.docked}`,
+        // );
     }
 
     if (gameState.currentUser && gameState.myId && gameState.myShip) {
@@ -386,3 +404,4 @@ function gameLoop(timestamp) {
     }
     requestAnimationFrame(gameLoop);
 }
+/* ===== END: hypernova/client/js/main.js ===== */

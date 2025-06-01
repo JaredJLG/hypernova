@@ -1,3 +1,4 @@
+/* ===== START: hypernova/server/modules/player_manager.js ===== */
 // hypernova/server/modules/player_manager.js
 const { MISSION_TYPES } = require("../config/game_config");
 
@@ -44,14 +45,12 @@ class PlayerManager {
         };
 
         console.log(
-            `Player ${socket.id} connected. Initial ship: ${defaultShipType.name}`,
+            `Player ${socket.id} connected. Initial ship: ${defaultShipType.name}. Initial credits: ${this.players[socket.id].credits}`,
         );
 
         socket.emit("init", {
             id: socket.id,
-            // Send ALL players to new client, and player's own ship is among them.
-            // Client will use data.ships[data.id] for its own ship if needed.
-            ships: this.players,
+            ships: this.players, // Server sends its current view of players (new player is default)
             gameData: {
                 ...initialWorldData,
                 tradeGoods: this.tradeGoods,
@@ -66,91 +65,159 @@ class PlayerManager {
             ship: this.players[socket.id],
         });
 
-        // Register general handlers
         this.registerSocketHandlers(socket);
 
-        // === START: NEW EVENT LISTENER FOR DOCKED STATE SYNC ===
-        socket.on("clientLoadedDockedState", (dockedAtDetails) => {
+        socket.on("clientLoadedDockedState", (receivedSyncData) => {
             console.log(
-                `PlayerManager: Received 'clientLoadedDockedState' from ${socket.id} with details:`,
-                JSON.stringify(dockedAtDetails),
+                `PlayerManager: Received 'clientLoadedDockedState' from ${socket.id} with data:`,
+                JSON.stringify(receivedSyncData),
             );
             const player = this.players[socket.id];
 
-            if (
-                player &&
-                dockedAtDetails &&
-                dockedAtDetails.systemIndex !== undefined &&
-                dockedAtDetails.planetIndex !== undefined
-            ) {
-                player.dockedAtPlanetIdentifier = {
-                    systemIndex: dockedAtDetails.systemIndex,
-                    planetIndex: dockedAtDetails.planetIndex,
-                };
-                player.system = dockedAtDetails.systemIndex;
+            if (player && receivedSyncData) {
+                // --- CRITICAL: Update server's player object with client's loaded data ---
+                if (receivedSyncData.credits !== undefined)
+                    player.credits = receivedSyncData.credits;
+                if (receivedSyncData.cargo !== undefined)
+                    player.cargo = receivedSyncData.cargo;
+                if (receivedSyncData.weapons !== undefined)
+                    player.weapons = receivedSyncData.weapons;
+                if (receivedSyncData.activeWeapon !== undefined)
+                    player.activeWeapon = receivedSyncData.activeWeapon;
+                if (receivedSyncData.health !== undefined)
+                    player.health = receivedSyncData.health;
+                if (receivedSyncData.activeMissions !== undefined)
+                    player.activeMissions = receivedSyncData.activeMissions;
 
-                // Get planet's actual coordinates from WorldManager to ensure player is positioned correctly
-                if (
-                    this.worldManager &&
-                    typeof this.worldManager.getPlanet === "function"
-                ) {
-                    const planet = this.worldManager.getPlanet(
-                        dockedAtDetails.systemIndex,
-                        dockedAtDetails.planetIndex,
-                    );
-                    if (planet) {
-                        player.x = planet.x;
-                        player.y = planet.y;
+                if (receivedSyncData.type !== undefined) {
+                    player.type = receivedSyncData.type;
+                    const shipTypeDef = this.shipTypes[player.type];
+                    if (shipTypeDef) {
+                        player.maxCargo = shipTypeDef.maxCargo;
+                        player.maxHealth = shipTypeDef.maxHealth;
+                        if (player.health > player.maxHealth) {
+                            player.health = player.maxHealth;
+                        }
                     } else {
                         console.warn(
-                            `PlayerManager: 'clientLoadedDockedState' - Planet not found in WorldManager for system ${dockedAtDetails.systemIndex}, planet ${dockedAtDetails.planetIndex}. Player position not synced to planet.`,
+                            `PlayerManager: Unknown ship type ${receivedSyncData.type} received for player ${socket.id}. MaxCargo/MaxHealth may be incorrect.`,
                         );
                     }
-                } else {
-                    console.warn(
-                        `PlayerManager: 'clientLoadedDockedState' - WorldManager or getPlanet method not available. Player position not synced to planet.`,
-                    );
                 }
+                // --- End critical update section ---
 
-                player.vx = 0;
-                player.vy = 0;
-
+                // Update positional and docking state based on receivedSyncData
                 if (
-                    this.worldManager &&
-                    typeof this.worldManager.playerDockedAtPlanet === "function"
+                    receivedSyncData.dockedAtDetails &&
+                    receivedSyncData.dockedAtDetails.systemIndex !==
+                        undefined &&
+                    receivedSyncData.dockedAtDetails.planetIndex !== undefined
                 ) {
-                    this.worldManager.playerDockedAtPlanet(
-                        player,
-                        dockedAtDetails.systemIndex,
-                        dockedAtDetails.planetIndex,
-                    );
+                    player.dockedAtPlanetIdentifier = {
+                        systemIndex:
+                            receivedSyncData.dockedAtDetails.systemIndex,
+                        planetIndex:
+                            receivedSyncData.dockedAtDetails.planetIndex,
+                    };
+                    player.system =
+                        receivedSyncData.dockedAtDetails.systemIndex;
+
+                    if (
+                        this.worldManager &&
+                        typeof this.worldManager.getPlanet === "function"
+                    ) {
+                        const planet = this.worldManager.getPlanet(
+                            player.dockedAtPlanetIdentifier.systemIndex,
+                            player.dockedAtPlanetIdentifier.planetIndex,
+                        );
+                        if (planet) {
+                            player.x = planet.x;
+                            player.y = planet.y;
+                        } else {
+                            console.warn(
+                                `PlayerManager ('clientLoadedDockedState'): Planet not found in WorldManager for system ${player.dockedAtPlanetIdentifier.systemIndex}, planet ${player.dockedAtPlanetIdentifier.planetIndex}. Player position not synced to planet.`,
+                            );
+                        }
+                    } else {
+                        console.warn(
+                            `PlayerManager ('clientLoadedDockedState'): WorldManager or getPlanet method not available. Player position not synced to planet.`,
+                        );
+                    }
+                    player.vx = 0;
+                    player.vy = 0;
+
+                    if (
+                        this.worldManager &&
+                        typeof this.worldManager.playerDockedAtPlanet ===
+                            "function"
+                    ) {
+                        this.worldManager.playerDockedAtPlanet(
+                            player, // Pass the now-updated player object
+                            player.dockedAtPlanetIdentifier.systemIndex,
+                            player.dockedAtPlanetIdentifier.planetIndex,
+                        );
+                    } else {
+                        console.error(
+                            `PlayerManager ('clientLoadedDockedState'): worldManager or worldManager.playerDockedAtPlanet method not found! Cannot update planet dock state on server.`,
+                        );
+                    }
                     console.log(
-                        `PlayerManager: Synced server state for ${socket.id} to be DOCKED at system ${dockedAtDetails.systemIndex}, planet ${dockedAtDetails.planetIndex}.`,
+                        `PlayerManager: Synced server state for ${socket.id} to be DOCKED at system ${player.system}, planet ${player.dockedAtPlanetIdentifier.planetIndex}. Credits: ${player.credits}`,
                     );
                 } else {
-                    console.error(
-                        `PlayerManager: worldManager or worldManager.playerDockedAtPlanet method not found! Cannot update planet dock state on server.`,
+                    // Player is NOT DOCKED according to their loaded save
+                    player.dockedAtPlanetIdentifier = null;
+                    // If a player was previously thought to be docked by the server (e.g. abrupt disconnect), ensure worldManager reflects this
+                    // This is complex, for now, player.dockedAtPlanetIdentifier = null is the main thing.
+                    // WorldManager's playerUndockedFromPlanet might be called if player.dockedAtPlanetIdentifier *was* set on the fresh player obj, but it's null.
+
+                    if (receivedSyncData.x !== undefined)
+                        player.x = receivedSyncData.x;
+                    if (receivedSyncData.y !== undefined)
+                        player.y = receivedSyncData.y;
+                    if (receivedSyncData.angle !== undefined)
+                        player.angle = receivedSyncData.angle;
+                    if (receivedSyncData.vx !== undefined)
+                        player.vx = receivedSyncData.vx;
+                    if (receivedSyncData.vy !== undefined)
+                        player.vy = receivedSyncData.vy;
+                    if (receivedSyncData.system !== undefined)
+                        player.system = receivedSyncData.system;
+                    console.log(
+                        `PlayerManager: Synced server state for ${socket.id} to be UNDOCKED in system ${player.system}. Credits: ${player.credits}`,
                     );
                 }
 
-                // Send updated state (especially position and docked status) back to the client
-                // to ensure client and server are perfectly aligned after this server-side sync.
-                this.updatePlayerState(socket.id, {
+                // Send the fully updated server state back to the client (and others) for confirmation and sync.
+                const comprehensiveUpdate = {
                     x: player.x,
                     y: player.y,
                     vx: player.vx,
                     vy: player.vy,
+                    angle: player.angle,
                     system: player.system,
                     dockedAtPlanetIdentifier: player.dockedAtPlanetIdentifier,
-                });
+                    credits: player.credits,
+                    cargo: player.cargo,
+                    weapons: player.weapons,
+                    activeWeapon: player.activeWeapon,
+                    health: player.health,
+                    maxHealth: player.maxHealth,
+                    type: player.type,
+                    maxCargo: player.maxCargo,
+                    activeMissions: player.activeMissions,
+                    // destroyed: player.destroyed // if relevant
+                };
+                this.updatePlayerState(socket.id, comprehensiveUpdate);
+                console.log(
+                    `PlayerManager: Server state for ${socket.id} fully updated and broadcasted after client load. Player credits on server: ${player.credits}`,
+                );
             } else {
                 console.warn(
-                    `PlayerManager: Invalid data for 'clientLoadedDockedState' from ${socket.id} or player not found. Details:`,
-                    JSON.stringify(dockedAtDetails),
+                    `PlayerManager: Invalid data for 'clientLoadedDockedState' from ${socket.id} or player not found. Player: ${!!player}, Data: ${JSON.stringify(receivedSyncData)}`,
                 );
             }
         });
-        // === END: NEW EVENT LISTENER ===
     }
 
     handleDisconnect(socket) {
@@ -182,15 +249,12 @@ class PlayerManager {
     updatePlayerState(playerId, updates) {
         if (this.players[playerId]) {
             Object.assign(this.players[playerId], updates);
-            // Emit to all, including the player who made the change, to ensure sync
-            this.io.emit("state", { [playerId]: this.players[playerId] }); // Send full player state for simplicity or specific updates
-            // console.log(`PlayerManager: Emitted state update for ${playerId}:`, JSON.stringify({ [playerId]: this.players[playerId] }));
+            this.io.emit("state", { [playerId]: this.players[playerId] });
         }
     }
 
-    // broadcastPlayerState not strictly needed if updatePlayerState emits to all.
-    // Kept for now if you have specific use cases for it.
     broadcastPlayerState(playerId, specificUpdates) {
+        // Can be removed if updatePlayerState is always used
         if (this.players[playerId]) {
             const updateToSend = specificUpdates || this.players[playerId];
             this.io.emit("state", { [playerId]: updateToSend });
@@ -200,7 +264,7 @@ class PlayerManager {
     registerSocketHandlers(socket) {
         socket.on("control", (data) => {
             const player = this.getPlayer(socket.id);
-            if (!player || player.dockedAtPlanetIdentifier) return; // Ignore controls if docked server-side
+            if (!player || player.dockedAtPlanetIdentifier) return;
 
             player.x = data.x;
             player.y = data.y;
@@ -208,10 +272,8 @@ class PlayerManager {
             player.vy = data.vy;
             player.angle = data.angle;
 
-            let systemChanged = false;
             if (data.system !== undefined && player.system !== data.system) {
                 player.system = data.system;
-                systemChanged = true; // If player changed system, they are no longer docked (should be handled by client already)
             }
 
             const minimalUpdate = {
@@ -222,9 +284,6 @@ class PlayerManager {
                 angle: player.angle,
                 system: player.system,
             };
-            // If system changed, client should already have cleared its docked state.
-            // Server side player.dockedAtPlanetIdentifier is cleared by "undock" or "clientLoadedDockedState" (if it comes with null)
-
             socket.broadcast.emit("state", { [socket.id]: minimalUpdate });
         });
 
@@ -286,11 +345,11 @@ class PlayerManager {
             }
 
             player.credits -= newShipType.price;
-            player.type = shipTypeIndex;
+            player.type = shipTypeIndex; // Update type
             player.maxCargo = newShipType.maxCargo;
-            player.cargo = new Array(this.tradeGoods.length).fill(0);
+            player.cargo = new Array(this.tradeGoods.length).fill(0); // Reset cargo
             player.maxHealth = newShipType.maxHealth || 100;
-            player.health = player.maxHealth;
+            player.health = player.maxHealth; // Full health on new ship
 
             this.updatePlayerState(socket.id, {
                 credits: player.credits,
@@ -334,3 +393,4 @@ class PlayerManager {
 }
 
 module.exports = PlayerManager;
+/* ===== END: hypernova/server/modules/player_manager.js ===== */

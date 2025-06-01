@@ -1,5 +1,707 @@
 
 
+/* ===== START: hypernova/client/index.html ===== */
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>HyperNova Game</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <!-- Assuming you have a style.css -->
+    </head>
+    <body>
+        <div id="login-screen">
+            <h2>Login</h2>
+            <form id="login-form">
+                <div>
+                    <label for="username">Name:</label>
+                    <input type="text" id="username" name="username" required />
+                </div>
+                <div>
+                    <label for="password">Password:</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                    />
+                </div>
+                <button type="submit">Login / Register</button>
+                <!-- Simple combined for now -->
+            </form>
+            <p id="login-error" style="color: red"></p>
+            <p id="login-message" style="color: lightgreen"></p>
+        </div>
+
+        <div id="game-container" class="hidden">
+            <canvas id="gameCanvas"></canvas>
+            <div id="ui"></div>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="module" src="js/main.js"></script>
+    </body>
+</html>
+
+/* ===== END: hypernova/client/index.html ===== */
+
+
+/* ===== START: hypernova/client/css/style.css ===== */
+/* Existing styles from your file */
+body {
+  margin: 0;
+  background-color: #000; /* Updated to background-color, kept user's color */
+  color: #0f0;
+  font-family: monospace;
+  overflow: hidden; /* Added from instructions: Prevent scrollbars if game is full screen */
+}
+#gameCanvas {
+  display: block;
+  background: #111;
+}
+#ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.panel {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #0f0;
+  padding: 10px;
+  max-width: 480px; /* Increased width for mission descriptions */
+  pointer-events: auto;
+  color: #0f0; /* Ensure panel text is also green */
+  font-family: monospace; /* Ensure panel font matches */
+}
+button { /* Though not used in current UI, good to have */
+  background: #000;
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 5px;
+  margin: 2px;
+  pointer-events: auto;
+  font-family: monospace;
+}
+::selection {
+  background: #0f0;
+  color: #000;
+}
+.trade-item-selected {
+  background-color: #030;
+}
+.menu-item {
+  padding: 2px 0;
+}
+.menu-item div { /* For nested divs within menu items, like mission descriptions */
+  padding: 1px 0;
+}
+body.no-scroll {
+  overflow: hidden;
+}
+
+/* Added styles from instructions */
+#login-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000D1A; /* Dark blue space theme */
+    color: #00FF00; /* Green retro text */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    font-family: 'Courier New', Courier, monospace;
+    border: 2px solid #00FF00;
+    box-shadow: 0 0 15px #00FF00;
+}
+
+#login-screen h2 {
+    border-bottom: 1px solid #00FF00;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+#login-form div {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+#login-form label {
+    display: inline-block;
+    width: 90px;
+    margin-right: 10px;
+}
+
+#login-form input[type="text"],
+#login-form input[type="password"] {
+    background-color: #002233;
+    border: 1px solid #00FF00;
+    color: #00FF00;
+    padding: 8px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#login-form button {
+    background-color: #003344;
+    border: 1px solid #00FF00;
+    color: #00FF00;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+#login-form button:hover {
+    background-color: #005566;
+    box-shadow: 0 0 10px #00FF00;
+}
+
+#login-error, #login-message {
+    margin-top: 15px;
+    min-height: 1em; /* Keep space even if empty */
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Ensure game container takes full space when visible */
+#game-container {
+    width: 100%;
+    height: 100%;
+    /* display: flex; /* Or however you manage layout */
+    /* flex-direction: column; */
+    /* align-items: center; */
+    /* justify-content: center; */
+}
+/* ===== END: hypernova/client/css/style.css ===== */
+
+
+/* ===== START: hypernova/client/js/client_config.js ===== */
+// client/js/client_config.js
+export const BASE_THRUST = 0.1;
+export const BASE_ROTATION_SPEED = 0.07;
+export const DAMPING = 0.99;
+export const PROJECTILE_LIFESPAN_MS = 400; // ms
+export const DOCKING_DISTANCE_SQUARED = 400; // (20px)^2
+
+/* ===== END: hypernova/client/js/client_config.js ===== */
+
+
+/* ===== START: hypernova/client/js/game_state.js ===== */
+// hypernova/client/js/game_state.js
+export const gameState = {
+    currentUser: null, // NEW: Will store { username: "string" } after login
+    socket: null, // Will be set by network.js
+    myId: null,
+    allShips: {}, // Store all ship objects, including myShip
+    get myShip() {
+        // Getter for convenience
+        return this.allShips[this.myId];
+    },
+    projectiles: [],
+    loadedImages: {}, // To store Image objects: { 'filename.png': ImageElement }
+    imagePathsToLoad: [], // To collect all image paths
+
+    // Game data received from server
+    clientGameData: {
+        systems: [],
+        tradeGoods: [],
+        weapons: {},
+        shipTypes: [],
+        MISSION_TYPES: {},
+    },
+    clientPlanetEconomies: [],
+
+    // UI related state
+    docked: false,
+    dockedAtDetails: null,
+    isMenuOpen: false,
+    activeSubMenu: null,
+
+    // Selection indices for menus
+    selectedTradeIndex: 0,
+    selectedWeaponKey: null,
+    selectedShipIndex: 0,
+    selectedMissionIndex: 0,
+    availableMissionsForCurrentPlanet: [],
+
+    // Input state
+    weaponCycleIdx: 0,
+    controls: {
+        rotatingLeft: false,
+        rotatingRight: false,
+        accelerating: false,
+        decelerating: false,
+    },
+
+    updateShipData(id, data) {
+        // console.log(`game_state.js/updateShipData called for ID: ${id}, with data:`, JSON.stringify(data));
+        if (!this.allShips[id]) {
+            // console.log(`game_state.js/updateShipData: Ship ${id} not found, creating.`);
+            this.allShips[id] = {};
+        }
+        Object.assign(this.allShips[id], data);
+        // console.log(`game_state.js/updateShipData: Ship ${id} after assign:`, JSON.stringify(this.allShips[id]));
+
+        if (this.allShips[id]) {
+            // Ensure ship exists before calling defaultShipProps
+            // console.log(`game_state.js/updateShipData: Calling defaultShipProps for ship ${id}. Current gameState.docked: ${this.docked}`);
+            this.defaultShipProps(this.allShips[id]);
+        }
+    },
+
+    defaultShipProps(ship) {
+        if (!ship) {
+            // console.warn("game_state.js/defaultShipProps: Called with null/undefined ship.");
+            return;
+        }
+        // console.log(`game_state.js/defaultShipProps called for ship (type: ${ship.type}). Current ship state: ${JSON.stringify(ship)}. Current gameState.docked: ${this.docked}`);
+
+        const currentShipTypeData =
+            this.clientGameData.shipTypes &&
+            ship.type !== undefined &&
+            ship.type !== null
+                ? this.clientGameData.shipTypes[ship.type]
+                : null;
+        // console.log("game_state.js/defaultShipProps: currentShipTypeData:", JSON.stringify(currentShipTypeData));
+
+        if (ship.system === undefined) ship.system = 0;
+        // dockedAtPlanetIdentifier is specific to the ship object, not the global gameState.docked
+        if (ship.dockedAtPlanetIdentifier === undefined)
+            ship.dockedAtPlanetIdentifier = null;
+
+        if (currentShipTypeData) {
+            if (ship.maxHealth === undefined)
+                ship.maxHealth = currentShipTypeData.maxHealth || 100;
+            if (ship.health === undefined || ship.health > ship.maxHealth)
+                ship.health = ship.maxHealth;
+            if (ship.maxCargo === undefined)
+                ship.maxCargo = currentShipTypeData.maxCargo || 10;
+        } else {
+            // console.warn("game_state.js/defaultShipProps: No currentShipTypeData found for ship type:", ship.type, "Using generic defaults.");
+            if (ship.maxHealth === undefined) ship.maxHealth = 100;
+            if (ship.health === undefined) ship.health = 100;
+            if (ship.maxCargo === undefined) ship.maxCargo = 10;
+        }
+
+        if (ship.credits === undefined) ship.credits = 0;
+
+        if (
+            this.clientGameData.tradeGoods &&
+            this.clientGameData.tradeGoods.length > 0
+        ) {
+            if (
+                !ship.cargo ||
+                ship.cargo.length !== this.clientGameData.tradeGoods.length
+            ) {
+                // console.log("game_state.js/defaultShipProps: Initializing/resizing ship.cargo array.");
+                ship.cargo = new Array(
+                    this.clientGameData.tradeGoods.length,
+                ).fill(0);
+            }
+        } else if (!ship.cargo) {
+            // console.log("game_state.js/defaultShipProps: No trade goods data, initializing ship.cargo to empty array.");
+            ship.cargo = [];
+        }
+
+        if (!ship.weapons) ship.weapons = [];
+        if (!ship.activeWeapon && ship.weapons.length > 0)
+            ship.activeWeapon = ship.weapons[0];
+        if (!ship.activeMissions) ship.activeMissions = [];
+
+        // console.log(`game_state.js/defaultShipProps finished for ship. Ship dockedAtPlanetIdentifier: ${ship.dockedAtPlanetIdentifier}. gameState.docked REMAINS: ${this.docked}`);
+    },
+};
+
+/* ===== END: hypernova/client/js/game_state.js ===== */
+
+
+/* ===== START: hypernova/client/js/input_handler.js ===== */
+// client/js/input_handler.js
+import { gameState } from "./game_state.js";
+import * as Network from "./network.js";
+import { UIManager } from "./ui_manager.js";
+import {
+    BASE_THRUST,
+    BASE_ROTATION_SPEED,
+    DAMPING,
+    DOCKING_DISTANCE_SQUARED,
+} from "./client_config.js";
+
+function wrap(value, max) {
+    return ((value % max) + max) % max; // Ensure positive result for negative inputs
+}
+
+export function initInputListeners(canvas) {
+    // Pass canvas for wrap bounds
+    window.addEventListener("keydown", (e) => {
+        const keyLower = e.key.toLowerCase();
+        // Prevent default for game-specific keys to avoid page scroll, etc.
+        if (
+            [
+                "arrowup",
+                "arrowdown",
+                "arrowleft",
+                "arrowright",
+                " ",
+                "d",
+                "h",
+                "q",
+                "e",
+                "t",
+                "y",
+                "o",
+                "m",
+                "u",
+                "b",
+                "s",
+                "a",
+                "escape",
+            ].includes(keyLower)
+        ) {
+            e.preventDefault();
+        }
+
+        if (!gameState.myShip || gameState.myShip.destroyed) return;
+
+        if (!gameState.docked) {
+            // Flight controls
+            if (e.code === "Space") Network.fireWeapon(); // Use e.code for Space to be specific
+            switch (keyLower) {
+                case "arrowup":
+                    gameState.controls.accelerating = true;
+                    break;
+                case "arrowdown":
+                    gameState.controls.decelerating = true;
+                    break;
+                case "arrowleft":
+                    gameState.controls.rotatingLeft = true;
+                    break;
+                case "arrowright":
+                    gameState.controls.rotatingRight = true;
+                    break;
+                case "d":
+                    tryDockAction(canvas);
+                    break;
+                case "h":
+                    hyperJumpAction(canvas);
+                    break;
+                case "q":
+                    cycleWeaponAction(-1);
+                    break;
+                case "e":
+                    cycleWeaponAction(1);
+                    break;
+            }
+        } else {
+            // Docked menu controls
+            handleMenuKeyDown(keyLower);
+        }
+    });
+
+    window.addEventListener("keyup", (e) => {
+        if (
+            !gameState.myShip ||
+            gameState.myShip.destroyed ||
+            gameState.docked
+        ) {
+            // Clear movement flags if docked or destroyed, even if keyup happens later
+            gameState.controls.accelerating = false;
+            gameState.controls.decelerating = false;
+            gameState.controls.rotatingLeft = false;
+            gameState.controls.rotatingRight = false;
+            return;
+        }
+        const keyLower = e.key.toLowerCase();
+        switch (keyLower) {
+            case "arrowup":
+                gameState.controls.accelerating = false;
+                break;
+            case "arrowdown":
+                gameState.controls.decelerating = false;
+                break;
+            case "arrowleft":
+                gameState.controls.rotatingLeft = false;
+                break;
+            case "arrowright":
+                gameState.controls.rotatingRight = false;
+                break;
+        }
+    });
+}
+
+function tryDockAction(canvas) {
+    if (
+        !gameState.myShip ||
+        !gameState.clientGameData.systems[gameState.myShip.system]
+    )
+        return;
+    const planetsInCurrentSystem =
+        gameState.clientGameData.systems[gameState.myShip.system].planets;
+    let nearestDistSq = Infinity,
+        nearestPlanetIndex = -1;
+
+    planetsInCurrentSystem.forEach((p, index) => {
+        const d2 =
+            (gameState.myShip.x - p.x) ** 2 + (gameState.myShip.y - p.y) ** 2;
+        if (d2 < nearestDistSq) {
+            nearestDistSq = d2;
+            nearestPlanetIndex = index;
+        }
+    });
+
+    if (nearestPlanetIndex !== -1 && nearestDistSq < DOCKING_DISTANCE_SQUARED) {
+        Network.requestDock(gameState.myShip.system, nearestPlanetIndex);
+    }
+}
+
+function hyperJumpAction(canvas) {
+    if (!gameState.myShip || gameState.clientGameData.systems.length === 0)
+        return;
+
+    // If docked, emit undock first and let server handle it, then jump.
+    // However, client-side hyperjump is immediate for feel.
+    if (gameState.docked) {
+        Network.undock(); // Tell server we are undocking
+        UIManager.undockCleanup(); // Clean UI immediately
+    }
+
+    const oldSystem = gameState.myShip.system;
+    gameState.myShip.system =
+        (gameState.myShip.system + 1) % gameState.clientGameData.systems.length;
+
+    const targetSystemData =
+        gameState.clientGameData.systems[gameState.myShip.system];
+    if (targetSystemData && targetSystemData.planets.length > 0) {
+        const p = targetSystemData.planets[0]; // Jump to first planet of new system
+        gameState.myShip.x = p.x;
+        gameState.myShip.y = p.y;
+    } else {
+        // Fallback if system has no planets or data issue
+        gameState.myShip.x = canvas.width / 2;
+        gameState.myShip.y = canvas.height / 2;
+    }
+    gameState.myShip.vx = 0;
+    gameState.myShip.vy = 0;
+    gameState.myShip.dockedAtPlanetIdentifier = null; // Crucial: player is no longer docked
+
+    Network.sendControls(); // Inform server of new position and system
+}
+
+function cycleWeaponAction(direction) {
+    if (
+        !gameState.myShip ||
+        !gameState.myShip.weapons ||
+        gameState.myShip.weapons.length === 0
+    )
+        return;
+    gameState.weaponCycleIdx =
+        (gameState.weaponCycleIdx +
+            direction +
+            gameState.myShip.weapons.length) %
+        gameState.myShip.weapons.length;
+    const weaponName = gameState.myShip.weapons[gameState.weaponCycleIdx];
+    Network.equipWeapon(weaponName); // Server will set myShip.activeWeapon via "state" update
+}
+
+function handleMenuKeyDown(keyLower) {
+    if (!gameState.activeSubMenu) {
+        // Main dock menu
+        switch (keyLower) {
+            case "t":
+                gameState.activeSubMenu = "trade";
+                gameState.selectedTradeIndex = 0;
+                UIManager.renderTradeMenu();
+                break;
+            case "y":
+                gameState.activeSubMenu = "shipyard";
+                gameState.selectedShipIndex = 0;
+                UIManager.renderShipyardMenu();
+                break;
+            case "o":
+                gameState.activeSubMenu = "outfitter";
+                // Ensure selectedWeaponKey is initialized if not already
+                const weaponKeysList = Object.keys(
+                    gameState.clientGameData.weapons,
+                );
+                if (
+                    !gameState.selectedWeaponKey ||
+                    !weaponKeysList.includes(gameState.selectedWeaponKey)
+                ) {
+                    gameState.selectedWeaponKey = weaponKeysList[0] || null;
+                }
+                UIManager.renderOutfitterMenu();
+                break;
+            case "m":
+                gameState.activeSubMenu = "missions";
+                gameState.selectedMissionIndex = 0;
+                gameState.availableMissionsForCurrentPlanet = []; // Clear old list
+                UIManager.renderMissionsMenu(); // Initial render (likely empty or loading)
+                if (gameState.dockedAtDetails) {
+                    Network.requestMissions(
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+                break;
+            case "u":
+                Network.undock();
+                break;
+        }
+    } else {
+        // In a sub-menu
+        if (keyLower === "escape") {
+            gameState.activeSubMenu = null;
+            UIManager.renderMainMenu();
+            return;
+        }
+        switch (gameState.activeSubMenu) {
+            case "trade":
+                const numTradeGoods =
+                    gameState.clientGameData.tradeGoods.length;
+                if (keyLower === "arrowup")
+                    gameState.selectedTradeIndex = Math.max(
+                        0,
+                        gameState.selectedTradeIndex - 1,
+                    );
+                else if (keyLower === "arrowdown")
+                    gameState.selectedTradeIndex = Math.min(
+                        numTradeGoods - 1,
+                        gameState.selectedTradeIndex + 1,
+                    );
+                else if (keyLower === "b" && numTradeGoods > 0)
+                    Network.buyGood(gameState.selectedTradeIndex);
+                else if (keyLower === "s" && numTradeGoods > 0)
+                    Network.sellGood(gameState.selectedTradeIndex);
+                UIManager.renderTradeMenu();
+                break;
+            case "outfitter":
+                const weaponKeys = Object.keys(
+                    gameState.clientGameData.weapons,
+                );
+                if (weaponKeys.length > 0) {
+                    let currentWKeyIndex = weaponKeys.indexOf(
+                        gameState.selectedWeaponKey,
+                    );
+                    if (currentWKeyIndex === -1 && weaponKeys.length > 0)
+                        currentWKeyIndex = 0; // Default if somehow invalid
+
+                    if (keyLower === "arrowup")
+                        currentWKeyIndex = Math.max(0, currentWKeyIndex - 1);
+                    else if (keyLower === "arrowdown")
+                        currentWKeyIndex = Math.min(
+                            weaponKeys.length - 1,
+                            currentWKeyIndex + 1,
+                        );
+                    gameState.selectedWeaponKey = weaponKeys[currentWKeyIndex];
+                }
+                if (keyLower === "b" && gameState.selectedWeaponKey)
+                    Network.equipWeapon(gameState.selectedWeaponKey);
+                UIManager.renderOutfitterMenu();
+                break;
+            case "shipyard":
+                const numShipTypes = gameState.clientGameData.shipTypes.length;
+                if (keyLower === "arrowup")
+                    gameState.selectedShipIndex = Math.max(
+                        0,
+                        gameState.selectedShipIndex - 1,
+                    );
+                else if (keyLower === "arrowdown")
+                    gameState.selectedShipIndex = Math.min(
+                        numShipTypes - 1,
+                        gameState.selectedShipIndex + 1,
+                    );
+                else if (keyLower === "b" && numShipTypes > 0)
+                    Network.buyShip(gameState.selectedShipIndex);
+                UIManager.renderShipyardMenu();
+                break;
+            case "missions":
+                const numMissions =
+                    gameState.availableMissionsForCurrentPlanet.length;
+                if (keyLower === "arrowup")
+                    gameState.selectedMissionIndex = Math.max(
+                        0,
+                        gameState.selectedMissionIndex - 1,
+                    );
+                else if (keyLower === "arrowdown")
+                    gameState.selectedMissionIndex = Math.min(
+                        numMissions - 1,
+                        gameState.selectedMissionIndex + 1,
+                    );
+                else if (
+                    keyLower === "a" &&
+                    numMissions > 0 &&
+                    gameState.availableMissionsForCurrentPlanet[
+                        gameState.selectedMissionIndex
+                    ]
+                ) {
+                    const missionToAccept =
+                        gameState.availableMissionsForCurrentPlanet[
+                            gameState.selectedMissionIndex
+                        ];
+                    Network.acceptMission(
+                        missionToAccept.id,
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+                UIManager.renderMissionsMenu();
+                break;
+        }
+    }
+}
+
+// This function should be called in the main game loop
+export function processInputs(canvas) {
+    if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked)
+        return;
+
+    const myShip = gameState.myShip;
+    const shipDef = gameState.clientGameData.shipTypes[myShip.type || 0];
+    if (!shipDef) return; // Ship definition not loaded
+
+    const thrust = BASE_THRUST * shipDef.speedMult;
+    const rotSpd = BASE_ROTATION_SPEED * shipDef.rotMult;
+    const revThrust = thrust * shipDef.revMult; // Reverse thrust strength
+
+    if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;
+    if (gameState.controls.rotatingRight) myShip.angle += rotSpd;
+
+    if (gameState.controls.accelerating) {
+        myShip.vx += thrust * Math.cos(myShip.angle);
+        myShip.vy += thrust * Math.sin(myShip.angle);
+    }
+    if (gameState.controls.decelerating) {
+        myShip.vx -= revThrust * Math.cos(myShip.angle);
+        myShip.vy -= revThrust * Math.sin(myShip.angle);
+    }
+
+    myShip.vx *= DAMPING;
+    myShip.vy *= DAMPING;
+
+    myShip.x += myShip.vx;
+    myShip.y += myShip.vy;
+
+    // Wrap around canvas edges
+    myShip.x = wrap(myShip.x, canvas.width);
+    myShip.y = wrap(myShip.y, canvas.height);
+
+    // Send controls to server (can be throttled if needed)
+    Network.sendControls();
+}
+
+/* ===== END: hypernova/client/js/input_handler.js ===== */
+
+
 /* ===== START: hypernova/client/js/main.js ===== */
 // hypernova/client/js/main.js
 console.log("main.js script started");
@@ -121,8 +823,8 @@ async function handleLoginSubmit(username, password) {
                         gameState.docked,
                     );
                     gameState.allShips[gameState.myId] =
-                        gameState.allShips[gameState.myId] || {};
-                    gameState.defaultShipProps(gameState.myShip);
+                        gameState.allShips[gameState.myId] || {}; 
+                    gameState.defaultShipProps(gameState.myShip); 
                     console.log(
                         "main.js/onReadyCallback: Initialized myShip with defaults (was missing). gameState.docked:",
                         gameState.docked,
@@ -133,7 +835,7 @@ async function handleLoginSubmit(username, password) {
                     gameState.myId &&
                     gameState.myShip &&
                     (gameState.myShip.type === undefined ||
-                        gameState.myShip.type === null)
+                        gameState.myShip.type === null) 
                 ) {
                     console.warn(
                         "main.js/onReadyCallback: myShip exists but seems uninitialized (e.g. type missing). Applying default props. gameState.docked:",
@@ -160,12 +862,12 @@ async function handleLoginSubmit(username, password) {
                 );
                 const canvas = document.getElementById("gameCanvas");
                 if (canvas) {
-                    canvas.focus();
+                    canvas.focus(); 
                     console.log(
                         "main.js/onReadyCallback: Attempted to focus canvas.",
                     );
                 }
-                lastTime = performance.now();
+                lastTime = performance.now(); 
                 requestAnimationFrame(gameLoop);
             });
         } else {
@@ -194,7 +896,7 @@ async function loadProgress() {
         return;
     }
     console.log(
-        `main.js/loadProgress: Attempting to load progress for ${gameState.currentUser.username}. Current myId: ${gameState.myId}`,
+        `main.js/loadProgress: Attempting to load progress for ${gameState.currentUser.username}. Current myId: ${gameState.myId}`
     );
     try {
         const response = await fetch(
@@ -220,14 +922,14 @@ async function loadProgress() {
                         );
                         gameState.allShips[gameState.myId] = {};
                     }
-                    gameState.updateShipData(gameState.myId, progress.shipData);
+                    gameState.updateShipData(gameState.myId, progress.shipData); 
                     console.log(
                         "main.js/loadProgress: After updateShipData. myShip:",
                         JSON.stringify(gameState.myShip),
                     );
 
                     if (
-                        gameState.myShip &&
+                        gameState.myShip && 
                         progress.shipData.system !== undefined
                     ) {
                         gameState.myShip.system = progress.shipData.system;
@@ -237,28 +939,64 @@ async function loadProgress() {
                         );
                     }
 
-                    if (progress.dockedAtDetails) {
-                        gameState.docked = true;
-                        gameState.dockedAtDetails = progress.dockedAtDetails;
-                        console.log(
-                            "main.js/loadProgress: SETTING gameState.docked = true from progress.dockedAtDetails. Details:",
-                            JSON.stringify(gameState.dockedAtDetails),
-                        );
-                        // ***** NEW: Inform server about loaded docked state *****
-                        if (gameState.socket) {
+                        if (progress.dockedAtDetails) {
+                            gameState.docked = true;
+                            gameState.dockedAtDetails = progress.dockedAtDetails;
                             console.log(
-                                "main.js/loadProgress: Emitting 'clientLoadedDockedState' to server with details:",
+                                "main.js/loadProgress: SETTING gameState.docked = true from progress.dockedAtDetails. Details:",
                                 JSON.stringify(gameState.dockedAtDetails),
                             );
-                            gameState.socket.emit(
-                                "clientLoadedDockedState",
-                                gameState.dockedAtDetails,
-                            );
-                        }
-                        // *******************************************************
-                    } else {
-                        gameState.docked = false;
-                        gameState.dockedAtDetails = null;
+                            if (gameState.socket) {
+                                const syncData = {
+                                    dockedAtDetails: gameState.dockedAtDetails,
+                                    // Also send other critical ship data that might be resetting
+                                    credits: progress.shipData.credits,
+                                    cargo: progress.shipData.cargo,
+                                    weapons: progress.shipData.weapons,
+                                    activeWeapon: progress.shipData.activeWeapon,
+                                    health: progress.shipData.health, // Good to sync health too
+                                    // x, y, system are already handled by server based on dockedAtDetails or updated by client state
+                                };
+                                console.log(
+                                    "main.js/loadProgress: Emitting 'clientLoadedDockedState' to server with syncData:",
+                                    JSON.stringify(syncData),
+                                );
+                                gameState.socket.emit(
+                                    "clientLoadedDockedState",
+                                    syncData, // Send the richer object
+                                );
+                            }
+                        } else {
+                            // If not docked, still important to tell server our loaded (non-docked) state for credits/cargo etc.
+                            // if gameState.socket means we are connected and loadProgress found data.
+                            if (gameState.socket && progress && progress.shipData) { 
+                                const syncData = {
+                                    dockedAtDetails: null, // Explicitly null
+                                    credits: progress.shipData.credits,
+                                    cargo: progress.shipData.cargo,
+                                    weapons: progress.shipData.weapons,
+                                    activeWeapon: progress.shipData.activeWeapon,
+                                    health: progress.shipData.health,
+                                    // Current position if not docked
+                                    x: progress.shipData.x,
+                                    y: progress.shipData.y,
+                                    angle: progress.shipData.angle,
+                                    vx: progress.shipData.vx,
+                                    vy: progress.shipData.vy,
+                                    system: progress.shipData.system,
+                                };
+                                console.log(
+                                    "main.js/loadProgress: (Not Docked from save) Emitting 'clientLoadedDockedState' to server with syncData:",
+                                    JSON.stringify(syncData),
+                                );
+                                gameState.socket.emit(
+                                    "clientLoadedDockedState",
+                                    syncData,
+                                );
+                            }
+                            // ... rest of the else for not docked from progress
+                            gameState.docked = false;
+                            gameState.dockedAtDetails = null;
                         console.log(
                             "main.js/loadProgress: SETTING gameState.docked = false (no dockedAtDetails in loaded progress)",
                         );
@@ -285,7 +1023,7 @@ async function loadProgress() {
                         JSON.stringify(gameState.myShip),
                     );
                 }
-                gameState.docked = false;
+                gameState.docked = false; 
                 gameState.dockedAtDetails = null;
             }
         } else {
@@ -293,7 +1031,7 @@ async function loadProgress() {
                 "main.js/loadProgress: Fetch to /load-progress failed with status:",
                 response.statusText,
             );
-            gameState.docked = false;
+            gameState.docked = false; 
             gameState.dockedAtDetails = null;
         }
     } catch (error) {
@@ -301,7 +1039,7 @@ async function loadProgress() {
             "main.js/loadProgress: Error during fetch/processing in loadProgress:",
             error,
         );
-        gameState.docked = false;
+        gameState.docked = false; 
         gameState.dockedAtDetails = null;
     }
     console.log(
@@ -333,7 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     Renderer.init(canvas);
     UIManager.init(uiContainer);
-    initInputListeners(canvas);
+    initInputListeners(canvas); 
 
     const loginForm = document.getElementById("login-form");
     if (loginForm) {
@@ -360,12 +1098,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 let gameLoopFrameCount = 0;
-let lastTime = 0;
+let lastTime = 0; 
 
 function gameLoop(timestamp) {
     gameLoopFrameCount++;
     const deltaTime = timestamp - lastTime;
-    lastTime = timestamp;
+    lastTime = timestamp; 
 
     const canvas = document.getElementById("gameCanvas");
 
@@ -389,8 +1127,1140 @@ function gameLoop(timestamp) {
     }
     requestAnimationFrame(gameLoop);
 }
-
 /* ===== END: hypernova/client/js/main.js ===== */
+
+
+/* ===== START: hypernova/client/js/network.js ===== */
+// hypernova/client/js/network.js
+import { gameState } from "./game_state.js";
+import { UIManager } from "./ui_manager.js";
+// Renderer might not be directly needed here, but can be if you need to trigger redraws from network events
+// import { Renderer } from './renderer.js';
+
+// NEW: Function to save progress to the server
+export async function saveProgress() {
+    // Make it async
+    if (!gameState.socket || !gameState.myShip || !gameState.currentUser) {
+        console.warn(
+            "saveProgress: Cannot save - No socket, ship, or user data.",
+        );
+        console.warn(
+            `saveProgress details: socket: ${!!gameState.socket}, myShip: ${!!gameState.myShip}, currentUser: ${!!gameState.currentUser}`,
+        );
+        return;
+    }
+
+    // Add a specific log here
+    console.log(
+        `saveProgress: Preparing data. Current gameState.docked: ${gameState.docked}, dockedAtDetails being saved: ${JSON.stringify(gameState.docked ? gameState.dockedAtDetails : null)}`,
+    );
+
+    // Prepare the data to be saved
+    const progressData = {
+        username: gameState.currentUser.username,
+        shipData: {
+            x: gameState.myShip.x,
+            y: gameState.myShip.y,
+            angle: gameState.myShip.angle,
+            vx: gameState.myShip.vx,
+            vy: gameState.myShip.vy,
+            type: gameState.myShip.type, // This is likely an index
+            credits: gameState.myShip.credits,
+            cargo: gameState.myShip.cargo, // Array of numbers
+            maxCargo: gameState.myShip.maxCargo,
+            health: gameState.myShip.health,
+            maxHealth: gameState.myShip.maxHealth,
+            weapons: gameState.myShip.weapons, // Array of weapon names/IDs
+            activeWeapon: gameState.myShip.activeWeapon, // Name/ID of active weapon
+            system: gameState.myShip.system, // Current system index
+            activeMissions: gameState.myShip.activeMissions, // Array of mission objects/IDs
+            // dockedAtPlanetIdentifier is handled by saving `dockedAtDetails` if docked
+        },
+        dockedAtDetails: gameState.docked ? gameState.dockedAtDetails : null,
+    };
+
+    try {
+        const response = await fetch("/save-progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(progressData),
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+            console.log("saveProgress: Progress saved successfully to server.");
+        } else {
+            console.error(
+                "saveProgress: Failed to save progress to server:",
+                result.message || "Server error",
+            );
+        }
+    } catch (error) {
+        console.error(
+            "saveProgress: Error during fetch to save progress:",
+            error,
+        );
+    }
+}
+
+export function initNetwork(onReadyCallback) {
+    const socket = io();
+    gameState.socket = socket;
+
+    socket.on("init", (data) => {
+        console.log(
+            "network.js/init: Received init data:",
+            JSON.stringify(data),
+        ); // Log full init data
+        if (!data || !data.id || !data.gameData) {
+            console.error(
+                "network.js/init: Incomplete init data received from server.",
+            );
+            return;
+        }
+        gameState.myId = data.id;
+        console.log("network.js/init: Set gameState.myId to:", gameState.myId);
+
+        // Populate clientGameData from server (user's existing logic)
+        gameState.clientGameData.systems = data.gameData.systems || [];
+        gameState.clientGameData.tradeGoods = data.gameData.tradeGoods || [];
+        gameState.clientGameData.weapons = data.gameData.weapons || {};
+        gameState.clientGameData.shipTypes = data.gameData.shipTypes || [];
+        gameState.clientGameData.MISSION_TYPES =
+            data.gameData.MISSION_TYPES || {};
+        gameState.clientPlanetEconomies = data.gameData.economies || [];
+
+        // Collect image paths to load (user's existing logic)
+        const uniqueImageFiles = new Set();
+        if (gameState.clientGameData.systems) {
+            gameState.clientGameData.systems.forEach((system) => {
+                if (system.planets) {
+                    system.planets.forEach((planet) => {
+                        if (planet.imageFile) {
+                            uniqueImageFiles.add(
+                                `assets/images/${planet.imageFile}`,
+                            );
+                        }
+                    });
+                }
+            });
+        }
+        if (gameState.clientGameData.shipTypes) {
+            gameState.clientGameData.shipTypes.forEach((shipType) => {
+                if (shipType.imageFile) {
+                    uniqueImageFiles.add(`assets/images/${shipType.imageFile}`);
+                }
+            });
+        }
+        gameState.imagePathsToLoad = Array.from(uniqueImageFiles);
+        // console.log("network.js/init: Image paths to load:", gameState.imagePathsToLoad);
+
+        if (data.ships) {
+            for (const shipId in data.ships) {
+                console.log(
+                    "network.js/init: Processing ship from server init data for shipId:",
+                    shipId,
+                );
+                gameState.updateShipData(shipId, data.ships[shipId]); // updateShipData calls defaultShipProps
+            }
+        }
+        console.log(
+            "network.js/init: After processing server ships. Current myShip:",
+            JSON.stringify(gameState.myShip),
+            "Current gameState.docked:",
+            gameState.docked,
+        );
+
+        if (gameState.pendingProgressToApply && gameState.myId) {
+            console.log(
+                "network.js/init: Applying pendingProgressToApply. Current gameState.docked BEFORE apply:",
+                gameState.docked,
+                "Pending progress:",
+                JSON.stringify(gameState.pendingProgressToApply),
+            );
+            const pendingProgress = gameState.pendingProgressToApply;
+
+            gameState.updateShipData(
+                // This will call defaultShipProps
+                gameState.myId,
+                pendingProgress.shipData,
+            );
+            console.log(
+                "network.js/init (pending): After updateShipData. myShip:",
+                JSON.stringify(gameState.myShip),
+            );
+
+            if (
+                gameState.myShip && // Ensure myShip exists after updateShipData
+                pendingProgress.shipData.system !== undefined
+            ) {
+                gameState.myShip.system = pendingProgress.shipData.system;
+                console.log(
+                    "network.js/init (pending): Set gameState.myShip.system to",
+                    gameState.myShip.system,
+                );
+            }
+
+            if (pendingProgress.dockedAtDetails) {
+                gameState.docked = true;
+                gameState.dockedAtDetails = pendingProgress.dockedAtDetails;
+                console.log(
+                    "network.js/init (pending): SETTING gameState.docked = true, details:",
+                    JSON.stringify(gameState.dockedAtDetails),
+                );
+            } else {
+                gameState.docked = false;
+                gameState.dockedAtDetails = null;
+                console.log(
+                    "network.js/init (pending): SETTING gameState.docked = false (no dockedAtDetails in pending progress)",
+                );
+            }
+            console.log(
+                "network.js/init: Applied pendingProgressToApply. gameState.docked is now:",
+                gameState.docked,
+                "myShip:",
+                JSON.stringify(gameState.myShip),
+            );
+            delete gameState.pendingProgressToApply;
+        } else if (gameState.myShip) {
+            // This branch means: myId is set, myShip exists (likely from server's data.ships), and there was NO pendingProgressToApply.
+            // defaultShipProps would have been called via updateShipData when data.ships was processed.
+            console.log(
+                "network.js/init: (No pending progress, myShip exists). gameState.docked:",
+                gameState.docked,
+                "myShip:",
+                JSON.stringify(gameState.myShip),
+            );
+        } else if (gameState.myId) {
+            // This branch means: myId is set, but myShip was NOT in data.ships and NO pendingProgressToApply.
+            // This implies a new ship situation or a ship not yet created on the server but client knows its ID.
+            console.log(
+                "network.js/init: (No pending progress, myShip DID NOT exist). Creating and applying defaults for myId:",
+                gameState.myId,
+                "Current gameState.docked:",
+                gameState.docked,
+            );
+            gameState.allShips[gameState.myId] = {}; // Create the ship object.
+            gameState.defaultShipProps(gameState.myShip); // Apply default properties.
+            console.log(
+                "network.js/init: (New ship scenario) Created and applied defaults. gameState.docked:",
+                gameState.docked,
+                "myShip:",
+                JSON.stringify(gameState.myShip),
+            );
+        }
+
+        console.log(
+            "network.js/init: Client initialization sequence in 'init' handler complete. Final My ship:",
+            JSON.stringify(gameState.myShip),
+            "Final gameState.docked:",
+            gameState.docked,
+        );
+        if (onReadyCallback) {
+            console.log("network.js/init: Calling onReadyCallback.");
+            onReadyCallback();
+        }
+    });
+
+    socket.on("state", (updatedShipDataMap) => {
+        // console.log("network.js/state: Received state update:", updatedShipDataMap);
+        for (const id in updatedShipDataMap) {
+            gameState.updateShipData(id, updatedShipDataMap[id]);
+        }
+        if (
+            gameState.myShip &&
+            gameState.myShip.dockedAtPlanetIdentifier === null && // Ship itself says it's not at a planet
+            gameState.docked // Global state says it IS docked
+        ) {
+            // This implies a server-driven undock or state mismatch.
+            console.log(
+                "network.js/state: Server state indicates ship is not docked, but client gameState.docked was true. Cleaning up UI.",
+            );
+            UIManager.undockCleanup(); // This sets gameState.docked = false
+        }
+    });
+
+    socket.on("playerJoined", (data) => {
+        console.log("network.js/playerJoined:", data.id);
+        gameState.updateShipData(data.id, data.ship);
+    });
+
+    socket.on("playerLeft", (id) => {
+        console.log("network.js/playerLeft:", id);
+        delete gameState.allShips[id];
+    });
+
+    socket.on("projectile", (data) => {
+        data.time = Date.now();
+        gameState.projectiles.push(data);
+    });
+
+    socket.on("dockConfirmed", (data) => {
+        console.log(
+            "network.js/dockConfirmed: Received data:",
+            JSON.stringify(data),
+        );
+        gameState.docked = true;
+        if (gameState.myShip) {
+            // Should always exist if we are docking
+            gameState.myShip.dockedAtPlanetIdentifier = {
+                // Store simple identifier on ship object
+                systemIndex: data.systemIndex,
+                planetIndex: data.planetIndex,
+            };
+        }
+        gameState.dockedAtDetails = { ...data }; // Store full details in global state
+        console.log(
+            "network.js/dockConfirmed: Set gameState.docked = true. dockedAtDetails:",
+            JSON.stringify(gameState.dockedAtDetails),
+            "myShip.dockedAtPlanetIdentifier:",
+            gameState.myShip
+                ? JSON.stringify(gameState.myShip.dockedAtPlanetIdentifier)
+                : "N/A",
+        );
+        UIManager.openDockMenu();
+        console.log("network.js/dockConfirmed: Calling saveProgress().");
+        saveProgress(); // <<< SAVE ON DOCK
+    });
+
+    socket.on("undockConfirmed", () => {
+        console.log(
+            "network.js/undockConfirmed: Received from server. Current gameState.docked BEFORE UIManager.undockCleanup:",
+            gameState.docked,
+        );
+        UIManager.undockCleanup(); // This should set gameState.docked = false and clear dockedAtDetails
+        console.log(
+            "network.js/undockConfirmed: AFTER UIManager.undockCleanup. gameState.docked:",
+            gameState.docked,
+        );
+        // Note: saveProgress() is called by the client's undock() action, not here.
+        // If it were here, it would save the *actually* undocked state.
+    });
+
+    socket.on("tradeError", ({ message }) => {
+        console.error("network.js/tradeError:", message);
+        alert(`Trade Error: ${message}`);
+    });
+    socket.on("actionFailed", ({ message }) => {
+        console.warn("network.js/actionFailed:", message);
+        alert(`Action Failed: ${message}`);
+    });
+    socket.on("actionSuccess", ({ message }) => {
+        console.log("network.js/actionSuccess:", message);
+    });
+
+    socket.on("tradeSuccess", (data) => {
+        console.log("network.js/tradeSuccess: data:", JSON.stringify(data));
+        if (gameState.myShip) {
+            gameState.myShip.credits = data.credits;
+            gameState.myShip.cargo = data.cargo;
+        }
+        if (
+            gameState.dockedAtDetails &&
+            data.updatedPlanetData &&
+            gameState.dockedAtDetails.systemIndex ===
+                data.updatedPlanetData.systemIndex &&
+            gameState.dockedAtDetails.planetIndex ===
+                data.updatedPlanetData.planetIndex
+        ) {
+            gameState.dockedAtDetails.buyPrices =
+                data.updatedPlanetData.buyPrices;
+            gameState.dockedAtDetails.sellPrices =
+                data.updatedPlanetData.sellPrices;
+            gameState.dockedAtDetails.stock = data.updatedPlanetData.stock;
+
+            if (
+                gameState.clientPlanetEconomies[
+                    data.updatedPlanetData.systemIndex
+                ]
+            ) {
+                gameState.clientPlanetEconomies[
+                    data.updatedPlanetData.systemIndex
+                ].planets[data.updatedPlanetData.planetIndex] = {
+                    buyPrices: data.updatedPlanetData.buyPrices,
+                    sellPrices: data.updatedPlanetData.sellPrices,
+                    stock: data.updatedPlanetData.stock,
+                };
+            }
+        }
+        if (gameState.activeSubMenu === "trade") UIManager.renderTradeMenu();
+    });
+
+    socket.on("updatePlanetEconomies", (updatedSystemsEconomies) => {
+        // console.log("network.js/updatePlanetEconomies received");
+        gameState.clientPlanetEconomies = updatedSystemsEconomies;
+        if (
+            gameState.docked &&
+            gameState.activeSubMenu === "trade" &&
+            gameState.dockedAtDetails
+        ) {
+            const currentPlanetEcoFromServer =
+                updatedSystemsEconomies[gameState.dockedAtDetails.systemIndex]
+                    ?.planets[gameState.dockedAtDetails.planetIndex];
+            if (currentPlanetEcoFromServer) {
+                gameState.dockedAtDetails.buyPrices =
+                    currentPlanetEcoFromServer.buyPrices;
+                gameState.dockedAtDetails.sellPrices =
+                    currentPlanetEcoFromServer.sellPrices;
+                gameState.dockedAtDetails.stock =
+                    currentPlanetEcoFromServer.stock;
+                UIManager.renderTradeMenu();
+            }
+        }
+    });
+
+    socket.on("planetEconomyUpdate", (data) => {
+        // console.log("network.js/planetEconomyUpdate received for system", data.systemIndex, "planet", data.planetIndex);
+        const { systemIndex, planetIndex, buyPrices, sellPrices, stock } = data;
+        if (
+            gameState.clientPlanetEconomies[systemIndex] &&
+            gameState.clientPlanetEconomies[systemIndex].planets[planetIndex]
+        ) {
+            gameState.clientPlanetEconomies[systemIndex].planets[planetIndex] =
+                { stock, buyPrices, sellPrices };
+        }
+        if (
+            gameState.docked &&
+            gameState.activeSubMenu === "trade" &&
+            gameState.dockedAtDetails &&
+            gameState.dockedAtDetails.systemIndex === systemIndex &&
+            gameState.dockedAtDetails.planetIndex === planetIndex
+        ) {
+            gameState.dockedAtDetails.buyPrices = buyPrices;
+            gameState.dockedAtDetails.sellPrices = sellPrices;
+            gameState.dockedAtDetails.stock = stock;
+            UIManager.renderTradeMenu();
+        }
+    });
+
+    socket.on("availableMissionsList", (data) => {
+        // console.log("network.js/availableMissionsList for system", data.systemIndex, "planet", data.planetIndex);
+        if (
+            gameState.docked &&
+            gameState.dockedAtDetails &&
+            gameState.dockedAtDetails.systemIndex === data.systemIndex &&
+            gameState.dockedAtDetails.planetIndex === data.planetIndex
+        ) {
+            gameState.availableMissionsForCurrentPlanet = data.missions;
+            gameState.selectedMissionIndex = 0;
+            if (gameState.activeSubMenu === "missions") {
+                UIManager.renderMissionsMenu();
+            }
+        }
+    });
+
+    socket.on("missionAccepted", (data) => {
+        console.log(`network.js/missionAccepted: "${data.mission.title}"`);
+        alert(`Mission "${data.mission.title}" accepted!`);
+        if (
+            gameState.activeSubMenu === "missions" &&
+            gameState.dockedAtDetails
+        ) {
+            requestMissions(
+                gameState.dockedAtDetails.systemIndex,
+                gameState.dockedAtDetails.planetIndex,
+            );
+        }
+    });
+
+    socket.on("missionUpdate", (data) => {
+        // ... (existing missionUpdate logic with its console logs) ...
+        if (gameState.myShip && gameState.myShip.activeMissions) {
+            const missionIndex = gameState.myShip.activeMissions.findIndex(
+                (m) => m.id === data.missionId,
+            );
+            if (missionIndex !== -1) {
+                if (data.status)
+                    gameState.myShip.activeMissions[missionIndex].status =
+                        data.status;
+                if (
+                    data.progress &&
+                    gameState.myShip.activeMissions[missionIndex].type ===
+                        gameState.clientGameData.MISSION_TYPES.BOUNTY
+                ) {
+                    gameState.myShip.activeMissions[
+                        missionIndex
+                    ].targetsDestroyed = parseInt(data.progress.split("/")[0]);
+                }
+                // ...
+            }
+        }
+        // ...
+        console.log("network.js/missionUpdate received:", JSON.stringify(data));
+        // ... (alerting logic) ...
+    });
+}
+
+export function sendControls() {
+    if (
+        !gameState.socket ||
+        !gameState.myShip ||
+        (gameState.myShip && gameState.myShip.destroyed)
+    ) {
+        // console.warn("sendControls: Pre-condition failed", {socket: !!gameState.socket, myShip: !!gameState.myShip, destroyed: gameState.myShip ? gameState.myShip.destroyed : 'N/A'});
+        return;
+    }
+    // console.log("sendControls: Emitting 'control'");
+    gameState.socket.emit("control", {
+        x: gameState.myShip.x,
+        y: gameState.myShip.y,
+        angle: gameState.myShip.angle,
+        vx: gameState.myShip.vx,
+        vy: gameState.myShip.vy,
+        system: gameState.myShip.system,
+    });
+}
+
+export function fireWeapon() {
+    console.log(
+        `fireWeapon called. Socket: ${!!gameState.socket}, MyShip: ${!!gameState.myShip}, Destroyed: ${gameState.myShip ? gameState.myShip.destroyed : "N/A"}, ActiveWeapon: ${gameState.myShip ? gameState.myShip.activeWeapon : "N/A"}, Docked: ${gameState.docked}`,
+    );
+    if (
+        !gameState.socket ||
+        !gameState.myShip ||
+        gameState.myShip.destroyed ||
+        !gameState.myShip.activeWeapon ||
+        gameState.docked
+    ) {
+        console.warn("fireWeapon: Pre-condition failed.");
+        return;
+    }
+    console.log("fireWeapon: Emitting 'fire'.");
+    gameState.socket.emit("fire");
+}
+
+export function equipWeapon(weaponName) {
+    console.log(
+        `equipWeapon called with: ${weaponName}. Socket: ${!!gameState.socket}`,
+    );
+    if (!gameState.socket) return;
+    gameState.socket.emit("equipWeapon", { weapon: weaponName });
+}
+
+export function requestDock(systemIndex, planetIndex) {
+    console.log(
+        `requestDock called for system ${systemIndex}, planet ${planetIndex}. Socket: ${!!gameState.socket}`,
+    );
+    if (!gameState.socket) return;
+    gameState.socket.emit("dock", { systemIndex, planetIndex });
+}
+
+export function undock() {
+    console.log(
+        `undock() called. Current gameState.docked: ${gameState.docked}, gameState.dockedAtDetails: ${JSON.stringify(gameState.dockedAtDetails)}`,
+    );
+    if (!gameState.socket || !gameState.docked) {
+        console.warn(
+            `undock: Pre-condition failed. Socket: ${!!gameState.socket}, gameState.docked: ${gameState.docked}. Cannot send undock emit or save.`,
+        );
+        // The "Action Failed: Not docked" alert might be coming from a server response if the emit still goes through,
+        // or if the client directly shows this based on this check.
+        // If the alert is from the client, it means this check is what's stopping it.
+        return;
+    }
+    console.log("undock: Emitting 'undock' to server.");
+    gameState.socket.emit("undock");
+
+    console.log(
+        "undock: Calling saveProgress(). gameState.docked BEFORE UIManager.undockCleanup (which happens on undockConfirmed) and server confirm:",
+        gameState.docked,
+    );
+    // At this exact moment, gameState.docked is TRUE because the check above passed.
+    // saveProgress will therefore save the current (still docked) state details.
+    saveProgress(); // <<< SAVE ON UNDOCK REQUEST (as per instructions)
+}
+
+export function buyGood(goodIndex) {
+    console.log(
+        `buyGood called for index ${goodIndex}. Docked: ${gameState.docked}`,
+    );
+    if (
+        !gameState.socket ||
+        !gameState.docked ||
+        !gameState.dockedAtDetails ||
+        !gameState.clientGameData.tradeGoods[goodIndex]
+    ) {
+        console.warn("buyGood: Pre-condition failed.");
+        return;
+    }
+    const good = gameState.clientGameData.tradeGoods[goodIndex];
+    console.log("buyGood: Emitting 'buyGood' for", good.name);
+    gameState.socket.emit("buyGood", {
+        goodName: good.name,
+        quantity: 1,
+        systemIndex: gameState.dockedAtDetails.systemIndex,
+        planetIndex: gameState.dockedAtDetails.planetIndex,
+    });
+}
+
+export function sellGood(goodIndex) {
+    console.log(
+        `sellGood called for index ${goodIndex}. Docked: ${gameState.docked}`,
+    );
+    if (
+        !gameState.socket ||
+        !gameState.docked ||
+        !gameState.dockedAtDetails ||
+        !gameState.clientGameData.tradeGoods[goodIndex]
+    ) {
+        console.warn("sellGood: Pre-condition failed.");
+        return;
+    }
+    const good = gameState.clientGameData.tradeGoods[goodIndex];
+    console.log("sellGood: Emitting 'sellGood' for", good.name);
+    gameState.socket.emit("sellGood", {
+        goodName: good.name,
+        quantity: 1,
+        systemIndex: gameState.dockedAtDetails.systemIndex,
+        planetIndex: gameState.dockedAtDetails.planetIndex,
+    });
+}
+
+export function buyShip(shipTypeIndex) {
+    console.log(
+        `buyShip called for type index ${shipTypeIndex}. MyShip exists: ${!!gameState.myShip}`,
+    );
+    if (!gameState.socket || !gameState.myShip) return;
+    const sTypeDef = gameState.clientGameData.shipTypes[shipTypeIndex];
+    if (!sTypeDef) {
+        alert("Invalid ship type selected.");
+        return;
+    }
+    if (gameState.myShip.credits < sTypeDef.price) {
+        alert("Not enough credits to buy this ship.");
+        return;
+    }
+    console.log("buyShip: Emitting 'buyShip' for type index", shipTypeIndex);
+    gameState.socket.emit("buyShip", { shipTypeIndex: shipTypeIndex });
+}
+
+export function requestMissions(systemIndex, planetIndex) {
+    console.log(
+        `requestMissions called for system ${systemIndex}, planet ${planetIndex}. Socket: ${!!gameState.socket}`,
+    );
+    if (!gameState.socket) return;
+    gameState.socket.emit("requestMissions", { systemIndex, planetIndex });
+}
+
+export function acceptMission(missionId, systemIndex, planetIndex) {
+    console.log(
+        `acceptMission called for ID ${missionId}. Socket: ${!!gameState.socket}`,
+    );
+    if (!gameState.socket) return;
+    gameState.socket.emit("acceptMission", {
+        missionId,
+        systemIndex,
+        planetIndex,
+    });
+}
+
+/* ===== END: hypernova/client/js/network.js ===== */
+
+
+/* ===== START: hypernova/client/js/renderer.js ===== */
+// hypernova/client/js/renderer.js
+import { gameState } from "./game_state.js";
+import {
+    PROJECTILE_LIFESPAN_MS,
+    DOCKING_DISTANCE_SQUARED,
+} from "./client_config.js";
+
+let ctx = null;
+let canvas = null;
+const DEFAULT_PLANET_RADIUS = 20; // Default visual radius if image fails or for placeholder
+const DEFAULT_PLANET_IMAGE_SIZE = 64; // Assumed default render size for planet images
+
+export const Renderer = {
+    init(canvasElement) {
+        canvas = canvasElement;
+        ctx = canvas.getContext("2d");
+        canvas.width = 800;
+        canvas.height = 600;
+    },
+
+    draw() {
+        if (!ctx || !gameState.myShip) {
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = "12px monospace";
+
+        const currentSystemData =
+            gameState.clientGameData.systems[gameState.myShip.system];
+        if (currentSystemData && currentSystemData.planets) {
+            currentSystemData.planets.forEach((p) => this.drawPlanet(p));
+        }
+
+        const now = Date.now();
+        gameState.projectiles = gameState.projectiles.filter(
+            (p) => now - (p.time || 0) < PROJECTILE_LIFESPAN_MS,
+        );
+        gameState.projectiles.forEach((p) => this.drawProjectile(p));
+
+        for (const id in gameState.allShips) {
+            const ship = gameState.allShips[id];
+            if (!ship || ship.system !== gameState.myShip.system) continue;
+            this.drawShip(ship);
+
+            if (
+                id !== gameState.myId &&
+                !ship.destroyed &&
+                ship.type !== undefined
+            ) {
+                ctx.fillStyle = ship.color || "#0f0";
+                const shipDef = gameState.clientGameData.shipTypes[ship.type];
+                const labelOffset =
+                    shipDef && shipDef.imgHeight
+                        ? shipDef.imgHeight / 2 + 5
+                        : 15; // Adjust label based on image height
+                ctx.fillText(
+                    id.substring(0, 6),
+                    ship.x - 10,
+                    ship.y - labelOffset,
+                );
+            }
+        }
+
+        this.drawHUD();
+    },
+
+    drawPlanet(planet) {
+        // planet.imageFile should be just the filename, e.g., "planet_alpha.png"
+        const img = gameState.loadedImages[planet.imageFile];
+
+        if (img) {
+            const w = DEFAULT_PLANET_IMAGE_SIZE; // Or use img.width if you want original size
+            const h = DEFAULT_PLANET_IMAGE_SIZE; // Or use img.height
+            ctx.drawImage(img, planet.x - w / 2, planet.y - h / 2, w, h);
+        } else {
+            ctx.fillStyle = "#080"; // Fallback color
+            ctx.beginPath();
+            ctx.arc(planet.x, planet.y, DEFAULT_PLANET_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            if (planet.imageFile) {
+                // Only warn if an imageFile was specified but not loaded
+                // console.warn(`Image not found or loaded for planet: ${planet.name} (${planet.imageFile})`);
+            }
+        }
+        ctx.fillStyle = "#0f0";
+        ctx.fillText(
+            planet.name,
+            planet.x + DEFAULT_PLANET_RADIUS + 5,
+            planet.y + 4,
+        );
+    },
+
+    drawShip(ship) {
+        if (ship.destroyed || ship.type === undefined) return;
+
+        const shipTypeDefinition =
+            gameState.clientGameData.shipTypes[ship.type];
+        if (!shipTypeDefinition) {
+            // console.warn(`Ship type definition not found for ship.type: ${ship.type}`);
+            return;
+        }
+
+        // shipTypeDefinition.imageFile should be just the filename
+        const img = gameState.loadedImages[shipTypeDefinition.imageFile];
+
+        ctx.save();
+        ctx.translate(ship.x, ship.y);
+        ctx.rotate(ship.angle);
+
+        if (img) {
+            const w = shipTypeDefinition.imgWidth || img.width;
+            const h = shipTypeDefinition.imgHeight || img.height;
+            ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        } else {
+            ctx.fillStyle = ship.color || "#0f0";
+            ctx.beginPath();
+            ctx.moveTo(15, 0);
+            ctx.lineTo(-10, 8);
+            ctx.lineTo(-10, -8);
+            ctx.closePath();
+            ctx.fill();
+            if (shipTypeDefinition.imageFile) {
+                // console.warn(`Image not found or loaded for ship type: ${shipTypeDefinition.name} (${shipTypeDefinition.imageFile})`);
+            }
+        }
+        ctx.restore();
+    },
+
+    drawProjectile(p) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(p.range / 4, 0);
+        ctx.stroke();
+        ctx.restore();
+    },
+
+    drawHUD() {
+        if (!gameState.myShip || gameState.myShip.destroyed) return;
+
+        const myShip = gameState.myShip;
+        const currentShipDef =
+            gameState.clientGameData.shipTypes[myShip.type || 0];
+        if (!currentShipDef) {
+            return;
+        }
+
+        let cargoCount =
+            myShip.cargo && myShip.cargo.length > 0
+                ? myShip.cargo.reduce((sum, val) => sum + val, 0)
+                : 0;
+
+        ctx.fillStyle = "#0f0";
+        ctx.fillText(`Credits $${myShip.credits}`, 10, 20);
+        ctx.fillText(
+            `Health ${myShip.health || 0}/${myShip.maxHealth || 0}`,
+            10,
+            36,
+        );
+        ctx.fillText(`Cargo ${cargoCount}/${currentShipDef.maxCargo}`, 10, 52);
+
+        const systemName =
+            gameState.clientGameData.systems[myShip.system]?.name ||
+            "Unknown System";
+        ctx.fillText(`System: ${systemName}`, 10, 68);
+
+        if (myShip.activeWeapon) {
+            const weaponDisplayName =
+                gameState.clientGameData.weapons[myShip.activeWeapon]?.name ||
+                myShip.activeWeapon;
+            ctx.fillText(`Weapon: ${weaponDisplayName}`, 10, 84);
+        }
+
+        let hudNextY = 116;
+        if (myShip.activeMissions && myShip.activeMissions.length > 0) {
+            ctx.fillText("Active Missions:", 10, hudNextY);
+            hudNextY += 16;
+            myShip.activeMissions.slice(0, 3).forEach((mission) => {
+                let missionText =
+                    mission.title.length > 35
+                        ? mission.title.substring(0, 32) + "..."
+                        : mission.title;
+                if (
+                    mission.type ===
+                    gameState.clientGameData.MISSION_TYPES.BOUNTY
+                ) {
+                    missionText += ` (${mission.targetsDestroyed || 0}/${mission.targetsRequired})`;
+                }
+                const timeRemainingMin = Math.max(
+                    0,
+                    Math.round((mission.timeLimit - Date.now()) / 60000),
+                );
+                missionText += ` (${timeRemainingMin}m)`;
+                ctx.fillText(`- ${missionText}`, 15, hudNextY);
+                hudNextY += 16;
+            });
+        }
+
+        if (
+            !gameState.docked &&
+            gameState.clientGameData.systems[myShip.system] &&
+            gameState.clientGameData.systems[myShip.system].planets
+        ) {
+            const planets =
+                gameState.clientGameData.systems[myShip.system].planets;
+            let canDock = false,
+                dockPlanetName = "";
+            planets.forEach((p) => {
+                if (
+                    (myShip.x - p.x) ** 2 + (myShip.y - p.y) ** 2 <
+                    DOCKING_DISTANCE_SQUARED
+                ) {
+                    canDock = true;
+                    dockPlanetName = p.name;
+                }
+            });
+            if (canDock) {
+                ctx.fillText(
+                    `Press 'D' to dock at ${dockPlanetName}`,
+                    canvas.width / 2 - 100,
+                    canvas.height - 20,
+                );
+            }
+        }
+    },
+};
+
+/* ===== END: hypernova/client/js/renderer.js ===== */
+
+
+/* ===== START: hypernova/client/js/ui_manager.js ===== */
+// client/js/ui_manager.js
+import { gameState } from "./game_state.js";
+import * as Network from "./network.js"; // To send actions like buy/sell/undock
+
+let uiContainer = null;
+let dockMenuElement = null;
+
+export const UIManager = {
+    init(containerElement) {
+        uiContainer = containerElement;
+    },
+
+    isMenuOpen() {
+        return gameState.isMenuOpen;
+    },
+
+    openDockMenu() {
+        if (dockMenuElement) this.closeDockMenu(); // Should not happen, but safeguard
+
+        gameState.isMenuOpen = true;
+        gameState.activeSubMenu = null; // Start at main dock menu
+        document.body.classList.add("no-scroll");
+
+        dockMenuElement = document.createElement("div");
+        dockMenuElement.className = "panel";
+        dockMenuElement.style.top = "50%";
+        dockMenuElement.style.left = "50%";
+        dockMenuElement.style.transform = "translate(-50%,-50%)";
+
+        this.renderMainMenu();
+        uiContainer.appendChild(dockMenuElement);
+    },
+
+    closeDockMenu() {
+        if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
+            uiContainer.removeChild(dockMenuElement);
+        }
+        dockMenuElement = null;
+        gameState.isMenuOpen = false;
+        gameState.activeSubMenu = null;
+        gameState.selectedTradeIndex = 0;
+        gameState.selectedWeaponKey = null;
+        gameState.selectedShipIndex = 0;
+        gameState.selectedMissionIndex = 0;
+        document.body.classList.remove("no-scroll");
+    },
+
+    // Called by network.js when server confirms undock or player jumps
+    undockCleanup() {
+        gameState.docked = false;
+        gameState.dockedAtDetails = null;
+        this.closeDockMenu();
+        // myShip.dockedAtPlanetIdentifier is set by server state update
+    },
+
+    renderMainMenu() {
+        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
+            return;
+
+        const myShip = gameState.myShip;
+        const currentShipDef =
+            gameState.clientGameData.shipTypes[myShip.type || 0];
+        if (!currentShipDef) return; // Ship def not loaded
+
+        const cargoCount = myShip.cargo.reduce((s, v) => s + v, 0);
+
+        dockMenuElement.innerHTML = `
+          <div class="menu-item"><b>Docked at ${gameState.dockedAtDetails.planetName} (${gameState.dockedAtDetails.systemName})</b></div>
+          <div class="menu-item">Credits: $${myShip.credits}</div>
+          <div class="menu-item">Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>
+          <div class="menu-item">---</div>
+          <div class="menu-item">T - Trade</div>
+          <div class="menu-item">Y - Shipyard</div>
+          <div class="menu-item">O - Outfitter</div>
+          <div class="menu-item">M - Missions</div>
+          <div class="menu-item">U - Undock</div>
+          <div class="menu-item" style="margin-top: 10px; font-size: 0.9em;">(Use Arrow Keys, Enter/Specific Keys, Esc)</div>
+        `;
+    },
+
+    renderTradeMenu() {
+        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
+            return;
+        const myShip = gameState.myShip;
+        const currentShipDef =
+            gameState.clientGameData.shipTypes[myShip.type || 0];
+        if (!currentShipDef) return;
+
+        const cargoCount = myShip.cargo.reduce((s, v) => s + v, 0);
+        let html = `<div class="menu-item"><b>Trade at ${gameState.dockedAtDetails.planetName}</b></div>`;
+        html += `<div class="menu-item">Credits: $${myShip.credits} Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>`;
+        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Good&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Qty&nbsp;&nbsp;&nbsp;Buy&nbsp;&nbsp;&nbsp;&nbsp;Sell&nbsp;&nbsp;&nbsp;Stock</u></div>`;
+
+        // Use dockedAtDetails for prices/stock, as it's updated on tradeSuccess directly
+        const planetEco = gameState.dockedAtDetails;
+
+        if (
+            !planetEco ||
+            !planetEco.buyPrices ||
+            !planetEco.sellPrices ||
+            !planetEco.stock
+        ) {
+            html += "<div>Loading prices...</div>";
+        } else {
+            gameState.clientGameData.tradeGoods.forEach((g, i) => {
+                const buyP =
+                    planetEco.buyPrices[g.name] !== undefined
+                        ? planetEco.buyPrices[g.name]
+                        : "N/A";
+                const sellP =
+                    planetEco.sellPrices[g.name] !== undefined
+                        ? planetEco.sellPrices[g.name]
+                        : "N/A";
+                const stockVal =
+                    planetEco.stock[g.name] !== undefined
+                        ? planetEco.stock[g.name]
+                        : 0;
+                const selectedClass =
+                    i === gameState.selectedTradeIndex
+                        ? "trade-item-selected"
+                        : "";
+
+                html +=
+                    `<div class="menu-item ${selectedClass}">${g.name.padEnd(12, " ")} ${myShip.cargo[i].toString().padStart(3, " ")} ` +
+                    `$${buyP.toString().padStart(4, " ")} $${sellP.toString().padStart(4, " ")} ${stockVal.toString().padStart(5, " ")}</div>`;
+            });
+        }
+        html +=
+            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy. S: Sell. Esc: Back</div>";
+        dockMenuElement.innerHTML = html;
+    },
+
+    renderOutfitterMenu() {
+        if (
+            !dockMenuElement ||
+            !gameState.myShip ||
+            !gameState.clientGameData.weapons
+        )
+            return;
+        const myShip = gameState.myShip;
+        let html = `<div class="menu-item"><b>Outfitter</b></div>`;
+        html += `<div class="menu-item">Credits: $${myShip.credits}</div>`;
+        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Weapon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Price&nbsp;&nbsp;&nbsp;Dmg&nbsp;&nbsp;Owned</u></div>`;
+
+        if (Object.keys(gameState.clientGameData.weapons).length === 0) {
+            html +=
+                "<div class='menu-item'>(No weapons available for purchase)</div>";
+        } else {
+            // Ensure selectedWeaponKey is valid
+            const weaponKeys = Object.keys(gameState.clientGameData.weapons);
+            if (
+                !gameState.selectedWeaponKey ||
+                !weaponKeys.includes(gameState.selectedWeaponKey)
+            ) {
+                gameState.selectedWeaponKey = weaponKeys[0] || null;
+            }
+
+            Object.entries(gameState.clientGameData.weapons).forEach(
+                ([wKey, wDef]) => {
+                    const owned =
+                        myShip.weapons && myShip.weapons.includes(wKey)
+                            ? "*"
+                            : " ";
+                    const selectedClass =
+                        wKey === gameState.selectedWeaponKey
+                            ? "trade-item-selected"
+                            : "";
+                    html += `<div class="menu-item ${selectedClass}">${wKey.padEnd(12, " ")} $${wDef.price.toString().padEnd(5, " ")} ${wDef.damage.toString().padEnd(3, " ")} ${owned}</div>`;
+                },
+            );
+        }
+        html +=
+            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy/Equip. Esc: Back</div>";
+        dockMenuElement.innerHTML = html;
+    },
+
+    renderShipyardMenu() {
+        if (!dockMenuElement || !gameState.myShip) return;
+        const myShip = gameState.myShip;
+        let html = `<div class="menu-item"><b>Shipyard</b></div>`;
+        html += `<div class="menu-item">Credits: $${myShip.credits}</div>`;
+        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Ship&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Price&nbsp;&nbsp;&nbsp;Cargo&nbsp;&nbsp;Current</u></div>`;
+
+        if (gameState.clientGameData.shipTypes.length === 0) {
+            html += "<div class='menu-item'>(No ships available)</div>";
+        } else {
+            gameState.clientGameData.shipTypes.forEach((s, i) => {
+                const cur = myShip.type === i ? "*" : " ";
+                const selectedClass =
+                    i === gameState.selectedShipIndex
+                        ? "trade-item-selected"
+                        : "";
+                html +=
+                    `<div class="menu-item ${selectedClass}">${s.name.padEnd(12, " ")} $${s.price.toString().padEnd(5, " ")} ` +
+                    `${s.maxCargo.toString().padEnd(3, " ")} ${cur}</div>`;
+            });
+        }
+        html +=
+            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy. Esc: Back</div>";
+        dockMenuElement.innerHTML = html;
+    },
+
+    renderMissionsMenu() {
+        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
+            return;
+        let html = `<div class="menu-item"><b>Missions at ${gameState.dockedAtDetails.planetName}</b></div>`;
+        html += `<div class="menu-item">Credits: $${gameState.myShip.credits}</div>`;
+        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Title&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Reward</u></div>`;
+
+        if (gameState.availableMissionsForCurrentPlanet.length === 0) {
+            html +=
+                "<div class='menu-item'>(No missions currently available)</div>";
+        } else {
+            // Ensure selectedMissionIndex is valid
+            if (
+                gameState.selectedMissionIndex >=
+                gameState.availableMissionsForCurrentPlanet.length
+            ) {
+                gameState.selectedMissionIndex = Math.max(
+                    0,
+                    gameState.availableMissionsForCurrentPlanet.length - 1,
+                );
+            }
+
+            gameState.availableMissionsForCurrentPlanet.forEach((m, i) => {
+                const selectedClass =
+                    i === gameState.selectedMissionIndex
+                        ? "trade-item-selected"
+                        : "";
+                let titleDisplay =
+                    m.title.length > 45
+                        ? m.title.substring(0, 42) + "..."
+                        : m.title;
+                html += `<div class="menu-item ${selectedClass}">${titleDisplay.padEnd(45, " ")} $${m.rewardCredits.toString().padStart(6, " ")}</div>`;
+
+                if (i === gameState.selectedMissionIndex) {
+                    // Display details for selected mission
+                    html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; ${m.description}</div>`;
+                    const timeLeftMs = m.timeLimit - Date.now();
+                    const timeLeftMin = Math.max(
+                        0,
+                        Math.round(timeLeftMs / 60000),
+                    );
+                    html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Time Limit: ${timeLeftMin} min. Penalty: $${m.penaltyCredits}</div>`;
+                    if (
+                        m.type ===
+                        gameState.clientGameData.MISSION_TYPES.CARGO_DELIVERY
+                    ) {
+                        html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Deliver: ${m.cargoQuantity} ${m.cargoGoodName}</div>`;
+                    } else if (
+                        m.type === gameState.clientGameData.MISSION_TYPES.BOUNTY
+                    ) {
+                        const targetSysName =
+                            gameState.clientGameData.systems[
+                                m.targetSystemIndex
+                            ]?.name || "Unknown System";
+                        html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Target: ${m.targetsRequired} ${m.targetShipName}(s) in ${targetSysName}</div>`;
+                    }
+                }
+            });
+        }
+        html +=
+            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. A: Accept. Esc: Back</div>";
+        dockMenuElement.innerHTML = html;
+    },
+};
+
+/* ===== END: hypernova/client/js/ui_manager.js ===== */
 
 
 /* ===== START: hypernova/server/server.js ===== */
@@ -684,6 +2554,1079 @@ startServer().catch((error) => {
 });
 
 /* ===== END: hypernova/server/server.js ===== */
+
+
+/* ===== START: hypernova/server/config/game_config.js ===== */
+module.exports = {
+    PORT: 3000,
+    MISSION_TYPES: {
+        CARGO_DELIVERY: "CARGO_DELIVERY",
+        BOUNTY: "BOUNTY",
+    },
+    MAX_MISSIONS_PER_PLANET: 3,
+    MISSION_GENERATION_INTERVAL_MS: 2 * 60 * 1000, // 2 minutes
+    MISSION_TIME_LIMIT_BASE_MS: 5 * 60 * 1000, // 5 minutes
+    MISSION_TIME_LIMIT_PER_SYSTEM_JUMP_MS: 1 * 60 * 1000, // 1 minute
+
+    ECONOMY_UPDATE_INTERVAL_MS: 1 * 60 * 1000, // 1 minute
+    PLAYER_MISSION_CHECK_INTERVAL_MS: 30 * 1000, // 30 seconds
+
+    INITIAL_STOCK_BASE: 1000,
+    STOCK_PRODUCED_MULTIPLIER: 2.0,
+    STOCK_CONSUMED_MULTIPLIER: 0.5,
+    PRICE_SUPPLY_FACTOR_LOW: 0.7,
+    PRICE_DEMAND_FACTOR_HIGH: 1.4,
+    PRICE_STOCK_MIN_EFFECT_MULTIPLIER: 0.5,
+    PRICE_STOCK_MAX_EFFECT_MULTIPLIER: 2.5,
+    PLANET_PROFIT_MARGIN: 0.05,
+
+    DEFAULT_PLAYER_CREDITS: 1000,
+    DEFAULT_PLAYER_SHIP_TYPE_INDEX: 0, // Scout
+};
+
+/* ===== END: hypernova/server/config/game_config.js ===== */
+
+
+/* ===== START: hypernova/server/data/ship_types.json ===== */
+[
+    {
+        "name": "Scout",
+        "price": 0,
+        "speedMult": 1.1,
+        "rotMult": 1.5,
+        "revMult": 2.5,
+        "maxCargo": 10,
+        "maxHealth": 100,
+        "imageFile": "scout_ship.png",
+        "imgWidth": 32,
+        "imgHeight": 32
+    },
+    {
+        "name": "Trader",
+        "price": 2000,
+        "speedMult": 1.0,
+        "rotMult": 1.0,
+        "revMult": 2.0,
+        "maxCargo": 30,
+        "maxHealth": 100
+    },
+    {
+        "name": "Freighter",
+        "price": 5000,
+        "speedMult": 0.7,
+        "rotMult": 0.7,
+        "revMult": 1.5,
+        "maxCargo": 60,
+        "maxHealth": 100
+    },
+    {
+        "name": "Interceptor",
+        "price": 1500,
+        "speedMult": 1.8,
+        "rotMult": 1.8,
+        "revMult": 2.2,
+        "maxCargo": 5,
+        "maxHealth": 120
+    },
+    {
+        "name": "Heavy Freighter",
+        "price": 10000,
+        "speedMult": 0.5,
+        "rotMult": 0.5,
+        "revMult": 1.0,
+        "maxCargo": 100,
+        "maxHealth": 150
+    }
+]
+
+/* ===== END: hypernova/server/data/ship_types.json ===== */
+
+
+/* ===== START: hypernova/server/data/systems_init.json ===== */
+[
+    {
+        "name": "Greek",
+        "planets": [
+            {
+                "name": "Alpha",
+                "x": 200,
+                "y": 150,
+                "produces": ["Food"],
+                "consumes": ["Electronics"]
+            },
+            {
+                "name": "Delta",
+                "x": 500,
+                "y": 320,
+                "produces": ["Ore"],
+                "consumes": ["Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Roman",
+        "planets": [
+            {
+                "name": "Sol",
+                "x": 140,
+                "y": 120,
+                "produces": ["Medicine", "Electronics"],
+                "consumes": ["Food", "Ore"]
+            },
+            {
+                "name": "Mars",
+                "x": 620,
+                "y": 420,
+                "produces": ["Ore"],
+                "consumes": ["Food"]
+            }
+        ]
+    },
+    {
+        "name": "Nordic",
+        "planets": [
+            {
+                "name": "Beta",
+                "x": 380,
+                "y": 480,
+                "produces": ["Food", "Ore"],
+                "consumes": ["Electronics", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Egyptian",
+        "planets": [
+            {
+                "name": "Nile",
+                "x": 100,
+                "y": 500,
+                "produces": ["Food"],
+                "consumes": ["Medicine", "Ore"]
+            },
+            {
+                "name": "Giza",
+                "x": 400,
+                "y": 550,
+                "produces": ["Ore"],
+                "consumes": ["Electronics", "Food"]
+            }
+        ]
+    },
+    {
+        "name": "Celtic",
+        "planets": [
+            {
+                "name": "Tara",
+                "x": 700,
+                "y": 100,
+                "produces": ["Medicine", "Food"],
+                "consumes": ["Ore"]
+            },
+            {
+                "name": "Avalon",
+                "x": 650,
+                "y": 300,
+                "produces": ["Electronics"],
+                "consumes": ["Food", "Medicine"]
+            }
+        ]
+    }
+]
+
+/* ===== END: hypernova/server/data/systems_init.json ===== */
+
+
+/* ===== START: hypernova/server/data/trade_goods.json ===== */
+[
+    { "name": "Food", "basePrice": 10, "mass": 1 },
+    { "name": "Ore", "basePrice": 50, "mass": 1 },
+    { "name": "Medicine", "basePrice": 100, "mass": 1 },
+    { "name": "Electronics", "basePrice": 200, "mass": 1 }
+]
+
+/* ===== END: hypernova/server/data/trade_goods.json ===== */
+
+
+/* ===== START: hypernova/server/data/weapons.json ===== */
+{
+    "Laser": {
+        "name": "Laser",
+        "price": 500,
+        "damage": 10,
+        "range": 140,
+        "rpm": 300,
+        "color": "#f00",
+        "beam": 0.3
+    },
+    "Plasma": {
+        "name": "Plasma",
+        "price": 1500,
+        "damage": 25,
+        "range": 200,
+        "rpm": 180,
+        "color": "#0ff",
+        "beam": 0.3
+    },
+    "Railgun": {
+        "name": "Railgun",
+        "price": 3000,
+        "damage": 40,
+        "range": 280,
+        "rpm": 120,
+        "color": "#ff0",
+        "beam": 0.2
+    },
+    "FusionGun": {
+        "name": "FusionGun",
+        "price": 8000,
+        "damage": 70,
+        "range": 350,
+        "rpm": 60,
+        "color": "#f0f",
+        "beam": 0.15
+    }
+}
+
+
+/* ===== END: hypernova/server/data/weapons.json ===== */
+
+
+/* ===== START: hypernova/server/modules/combat_manager.js ===== */
+// server/modules/combat_manager.js
+class CombatManager {
+    constructor(io, playerManager, missionManager, weaponsData, gameConfig) {
+        this.io = io;
+        this.playerManager = playerManager;
+        this.missionManager = missionManager; // To notify about bounty completions
+        this.weaponsData = weaponsData;
+        this.gameConfig = gameConfig;
+    }
+
+    registerSocketHandlers(socket) {
+        socket.on("fire", () => {
+            const attacker = this.playerManager.getPlayer(socket.id);
+            if (
+                !attacker ||
+                !attacker.activeWeapon ||
+                attacker.destroyed ||
+                attacker.dockedAtPlanetIdentifier
+            )
+                return;
+
+            const weaponStats = this.weaponsData[attacker.activeWeapon];
+            if (!weaponStats) return;
+
+            // Optional: RPM check
+            // const now = Date.now();
+            // if (now - attacker.lastShot < (60000 / weaponStats.rpm)) return; // Too soon
+            // attacker.lastShot = now;
+
+            const fwdX = Math.cos(attacker.angle);
+            const fwdY = Math.sin(attacker.angle);
+            // beam represents the angle tolerance (e.g. 0.3 radians for half cone)
+            const cosHalfBeam = Math.cos(weaponStats.beam * 0.5);
+            let hitSomeone = false;
+
+            const allPlayers = this.playerManager.getAllPlayers();
+
+            for (const targetId in allPlayers) {
+                if (targetId === socket.id) continue; // Can't shoot self
+
+                const target = allPlayers[targetId];
+                if (
+                    !target ||
+                    target.system !== attacker.system ||
+                    target.destroyed ||
+                    target.dockedAtPlanetIdentifier
+                )
+                    continue;
+
+                const dx = target.x - attacker.x;
+                const dy = target.y - attacker.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist === 0 || dist > weaponStats.range) continue;
+
+                // Check if target is within weapon cone
+                // Normalize direction vector to target
+                const dirToTargetX = dx / dist;
+                const dirToTargetY = dy / dist;
+                // Dot product between attacker's forward vector and direction to target
+                const dotProduct = fwdX * dirToTargetX + fwdY * dirToTargetY;
+
+                if (dotProduct < cosHalfBeam) continue; // Target is outside the firing cone
+
+                // Hit!
+                hitSomeone = true;
+                target.health -= weaponStats.damage;
+                let targetDestroyedThisShot = false;
+
+                if (target.health <= 0) {
+                    target.health = 0;
+                    target.destroyed = true;
+                    targetDestroyedThisShot = true;
+                    // TODO: Handle dropping cargo, respawn logic, etc.
+                    console.log(
+                        `Player ${target.id} destroyed by ${attacker.id}`,
+                    );
+                }
+
+                this.playerManager.broadcastPlayerState(target.id, {
+                    health: target.health,
+                    destroyed: target.destroyed,
+                });
+
+                if (targetDestroyedThisShot) {
+                    this.missionManager.handleTargetDestroyed(attacker, target);
+                }
+
+                // For simplicity, one projectile hits one target and stops.
+                // For beam weapons or piercing, this logic would change.
+                break;
+            }
+
+            // Emit projectile for visual effect, regardless of hit for now, or only if aimed near someone.
+            // The original logic was `if (hitSomeone)`
+            // For client feedback, it's often better to always show the shot if fired.
+            this.io.emit("projectile", {
+                // Broadcast to all in system
+                x: attacker.x,
+                y: attacker.y,
+                angle: attacker.angle,
+                color: weaponStats.color,
+                range: weaponStats.range,
+                shooterId: attacker.id, // So client doesn't draw its own predictive projectile AND server one
+            });
+        });
+    }
+}
+
+module.exports = CombatManager;
+
+/* ===== END: hypernova/server/modules/combat_manager.js ===== */
+
+
+/* ===== START: hypernova/server/modules/economy_manager.js ===== */
+// server/modules/economy_manager.js
+const {
+    INITIAL_STOCK_BASE,
+    STOCK_PRODUCED_MULTIPLIER,
+    STOCK_CONSUMED_MULTIPLIER,
+    PRICE_SUPPLY_FACTOR_LOW,
+    PRICE_DEMAND_FACTOR_HIGH,
+    PRICE_STOCK_MIN_EFFECT_MULTIPLIER,
+    PRICE_STOCK_MAX_EFFECT_MULTIPLIER,
+    PLANET_PROFIT_MARGIN,
+} = require("../config/game_config");
+
+class EconomyManager {
+    constructor(io, worldManager, playerManager, tradeGoods, gameConfig) {
+        this.io = io;
+        this.worldManager = worldManager; // To get/update planet data
+        this.playerManager = playerManager; // To update player credits/cargo
+        this.tradeGoods = tradeGoods;
+        this.gameConfig = gameConfig;
+    }
+
+    getTradeGoodByName(goodName) {
+        return this.tradeGoods.find((g) => g.name === goodName);
+    }
+
+    calculatePricesForGoodOnPlanet(planet, goodName) {
+        const good = this.getTradeGoodByName(goodName);
+        if (!good) return;
+
+        let baseValuation = good.basePrice;
+        if (planet.produces.includes(goodName))
+            baseValuation *= PRICE_SUPPLY_FACTOR_LOW;
+        else if (planet.consumes.includes(goodName))
+            baseValuation *= PRICE_DEMAND_FACTOR_HIGH;
+
+        let targetStock = INITIAL_STOCK_BASE;
+        if (planet.produces.includes(goodName))
+            targetStock *= STOCK_PRODUCED_MULTIPLIER;
+        if (planet.consumes.includes(goodName))
+            targetStock *= STOCK_CONSUMED_MULTIPLIER;
+        targetStock = Math.max(1, targetStock);
+
+        let stockEffectMultiplier = 1.0;
+        if (planet.stock[goodName] > 0) {
+            stockEffectMultiplier = targetStock / planet.stock[goodName];
+        } else {
+            stockEffectMultiplier = PRICE_STOCK_MAX_EFFECT_MULTIPLIER * 2; // High price if no stock
+        }
+        stockEffectMultiplier = Math.max(
+            PRICE_STOCK_MIN_EFFECT_MULTIPLIER,
+            Math.min(PRICE_STOCK_MAX_EFFECT_MULTIPLIER, stockEffectMultiplier),
+        );
+
+        const planetInternalValue = Math.round(
+            baseValuation * stockEffectMultiplier,
+        );
+        planet.buyPrices[goodName] = Math.max(
+            1,
+            Math.round(planetInternalValue * (1 + PLANET_PROFIT_MARGIN)),
+        );
+        planet.sellPrices[goodName] = Math.max(
+            1,
+            Math.round(planetInternalValue * (1 - PLANET_PROFIT_MARGIN)),
+        );
+
+        if (planet.buyPrices[goodName] <= planet.sellPrices[goodName]) {
+            planet.buyPrices[goodName] = planet.sellPrices[goodName] + 1;
+        }
+        if (planet.sellPrices[goodName] <= 0) planet.sellPrices[goodName] = 1;
+    }
+
+    initializeAllPlanetEconomies(systems) {
+        // `systems` is the live array from WorldManager
+        systems.forEach((system) => {
+            system.planets.forEach((planet) => {
+                this.tradeGoods.forEach((good) => {
+                    let initialStock = INITIAL_STOCK_BASE;
+                    if (planet.produces.includes(good.name))
+                        initialStock *= STOCK_PRODUCED_MULTIPLIER;
+                    if (planet.consumes.includes(good.name))
+                        initialStock *= STOCK_CONSUMED_MULTIPLIER;
+                    planet.stock[good.name] = Math.floor(
+                        Math.max(10, initialStock),
+                    );
+                    this.calculatePricesForGoodOnPlanet(planet, good.name);
+                });
+            });
+        });
+        console.log("Planet economies initialized by EconomyManager.");
+    }
+
+    updateAllPlanetEconomies() {
+        // Called by interval in server.js
+        const systems = this.worldManager.systems; // Get live systems data
+        if (!systems || systems.length === 0) return;
+
+        systems.forEach((system) => {
+            system.planets.forEach((planet) => {
+                this.tradeGoods.forEach((good) => {
+                    let targetStock = INITIAL_STOCK_BASE;
+                    if (planet.produces.includes(good.name))
+                        targetStock *= STOCK_PRODUCED_MULTIPLIER;
+                    if (planet.consumes.includes(good.name))
+                        targetStock *= STOCK_CONSUMED_MULTIPLIER;
+                    targetStock = Math.max(1, targetStock);
+
+                    const currentStock = planet.stock[good.name] || 0;
+                    const diff = targetStock - currentStock;
+                    let change = Math.round(diff * 0.02); // Slow adjustment
+                    if (change === 0 && diff !== 0) change = diff > 0 ? 1 : -1;
+
+                    planet.stock[good.name] = currentStock + change;
+                    planet.stock[good.name] = Math.max(
+                        0,
+                        Math.min(planet.stock[good.name], targetStock * 5),
+                    ); // Cap stock
+                    this.calculatePricesForGoodOnPlanet(planet, good.name);
+                });
+            });
+        });
+
+        this.io.emit(
+            "updatePlanetEconomies",
+            this.worldManager.getEconomiesForClient(),
+        );
+        // console.log("Planet economies updated and broadcasted.");
+    }
+
+    notifyPlanetEconomyUpdate(systemIndex, planetIndex) {
+        const planet = this.worldManager.getPlanet(systemIndex, planetIndex);
+        if (planet) {
+            this.io.emit("planetEconomyUpdate", {
+                systemIndex,
+                planetIndex,
+                name: planet.name, // Though client might not use name here
+                buyPrices: planet.buyPrices,
+                sellPrices: planet.sellPrices,
+                stock: planet.stock,
+            });
+        }
+    }
+
+    registerSocketHandlers(socket) {
+        socket.on(
+            "buyGood",
+            ({ goodName, quantity, systemIndex, planetIndex }) => {
+                const player = this.playerManager.getPlayer(socket.id);
+                const goodInfo = this.getTradeGoodByName(goodName);
+                const goodIdx = this.tradeGoods.findIndex(
+                    (g) => g.name === goodName,
+                );
+
+                if (
+                    !player ||
+                    !goodInfo ||
+                    goodIdx === -1 ||
+                    !player.dockedAtPlanetIdentifier ||
+                    player.dockedAtPlanetIdentifier.systemIndex !==
+                        systemIndex ||
+                    player.dockedAtPlanetIdentifier.planetIndex !== planetIndex
+                ) {
+                    return socket.emit("tradeError", {
+                        message: "Invalid trade conditions.",
+                    });
+                }
+
+                const planet = this.worldManager.getPlanet(
+                    systemIndex,
+                    planetIndex,
+                );
+                if (!planet)
+                    return socket.emit("tradeError", {
+                        message: "Planet not found.",
+                    });
+
+                const pricePerUnit = planet.buyPrices[goodName];
+                if (pricePerUnit === undefined)
+                    return socket.emit("tradeError", {
+                        message: "Good not sold here.",
+                    });
+                const totalCost = pricePerUnit * quantity;
+
+                const currentCargoMass = player.cargo.reduce(
+                    (sum, val, idx) => sum + this.tradeGoods[idx].mass * val,
+                    0,
+                );
+                const newGoodMass = goodInfo.mass * quantity;
+
+                if (player.credits < totalCost)
+                    return socket.emit("tradeError", {
+                        message: "Not enough credits.",
+                    });
+                if (currentCargoMass + newGoodMass > player.maxCargo)
+                    return socket.emit("tradeError", {
+                        message: "Not enough cargo space.",
+                    });
+                if (
+                    !planet.stock[goodName] ||
+                    planet.stock[goodName] < quantity
+                )
+                    return socket.emit("tradeError", {
+                        message: "Planet out of stock.",
+                    });
+
+                player.credits -= totalCost;
+                player.cargo[goodIdx] += quantity;
+                planet.stock[goodName] -= quantity;
+                this.calculatePricesForGoodOnPlanet(planet, goodName);
+
+                socket.emit("tradeSuccess", {
+                    credits: player.credits,
+                    cargo: player.cargo,
+                    updatedPlanetData: {
+                        // For immediate UI update on client
+                        systemIndex,
+                        planetIndex,
+                        buyPrices: planet.buyPrices,
+                        sellPrices: planet.sellPrices,
+                        stock: planet.stock,
+                    },
+                });
+                this.playerManager.updatePlayerState(socket.id, {
+                    credits: player.credits,
+                    cargo: player.cargo,
+                });
+                this.notifyPlanetEconomyUpdate(systemIndex, planetIndex);
+            },
+        );
+
+        socket.on(
+            "sellGood",
+            ({ goodName, quantity, systemIndex, planetIndex }) => {
+                const player = this.playerManager.getPlayer(socket.id);
+                const goodInfo = this.getTradeGoodByName(goodName);
+                const goodIdx = this.tradeGoods.findIndex(
+                    (g) => g.name === goodName,
+                );
+
+                if (
+                    !player ||
+                    !goodInfo ||
+                    goodIdx === -1 ||
+                    !player.dockedAtPlanetIdentifier ||
+                    player.dockedAtPlanetIdentifier.systemIndex !==
+                        systemIndex ||
+                    player.dockedAtPlanetIdentifier.planetIndex !== planetIndex
+                ) {
+                    return socket.emit("tradeError", {
+                        message: "Invalid trade conditions.",
+                    });
+                }
+                if (player.cargo[goodIdx] < quantity)
+                    return socket.emit("tradeError", {
+                        message: "Not enough goods to sell.",
+                    });
+
+                const planet = this.worldManager.getPlanet(
+                    systemIndex,
+                    planetIndex,
+                );
+                if (!planet)
+                    return socket.emit("tradeError", {
+                        message: "Planet not found.",
+                    });
+
+                const pricePerUnit = planet.sellPrices[goodName];
+                if (pricePerUnit === undefined)
+                    return socket.emit("tradeError", {
+                        message: "Good not bought here.",
+                    });
+
+                const totalGain = pricePerUnit * quantity;
+
+                player.credits += totalGain;
+                player.cargo[goodIdx] -= quantity;
+                planet.stock[goodName] += quantity;
+                this.calculatePricesForGoodOnPlanet(planet, goodName);
+
+                socket.emit("tradeSuccess", {
+                    credits: player.credits,
+                    cargo: player.cargo,
+                    updatedPlanetData: {
+                        systemIndex,
+                        planetIndex,
+                        buyPrices: planet.buyPrices,
+                        sellPrices: planet.sellPrices,
+                        stock: planet.stock,
+                    },
+                });
+                this.playerManager.updatePlayerState(socket.id, {
+                    credits: player.credits,
+                    cargo: player.cargo,
+                });
+                this.notifyPlanetEconomyUpdate(systemIndex, planetIndex);
+            },
+        );
+    }
+}
+
+module.exports = EconomyManager;
+
+/* ===== END: hypernova/server/modules/economy_manager.js ===== */
+
+
+/* ===== START: hypernova/server/modules/mission_manager.js ===== */
+// server/modules/mission_manager.js
+const { generateMissionId, getSystemDistance } = require("../utils/helpers");
+const {
+    MISSION_TYPES,
+    MAX_MISSIONS_PER_PLANET,
+    MISSION_TIME_LIMIT_BASE_MS,
+    MISSION_TIME_LIMIT_PER_SYSTEM_JUMP_MS,
+} = require("../config/game_config");
+
+class MissionManager {
+    constructor(io, worldManager, playerManager, tradeGoods, gameConfig) {
+        this.io = io;
+        this.worldManager = worldManager;
+        this.playerManager = playerManager;
+        this.tradeGoods = tradeGoods;
+        this.gameConfig = gameConfig; // For other mission params if any
+    }
+
+    generateCargoDeliveryMission(
+        originSystemIndex,
+        originPlanetIndex,
+        systems,
+    ) {
+        const numSystems = systems.length;
+        if (
+            numSystems === 0 ||
+            (numSystems === 1 && systems[0].planets.length < 2)
+        )
+            return null;
+
+        let destSystemIndex, destPlanetIndex;
+        let attempts = 0;
+        const originSystem = systems[originSystemIndex];
+        const originPlanet = originSystem.planets[originPlanetIndex];
+
+        do {
+            destSystemIndex = Math.floor(Math.random() * numSystems);
+            const destSystem = systems[destSystemIndex];
+            if (!destSystem || destSystem.planets.length === 0) {
+                attempts++;
+                continue;
+            }
+            destPlanetIndex = Math.floor(
+                Math.random() * destSystem.planets.length,
+            );
+            attempts++;
+        } while (
+            destSystemIndex === originSystemIndex &&
+            destPlanetIndex === originPlanetIndex &&
+            numSystems > 1 &&
+            systems[destSystemIndex].planets.length > 1 && // only try again if there are other options
+            attempts < 20
+        );
+
+        // If still same after attempts (e.g. only one planet in one system, or two planets total)
+        if (
+            destSystemIndex === originSystemIndex &&
+            destPlanetIndex === originPlanetIndex
+        )
+            return null;
+
+        const goodIndex = Math.floor(Math.random() * this.tradeGoods.length);
+        const goodToDeliver = this.tradeGoods[goodIndex];
+        const quantity = Math.floor(Math.random() * 5) + 2; // 2 to 6 units
+
+        const distance = getSystemDistance(
+            originSystemIndex,
+            destSystemIndex,
+            numSystems,
+        );
+        const rewardCredits =
+            goodToDeliver.basePrice * quantity * 1.5 + distance * 150 + 100;
+        const timeLimit =
+            Date.now() +
+            MISSION_TIME_LIMIT_BASE_MS +
+            distance * MISSION_TIME_LIMIT_PER_SYSTEM_JUMP_MS;
+        const destPlanet = systems[destSystemIndex].planets[destPlanetIndex];
+
+        return {
+            id: generateMissionId(),
+            type: MISSION_TYPES.CARGO_DELIVERY,
+            title: `Deliver ${quantity} ${goodToDeliver.name} to ${destPlanet.name} (${systems[destSystemIndex].name})`,
+            description: `Transport ${quantity} units of ${goodToDeliver.name} from ${originPlanet.name} (${originSystem.name}) to ${destPlanet.name} (${systems[destSystemIndex].name}).`,
+            originSystemIndex,
+            originPlanetIndex,
+            destinationSystemIndex: destSystemIndex,
+            destinationPlanetIndex: destPlanetIndex,
+            cargoGoodName: goodToDeliver.name,
+            cargoQuantity: quantity,
+            rewardCredits: Math.round(rewardCredits),
+            penaltyCredits: Math.round(rewardCredits * 0.3),
+            timeLimit: timeLimit,
+            status: "AVAILABLE", // Initial status
+        };
+    }
+
+    generateBountyMission(originSystemIndex, originPlanetIndex, systems) {
+        const numSystems = systems.length;
+        if (numSystems === 0) return null;
+        let targetSystemIndex;
+
+        if (numSystems > 1) {
+            do {
+                targetSystemIndex = Math.floor(Math.random() * numSystems);
+            } while (targetSystemIndex === originSystemIndex && numSystems > 1); // Ensure different system if possible
+        } else {
+            targetSystemIndex = originSystemIndex;
+        }
+
+        const numTargets = Math.floor(Math.random() * 2) + 1; // 1 to 2 pirates
+        const distance = getSystemDistance(
+            originSystemIndex,
+            targetSystemIndex,
+            numSystems,
+        );
+        const rewardCredits = numTargets * 500 + distance * 100; // Base reward + distance bonus
+        const timeLimit =
+            Date.now() +
+            MISSION_TIME_LIMIT_BASE_MS +
+            distance * MISSION_TIME_LIMIT_PER_SYSTEM_JUMP_MS;
+        const originPlanet =
+            systems[originSystemIndex].planets[originPlanetIndex];
+        const originSystem = systems[originSystemIndex];
+
+        return {
+            id: generateMissionId(),
+            type: MISSION_TYPES.BOUNTY,
+            title: `Bounty: ${numTargets} Pirate${numTargets > 1 ? "s" : ""} in ${systems[targetSystemIndex].name}`,
+            description: `Hostile elements reported in ${systems[targetSystemIndex].name} system. Originated near ${originPlanet.name} (${originSystem.name}). Eliminate ${numTargets} of them.`,
+            originSystemIndex,
+            originPlanetIndex,
+            targetSystemIndex: targetSystemIndex,
+            targetShipName: "Pirate", // Generic for now
+            targetsRequired: numTargets,
+            targetsDestroyed: 0,
+            rewardCredits: Math.round(rewardCredits),
+            penaltyCredits: Math.round(rewardCredits * 0.2),
+            timeLimit: timeLimit,
+            status: "AVAILABLE",
+        };
+    }
+
+    populateAllPlanetMissions() {
+        // Called by interval
+        const systems = this.worldManager.systems;
+        if (!systems) return;
+
+        systems.forEach((system, sysIdx) => {
+            system.planets.forEach((planet, pIdx) => {
+                // Filter out expired or already taken missions (though 'taken' is handled on accept)
+                planet.availableMissions = planet.availableMissions.filter(
+                    (m) => m.status === "AVAILABLE" && m.timeLimit > Date.now(),
+                );
+
+                while (
+                    planet.availableMissions.length < MAX_MISSIONS_PER_PLANET
+                ) {
+                    let newMission = null;
+                    const missionTypeRoll = Math.random();
+                    if (missionTypeRoll < 0.7) {
+                        // 70% chance for cargo
+                        newMission = this.generateCargoDeliveryMission(
+                            sysIdx,
+                            pIdx,
+                            systems,
+                        );
+                    } else {
+                        newMission = this.generateBountyMission(
+                            sysIdx,
+                            pIdx,
+                            systems,
+                        );
+                    }
+                    if (newMission) {
+                        planet.availableMissions.push(newMission);
+                    } else {
+                        break; // Stop if no mission could be generated (e.g., single planet system for cargo)
+                    }
+                }
+            });
+        });
+        // console.log("Planet missions populated.");
+    }
+
+    checkPlayerMissionTimeouts(player) {
+        // player object directly modified
+        let missionsChanged = false;
+        const completedOrFailed = [];
+
+        player.activeMissions.forEach((mission) => {
+            if (
+                mission.status === "ACCEPTED" &&
+                Date.now() > mission.timeLimit
+            ) {
+                mission.status = "FAILED_TIME";
+                player.credits -= mission.penaltyCredits;
+                player.credits = Math.max(0, player.credits);
+                missionsChanged = true;
+                completedOrFailed.push({
+                    missionId: mission.id,
+                    status: mission.status,
+                    reason: "Time expired.",
+                    penalty: mission.penaltyCredits,
+                });
+            }
+        });
+
+        if (missionsChanged) {
+            player.activeMissions = player.activeMissions.filter(
+                (m) => m.status === "ACCEPTED",
+            );
+        }
+        return { changed: missionsChanged, completedOrFailed };
+    }
+
+    checkCargoMissionCompletionOnDock(player, systemIndex, planetIndex) {
+        let cargoChanged = false;
+        let creditsChanged = false;
+        let missionsChanged = false;
+
+        if (player.activeMissions) {
+            const remainingMissions = [];
+            player.activeMissions.forEach((mission) => {
+                if (
+                    mission.type === MISSION_TYPES.CARGO_DELIVERY &&
+                    mission.status === "ACCEPTED" &&
+                    mission.destinationSystemIndex === systemIndex &&
+                    mission.destinationPlanetIndex === planetIndex
+                ) {
+                    const goodIdx = this.tradeGoods.findIndex(
+                        (g) => g.name === mission.cargoGoodName,
+                    );
+                    if (
+                        goodIdx !== -1 &&
+                        player.cargo[goodIdx] >= mission.cargoQuantity
+                    ) {
+                        player.cargo[goodIdx] -= mission.cargoQuantity;
+                        player.credits += mission.rewardCredits;
+                        mission.status = "COMPLETED"; // Mark for removal / notification
+                        cargoChanged = true;
+                        creditsChanged = true;
+                        missionsChanged = true;
+
+                        this.io.to(player.id).emit("missionUpdate", {
+                            missionId: mission.id,
+                            status: "COMPLETED",
+                            reward: mission.rewardCredits,
+                            message: `Delivered ${mission.cargoQuantity} ${mission.cargoGoodName}.`,
+                        });
+                    } else {
+                        this.io.to(player.id).emit("missionUpdate", {
+                            missionId: mission.id,
+                            status: "INFO",
+                            message: `Need ${mission.cargoQuantity} ${mission.cargoGoodName} to complete. You have ${player.cargo[goodIdx] || 0}.`,
+                        });
+                        remainingMissions.push(mission); // Keep mission
+                    }
+                } else {
+                    remainingMissions.push(mission); // Keep other missions
+                }
+            });
+            if (missionsChanged) player.activeMissions = remainingMissions;
+        }
+        return { cargoChanged, creditsChanged, missionsChanged };
+    }
+
+    // Called by CombatManager when a target is destroyed
+    handleTargetDestroyed(attackerPlayer, destroyedTargetPlayer) {
+        let missionsUpdated = false;
+        const completedBountiesForNotification = [];
+        const attacker = this.playerManager.getPlayer(attackerPlayer.id); // Get live player object
+        if (!attacker || !attacker.activeMissions) return;
+
+        attacker.activeMissions.forEach((mission) => {
+            if (
+                mission.type === MISSION_TYPES.BOUNTY &&
+                mission.status === "ACCEPTED" &&
+                mission.targetSystemIndex === attacker.system
+            ) {
+                // Check if in correct system
+
+                // For now, any player kill in the target system counts for "Pirate" bounty
+                // Later, you might check `destroyedTargetPlayer.type` or if it's an NPC
+                mission.targetsDestroyed = (mission.targetsDestroyed || 0) + 1;
+                missionsUpdated = true;
+
+                if (mission.targetsDestroyed >= mission.targetsRequired) {
+                    mission.status = "COMPLETED";
+                    attacker.credits += mission.rewardCredits;
+                    completedBountiesForNotification.push({
+                        missionId: mission.id,
+                        status: "COMPLETED",
+                        reward: mission.rewardCredits,
+                        progress: `${mission.targetsDestroyed}/${mission.targetsRequired}`,
+                        message: "Bounty completed!",
+                    });
+                } else {
+                    // Send progress update
+                    this.io.to(attacker.id).emit("missionUpdate", {
+                        missionId: mission.id,
+                        status: "ACCEPTED", // Still accepted, just progress
+                        progress: `${mission.targetsDestroyed}/${mission.targetsRequired}`,
+                    });
+                }
+            }
+        });
+
+        if (missionsUpdated) {
+            completedBountiesForNotification.forEach((update) =>
+                this.io.to(attacker.id).emit("missionUpdate", update),
+            );
+
+            const oldMissionCount = attacker.activeMissions.length;
+            attacker.activeMissions = attacker.activeMissions.filter(
+                (m) => m.status === "ACCEPTED",
+            );
+            const newMissionCount = attacker.activeMissions.length;
+
+            const playerUpdates = { credits: attacker.credits };
+            if (oldMissionCount !== newMissionCount) {
+                playerUpdates.activeMissions = attacker.activeMissions;
+            }
+            this.playerManager.updatePlayerState(attacker.id, playerUpdates);
+        }
+    }
+
+    registerSocketHandlers(socket) {
+        socket.on("requestMissions", ({ systemIndex, planetIndex }) => {
+            const player = this.playerManager.getPlayer(socket.id);
+            const planet = this.worldManager.getPlanet(
+                systemIndex,
+                planetIndex,
+            );
+
+            if (!player || !planet) {
+                return socket.emit("actionFailed", {
+                    message: "Invalid location for missions.",
+                });
+            }
+
+            const availableMissions = planet.availableMissions.filter(
+                (m) =>
+                    m.timeLimit > Date.now() && // Not expired
+                    (!player.activeMissions ||
+                        !player.activeMissions.find((pm) => pm.id === m.id)), // Not already active for player
+            );
+            socket.emit("availableMissionsList", {
+                systemIndex,
+                planetIndex,
+                missions: availableMissions,
+            });
+        });
+
+        socket.on(
+            "acceptMission",
+            ({ missionId, systemIndex, planetIndex }) => {
+                const player = this.playerManager.getPlayer(socket.id);
+                const planet = this.worldManager.getPlanet(
+                    systemIndex,
+                    planetIndex,
+                );
+
+                if (!player || !planet) {
+                    return socket.emit("actionFailed", {
+                        message: "Cannot accept mission from this location.",
+                    });
+                }
+
+                const missionIndex = planet.availableMissions.findIndex(
+                    (m) => m.id === missionId,
+                );
+                if (missionIndex === -1) {
+                    return socket.emit("actionFailed", {
+                        message: "Mission not available or already taken.",
+                    });
+                }
+
+                const missionToAccept = planet.availableMissions[missionIndex];
+
+                if (missionToAccept.timeLimit < Date.now()) {
+                    planet.availableMissions.splice(missionIndex, 1); // Remove expired
+                    return socket.emit("actionFailed", {
+                        message: "Mission has expired.",
+                    });
+                }
+                if (player.activeMissions.length >= 5) {
+                    // Max active missions limit
+                    return socket.emit("actionFailed", {
+                        message: "Too many active missions.",
+                    });
+                }
+
+                missionToAccept.status = "ACCEPTED";
+                if (
+                    !missionToAccept.targetsDestroyed &&
+                    missionToAccept.type === MISSION_TYPES.BOUNTY
+                ) {
+                    missionToAccept.targetsDestroyed = 0; // Ensure bounty missions start with 0 destroyed
+                }
+                player.activeMissions.push({ ...missionToAccept }); // Add a copy to player
+                planet.availableMissions.splice(missionIndex, 1); // Remove from planet's available list
+
+                socket.emit("missionAccepted", { mission: missionToAccept });
+                this.playerManager.updatePlayerState(socket.id, {
+                    activeMissions: player.activeMissions,
+                });
+            },
+        );
+    }
+}
+
+module.exports = MissionManager;
+
+/* ===== END: hypernova/server/modules/mission_manager.js ===== */
 
 
 /* ===== START: hypernova/server/modules/player_manager.js ===== */
@@ -1286,3 +4229,64 @@ class WorldManager {
 module.exports = WorldManager;
 
 /* ===== END: hypernova/server/modules/world_manager.js ===== */
+
+
+/* ===== START: hypernova/server/utils/data_loader.js ===== */
+const fs = require("fs").promises;
+const path = require("path");
+
+const dataDir = path.join(__dirname, "../data");
+
+async function loadJson(filename) {
+    const filePath = path.join(dataDir, filename);
+    try {
+        const fileContent = await fs.readFile(filePath, "utf-8");
+        return JSON.parse(fileContent);
+    } catch (error) {
+        console.error(`Error loading data file ${filename}:`, error);
+        throw error; // Or return null/empty object depending on desired error handling
+    }
+}
+
+async function loadAllData() {
+    try {
+        const [tradeGoods, weapons, systemsBase, shipTypes] = await Promise.all(
+            [
+                loadJson("trade_goods.json"),
+                loadJson("weapons.json"),
+                loadJson("systems_init.json"),
+                loadJson("ship_types.json"),
+            ],
+        );
+        return { tradeGoods, weapons, systemsBase, shipTypes };
+    } catch (error) {
+        console.error("Failed to load critical game data. Exiting.", error);
+        process.exit(1);
+    }
+}
+
+module.exports = {
+    loadAllData,
+};
+
+/* ===== END: hypernova/server/utils/data_loader.js ===== */
+
+
+/* ===== START: hypernova/server/utils/helpers.js ===== */
+function generateMissionId() {
+    return `mission_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// Note: systemsData is the live systems array from WorldManager
+function getSystemDistance(systemIndex1, systemIndex2, numSystems) {
+    if (numSystems === 0) return 0;
+    const diff = Math.abs(systemIndex1 - systemIndex2);
+    return Math.min(diff, numSystems - diff);
+}
+
+module.exports = {
+    generateMissionId,
+    getSystemDistance,
+};
+
+/* ===== END: hypernova/server/utils/helpers.js ===== */
