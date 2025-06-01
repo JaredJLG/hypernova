@@ -21,12 +21,12 @@ class WorldManager {
                 planet.buyPrices = {};
                 planet.sellPrices = {};
                 planet.availableMissions = [];
-                planet.dockedShipId = null; // Add this to track who is docked
+                planet.dockedShipId = null;
             });
         });
 
         this.economyManager.initializeAllPlanetEconomies(this.systems);
-        this.missionManager.populateAllPlanetMissions(this.systems);
+        this.missionManager.populateAllPlanetMissions(this.systems); // Pass systems here if needed by populate
 
         console.log("WorldManager initialized, systems processed.");
     }
@@ -40,7 +40,6 @@ class WorldManager {
         return system ? system.planets[planetIndex] : null;
     }
 
-    // Helper for PlayerManager to get planet coords for docking sync
     getPlanetDetailsForDocking(systemIndex, planetIndex) {
         const planet = this.getPlanet(systemIndex, planetIndex);
         if (planet) {
@@ -49,7 +48,6 @@ class WorldManager {
         return null;
     }
 
-    // ***** NEW METHOD *****
     playerDockedAtPlanet(player, systemIndex, planetIndex) {
         if (!player) {
             console.error(
@@ -65,15 +63,13 @@ class WorldManager {
             return false;
         }
 
-        // Check if another player is already docked (simple single-dock model)
         if (planet.dockedShipId && planet.dockedShipId !== player.id) {
             console.warn(
                 `WorldManager.playerDockedAtPlanet: Planet ${planet.name} is already occupied by ${planet.dockedShipId}. Player ${player.id} cannot dock.`,
             );
-            return false; // Docking failed, planet occupied
+            return false;
         }
 
-        // If a player was previously docked elsewhere, undock them first
         if (player.dockedAtPlanetIdentifier) {
             if (
                 player.dockedAtPlanetIdentifier.systemIndex !== systemIndex ||
@@ -91,18 +87,15 @@ class WorldManager {
         console.log(
             `WorldManager: Player ${player.id} server-side DOCKED at ${planet.name} (System: ${this.systems[systemIndex].name}).`,
         );
-        return true; // Successfully docked
+        return true;
     }
 
-    // ***** NEW METHOD *****
     playerUndockedFromPlanet(player, systemIndex, planetIndex) {
         if (!player) {
-            // console.warn("WorldManager.playerUndockedFromPlanet: Player object is null/undefined.");
             return false;
         }
         const planet = this.getPlanet(systemIndex, planetIndex);
         if (!planet) {
-            // console.warn(`WorldManager.playerUndockedFromPlanet: Planet ${planetIndex} in system ${systemIndex} not found.`);
             return false;
         }
 
@@ -112,12 +105,8 @@ class WorldManager {
                 `WorldManager: Player ${player.id} server-side UNDOCKED from ${planet.name}.`,
             );
             return true;
-        } else if (planet.dockedShipId) {
-            // console.warn(`WorldManager.playerUndockedFromPlanet: Player ${player.id} tried to undock from ${planet.name}, but planet is docked by ${planet.dockedShipId}.`);
-        } else {
-            // console.log(`WorldManager.playerUndockedFromPlanet: Player ${player.id} tried to undock from ${planet.name}, planet was already free.`);
         }
-        return false; // Player wasn't the one docked, or planet was free
+        return false;
     }
 
     getSystemsForClient() {
@@ -127,8 +116,7 @@ class WorldManager {
                 name: p.name,
                 x: p.x,
                 y: p.y,
-                // Optionally send dockedShipId if client needs to know for visuals
-                // dockedBy: p.dockedShipId
+                imageFile: p.imageFile, // Make sure imageFile is passed for client
             })),
         }));
     }
@@ -153,6 +141,12 @@ class WorldManager {
                     message: "Player not found.",
                 });
 
+            if (player.hyperjumpState === "charging") {
+                return socket.emit("actionFailed", {
+                    message: "Cannot dock while hyperdrive is charging.",
+                });
+            }
+
             if (player.system !== systemIndex) {
                 return socket.emit("actionFailed", {
                     message: "Cannot dock: Wrong system.",
@@ -165,13 +159,11 @@ class WorldManager {
                 });
             }
 
-            // Use the new centralized docking logic
             if (this.playerDockedAtPlanet(player, systemIndex, planetIndex)) {
-                // Successfully docked on server
                 player.dockedAtPlanetIdentifier = { systemIndex, planetIndex };
                 player.vx = 0;
                 player.vy = 0;
-                player.x = planet.x; // Ensure player position is at planet
+                player.x = planet.x;
                 player.y = planet.y;
 
                 const missionCompletionResult =
@@ -189,7 +181,6 @@ class WorldManager {
                     buyPrices: planet.buyPrices,
                     sellPrices: planet.sellPrices,
                     stock: planet.stock,
-                    // Send player's actual coordinates after docking
                     playerX: player.x,
                     playerY: player.y,
                 });
@@ -210,7 +201,6 @@ class WorldManager {
 
                 playerManager.updatePlayerState(socket.id, updatesForPlayer);
             } else {
-                // Docking failed (e.g., planet occupied or other server-side reason)
                 socket.emit("actionFailed", {
                     message: "Docking failed. Planet may be occupied.",
                 });
@@ -223,18 +213,13 @@ class WorldManager {
                 return socket.emit("actionFailed", {
                     message: "Player not found.",
                 });
-
             if (!player.dockedAtPlanetIdentifier) {
-                // Check server-side docked state
                 return socket.emit("actionFailed", {
                     message: "Not docked (according to server).",
                 });
             }
-
             const { systemIndex, planetIndex } =
                 player.dockedAtPlanetIdentifier;
-
-            // Use the new centralized undocking logic
             if (
                 this.playerUndockedFromPlanet(player, systemIndex, planetIndex)
             ) {
@@ -244,7 +229,6 @@ class WorldManager {
                     dockedAtPlanetIdentifier: null,
                 });
             } else {
-                // This case should be rare if player.dockedAtPlanetIdentifier was set
                 socket.emit("actionFailed", {
                     message: "Server undocking failed.",
                 });

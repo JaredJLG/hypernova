@@ -1,22 +1,21 @@
-/* ===== START: hypernova/client/js/input_handler.js ===== */
 // client/js/input_handler.js
 import { gameState } from "./game_state.js";
 import * as Network from "./network.js";
 import { UIManager } from "./ui_manager.js";
 import {
-    BASE_THRUST, // Needed for processInputs
-    BASE_ROTATION_SPEED, // Needed for processInputs
-    DAMPING, // Needed for processInputs
+    BASE_THRUST,
+    BASE_ROTATION_SPEED,
+    DAMPING,
     DOCKING_DISTANCE_SQUARED,
+    MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED,
+    HYPERJUMP_DENIED_MESSAGE_DURATION_MS,
 } from "./client_config.js";
-// Removed: import { processInputs as gameProcessInputs } from "./process_inputs.js"; // This was incorrect
 
 function wrap(value, max) {
     return ((value % max) + max) % max; // Ensure positive result for negative inputs
 }
 
 export function initInputListeners(canvas) {
-    // Pass canvas for wrap bounds
     window.addEventListener("keydown", (e) => {
         const targetElement = e.target;
         const isInputFocused =
@@ -25,17 +24,10 @@ export function initInputListeners(canvas) {
                 targetElement.tagName.toUpperCase() === "TEXTAREA" ||
                 targetElement.isContentEditable);
 
-        // If an input field is focused, allow default typing behavior.
-        // The game's input handling should not interfere.
         if (isInputFocused) {
-            // If 'Enter' is pressed in an input field, let the default browser behavior
-            // (which usually triggers form submission) occur. The form's own submit
-            // listener in main.js will handle it.
-            // For other keys, this allows normal typing.
             return;
         }
 
-        // If NOT in an input field, proceed with game input handling.
         const keyLower = e.key.toLowerCase();
         const gameSpecificKeys = [
             "arrowup",
@@ -58,45 +50,54 @@ export function initInputListeners(canvas) {
             "escape",
         ];
 
-        // Prevent default for game-specific keys to avoid page scroll, etc.,
-        // ONLY when an input field is NOT focused.
         if (gameSpecificKeys.includes(keyLower)) {
             e.preventDefault();
         }
 
+        if (gameState.hyperjumpDeniedMessage && keyLower !== "h") {
+            // Clear message on most key presses, but allow 'h' to re-attempt
+            clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
+            gameState.hyperjumpDeniedMessage = null;
+            gameState.hyperjumpDeniedMessageTimeoutId = null;
+        }
+
         if (!gameState.myShip || gameState.myShip.destroyed) {
-            // Limited actions if no ship or destroyed (e.g., escape from a potential global menu)
-            // Currently, most actions are tied to ship state or docking.
             return;
         }
 
         if (!gameState.docked) {
             // Flight controls
-            if (e.code === "Space") Network.fireWeapon(); // Use e.code for Space to be specific
+            if (e.code === "Space" && !gameState.isChargingHyperjump)
+                Network.fireWeapon();
             switch (keyLower) {
                 case "arrowup":
-                    gameState.controls.accelerating = true;
+                    if (!gameState.isChargingHyperjump)
+                        gameState.controls.accelerating = true;
                     break;
                 case "arrowdown":
-                    gameState.controls.decelerating = true;
+                    if (!gameState.isChargingHyperjump)
+                        gameState.controls.decelerating = true;
                     break;
                 case "arrowleft":
-                    gameState.controls.rotatingLeft = true;
+                    if (!gameState.isChargingHyperjump)
+                        gameState.controls.rotatingLeft = true;
                     break;
                 case "arrowright":
-                    gameState.controls.rotatingRight = true;
+                    if (!gameState.isChargingHyperjump)
+                        gameState.controls.rotatingRight = true;
                     break;
                 case "d":
-                    tryDockAction(canvas);
+                    if (!gameState.isChargingHyperjump) tryDockAction(canvas);
                     break;
                 case "h":
+                    // No !isChargingHyperjump check here, hyperJumpAction handles its own state
                     hyperJumpAction(canvas);
                     break;
                 case "q":
-                    cycleWeaponAction(-1);
+                    if (!gameState.isChargingHyperjump) cycleWeaponAction(-1);
                     break;
                 case "e":
-                    cycleWeaponAction(1);
+                    if (!gameState.isChargingHyperjump) cycleWeaponAction(1);
                     break;
             }
         } else {
@@ -114,7 +115,7 @@ export function initInputListeners(canvas) {
                 targetElement.isContentEditable);
 
         if (isInputFocused) {
-            return; // Don't process game keyup logic if an input is focused
+            return;
         }
 
         if (
@@ -122,6 +123,7 @@ export function initInputListeners(canvas) {
             gameState.myShip.destroyed ||
             gameState.docked
         ) {
+            // No need to check isChargingHyperjump here, as controls are already false if it was true during keydown
             gameState.controls.accelerating = false;
             gameState.controls.decelerating = false;
             gameState.controls.rotatingLeft = false;
@@ -172,33 +174,58 @@ function tryDockAction(canvas) {
 }
 
 function hyperJumpAction(canvas) {
-    if (!gameState.myShip || gameState.clientGameData.systems.length === 0)
+    if (
+        !gameState.myShip ||
+        gameState.myShip.destroyed ||
+        gameState.clientGameData.systems.length === 0 ||
+        gameState.docked
+    ) {
         return;
-
-    if (gameState.docked) {
-        Network.undock();
-        UIManager.undockCleanup();
     }
 
-    // const oldSystem = gameState.myShip.system; // Not used
-    gameState.myShip.system =
-        (gameState.myShip.system + 1) % gameState.clientGameData.systems.length;
+    if (gameState.isChargingHyperjump) {
+        // Optional: Allow canceling jump. For now, pressing H again does nothing if already charging.
+        // If implementing cancel: Network.cancelHyperjump();
+        console.log(
+            "Hyperjump already charging. Pressing H again does nothing for now.",
+        );
+        return;
+    }
 
-    const targetSystemData =
+    // Clear any previous denied message if player tries again
+    if (gameState.hyperjumpDeniedMessage) {
+        clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
+        gameState.hyperjumpDeniedMessage = null;
+        gameState.hyperjumpDeniedMessageTimeoutId = null;
+    }
+
+    // Check distance from planets
+    const currentSystemData =
         gameState.clientGameData.systems[gameState.myShip.system];
-    if (targetSystemData && targetSystemData.planets.length > 0) {
-        const p = targetSystemData.planets[0];
-        gameState.myShip.x = p.x;
-        gameState.myShip.y = p.y;
-    } else {
-        gameState.myShip.x = canvas.width / 2;
-        gameState.myShip.y = canvas.height / 2;
+    if (currentSystemData && currentSystemData.planets) {
+        for (const planet of currentSystemData.planets) {
+            const distSq =
+                (gameState.myShip.x - planet.x) ** 2 +
+                (gameState.myShip.y - planet.y) ** 2;
+            if (distSq < MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED) {
+                gameState.hyperjumpDeniedMessage =
+                    "Too close to a celestial body to engage hyperdrive.";
+                if (gameState.hyperjumpDeniedMessageTimeoutId) {
+                    clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
+                }
+                gameState.hyperjumpDeniedMessageTimeoutId = setTimeout(() => {
+                    gameState.hyperjumpDeniedMessage = null;
+                    gameState.hyperjumpDeniedMessageTimeoutId = null;
+                }, HYPERJUMP_DENIED_MESSAGE_DURATION_MS);
+                return;
+            }
+        }
     }
-    gameState.myShip.vx = 0;
-    gameState.myShip.vy = 0;
-    gameState.myShip.dockedAtPlanetIdentifier = null;
 
-    Network.sendControls();
+    // If clear, request hyperjump from server
+    console.log("Attempting to request hyperjump from server.");
+    Network.requestHyperjump();
+    // Client does NOT set charging state optimistically anymore. Server will inform via 'hyperjumpChargeStarted'.
 }
 
 function cycleWeaponAction(direction) {
@@ -218,9 +245,9 @@ function cycleWeaponAction(direction) {
 }
 
 function handleMenuKeyDown(keyLower) {
+    // ... (existing menu key down logic, ensure no conflicts if hyperjump state was relevant here, but it's for !docked state)
     if (!gameState.docked || !gameState.myShip) {
         gameState.activeSubMenu = null;
-        // UIManager.closeDockMenu(); // This might be too aggressive if called by mistake
         return;
     }
 
@@ -369,15 +396,38 @@ function handleMenuKeyDown(keyLower) {
     }
 }
 
-// This function is called in the main game loop (from main.js)
 export function processInputs(canvas) {
-    // Ensure this function is EXPORTED
-    if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked)
+    if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked) {
+        // If ship is just drifting while charging hyperjump, apply damping & update position
+        if (
+            gameState.myShip &&
+            !gameState.myShip.destroyed &&
+            gameState.isChargingHyperjump &&
+            !gameState.docked
+        ) {
+            const myShip = gameState.myShip;
+            myShip.vx *= DAMPING;
+            myShip.vy *= DAMPING;
+            myShip.x += myShip.vx;
+            myShip.y += myShip.vy;
+            myShip.x = wrap(myShip.x, canvas.width);
+            myShip.y = wrap(myShip.y, canvas.height);
+            Network.sendControls(); // Still send position updates from drift
+        }
+        // Reset controls if not accelerating/rotating due to being docked or destroyed.
+        // If charging hyperjump, keydown handlers already prevent setting controls to true.
+        gameState.controls.accelerating = false;
+        gameState.controls.decelerating = false;
+        gameState.controls.rotatingLeft = false;
+        gameState.controls.rotatingRight = false;
         return;
+    }
+
+    // If execution reaches here, player is not docked, not destroyed, and not charging hyperjump.
+    // So, normal input processing applies.
 
     const myShip = gameState.myShip;
 
-    // Safety check for ship type and definition
     if (
         myShip.type === undefined ||
         myShip.type === null ||
@@ -385,7 +435,6 @@ export function processInputs(canvas) {
         myShip.type >= gameState.clientGameData.shipTypes.length ||
         !gameState.clientGameData.shipTypes[myShip.type]
     ) {
-        // console.warn(`processInputs: Invalid or missing ship type definition for type index: ${myShip.type}. Controls not processed.`);
         return;
     }
     const shipDef = gameState.clientGameData.shipTypes[myShip.type];
@@ -417,4 +466,3 @@ export function processInputs(canvas) {
 
     Network.sendControls();
 }
-/* ===== END: hypernova/client/js/input_handler.js ===== */

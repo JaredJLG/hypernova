@@ -44,6 +44,12 @@ export const gameState = {
         decelerating: false,
     },
 
+    // Hyperjump state
+    isChargingHyperjump: false,
+    hyperjumpChargeStartTime: null,
+    hyperjumpDeniedMessage: null,
+    hyperjumpDeniedMessageTimeoutId: null,
+
     updateShipData(id, data) {
         // console.log(`game_state.js/updateShipData called for ID: ${id}, with data:`, JSON.stringify(data));
         if (!this.allShips[id]) {

@@ -1,5 +1,6 @@
 /* ===== START: hypernova/client/js/main.js ===== */
 // hypernova/client/js/main.js
+
 console.log("main.js script started");
 
 import { gameState } from "./game_state.js";

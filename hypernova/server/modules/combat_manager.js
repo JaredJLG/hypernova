@@ -3,7 +3,7 @@ class CombatManager {
     constructor(io, playerManager, missionManager, weaponsData, gameConfig) {
         this.io = io;
         this.playerManager = playerManager;
-        this.missionManager = missionManager; // To notify about bounty completions
+        this.missionManager = missionManager;
         this.weaponsData = weaponsData;
         this.gameConfig = gameConfig;
     }
@@ -15,28 +15,29 @@ class CombatManager {
                 !attacker ||
                 !attacker.activeWeapon ||
                 attacker.destroyed ||
-                attacker.dockedAtPlanetIdentifier
-            )
+                attacker.dockedAtPlanetIdentifier ||
+                attacker.hyperjumpState === "charging"
+            ) {
+                if (attacker && attacker.hyperjumpState === "charging") {
+                    socket.emit("actionFailed", {
+                        message:
+                            "Cannot fire weapons while hyperdrive is charging.",
+                    });
+                }
                 return;
+            }
 
             const weaponStats = this.weaponsData[attacker.activeWeapon];
             if (!weaponStats) return;
 
-            // Optional: RPM check
-            // const now = Date.now();
-            // if (now - attacker.lastShot < (60000 / weaponStats.rpm)) return; // Too soon
-            // attacker.lastShot = now;
-
             const fwdX = Math.cos(attacker.angle);
             const fwdY = Math.sin(attacker.angle);
-            // beam represents the angle tolerance (e.g. 0.3 radians for half cone)
             const cosHalfBeam = Math.cos(weaponStats.beam * 0.5);
-            let hitSomeone = false;
 
             const allPlayers = this.playerManager.getAllPlayers();
 
             for (const targetId in allPlayers) {
-                if (targetId === socket.id) continue; // Can't shoot self
+                if (targetId === socket.id) continue;
 
                 const target = allPlayers[targetId];
                 if (
@@ -53,55 +54,68 @@ class CombatManager {
 
                 if (dist === 0 || dist > weaponStats.range) continue;
 
-                // Check if target is within weapon cone
-                // Normalize direction vector to target
                 const dirToTargetX = dx / dist;
                 const dirToTargetY = dy / dist;
-                // Dot product between attacker's forward vector and direction to target
                 const dotProduct = fwdX * dirToTargetX + fwdY * dirToTargetY;
 
-                if (dotProduct < cosHalfBeam) continue; // Target is outside the firing cone
+                if (dotProduct < cosHalfBeam) continue;
 
-                // Hit!
-                hitSomeone = true;
                 target.health -= weaponStats.damage;
                 let targetDestroyedThisShot = false;
+
+                if (target.health > 0 && target.hyperjumpState === "charging") {
+                    this.playerManager.handlePlayerHitDuringHyperjumpCharge(
+                        target.id,
+                    );
+                }
 
                 if (target.health <= 0) {
                     target.health = 0;
                     target.destroyed = true;
                     targetDestroyedThisShot = true;
-                    // TODO: Handle dropping cargo, respawn logic, etc.
+
+                    if (
+                        target.hyperjumpState === "charging" &&
+                        target.hyperjumpChargeTimeoutId
+                    ) {
+                        clearTimeout(target.hyperjumpChargeTimeoutId);
+                        target.hyperjumpChargeTimeoutId = null;
+                        target.hyperjumpState = "idle";
+                        console.log(
+                            `Hyperjump charge for destroyed player ${target.id} cleared.`,
+                        );
+                    }
                     console.log(
                         `Player ${target.id} destroyed by ${attacker.id}`,
                     );
                 }
 
-                this.playerManager.broadcastPlayerState(target.id, {
+                this.playerManager.updatePlayerState(target.id, {
+                    // Changed to updatePlayerState for broader sync
                     health: target.health,
                     destroyed: target.destroyed,
+                    hyperjumpState: target.hyperjumpState, // ensure hyperjump state is also synced if changed
                 });
 
                 if (targetDestroyedThisShot) {
                     this.missionManager.handleTargetDestroyed(attacker, target);
                 }
-
-                // For simplicity, one projectile hits one target and stops.
-                // For beam weapons or piercing, this logic would change.
                 break;
             }
 
-            // Emit projectile for visual effect, regardless of hit for now, or only if aimed near someone.
-            // The original logic was `if (hitSomeone)`
-            // For client feedback, it's often better to always show the shot if fired.
-            this.io.emit("projectile", {
-                // Broadcast to all in system
-                x: attacker.x,
-                y: attacker.y,
-                angle: attacker.angle,
-                color: weaponStats.color,
-                range: weaponStats.range,
-                shooterId: attacker.id, // So client doesn't draw its own predictive projectile AND server one
+            // Emit projectile to all players in the attacker's system
+            const systemPlayers = Object.values(allPlayers).filter(
+                (p) => p.system === attacker.system,
+            );
+            systemPlayers.forEach((p) => {
+                this.io.to(p.id).emit("projectile", {
+                    x: attacker.x,
+                    y: attacker.y,
+                    angle: attacker.angle,
+                    color: weaponStats.color,
+                    range: weaponStats.range,
+                    shooterId: attacker.id,
+                });
             });
         });
     }

@@ -23,4 +23,12 @@ module.exports = {
 
     DEFAULT_PLAYER_CREDITS: 1000,
     DEFAULT_PLAYER_SHIP_TYPE_INDEX: 0, // Scout
+    PLAYER_SPAWN_X: 400,
+    PLAYER_SPAWN_Y: 300,
+
+    // Hyperjump configuration
+    MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED: 22500, // (150px)^2
+    HYPERJUMP_CHARGE_TIME_MS: 3000, // 3 seconds
+    // MAP_WIDTH: 800, // Example, if needed for arrival points
+    // MAP_HEIGHT: 600, // Example
 };
