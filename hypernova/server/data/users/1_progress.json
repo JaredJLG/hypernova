@@ -1,6 +1,6 @@
 {
   "username": "1",
-  "lastSaved": "2025-05-30T21:34:55.944Z",
+  "lastSaved": "2025-06-02T03:50:24.179Z",
   "shipData": {
     "x": 500,
     "y": 320,
@@ -41,7 +41,7 @@
       "Electronics": 190
     },
     "stock": {
-      "Food": 982,
+      "Food": 1000,
       "Ore": 2000,
       "Medicine": 500,
       "Electronics": 1000

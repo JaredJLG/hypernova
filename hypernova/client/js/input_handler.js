@@ -299,7 +299,7 @@ function handleMenuKeyDown(keyLower) {
     } else {
         if (keyLower === "escape") {
             gameState.activeSubMenu = null;
-            UIManager.renderMainMenu();
+            UIManager.renderDockedStationInterface(); // Go back to new main docked UI
             return;
         }
         switch (gameState.activeSubMenu) {
