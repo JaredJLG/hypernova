@@ -122,3 +122,4 @@ class CombatManager {
 }
 
 module.exports = CombatManager;
+

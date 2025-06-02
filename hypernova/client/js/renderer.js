@@ -630,3 +630,4 @@ export const Renderer = {
         minimapCtx.restore();
     },
 };
+

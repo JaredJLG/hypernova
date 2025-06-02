@@ -4,3 +4,4 @@
     { "name": "Medicine", "basePrice": 100, "mass": 1 },
     { "name": "Electronics", "basePrice": 200, "mass": 1 }
 ]
+

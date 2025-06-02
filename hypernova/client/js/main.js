@@ -475,3 +475,4 @@ function gameLoop(timestamp) {
     }
     requestAnimationFrame(gameLoop);
 }
+

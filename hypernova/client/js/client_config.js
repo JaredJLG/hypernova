@@ -7,3 +7,4 @@ export const DOCKING_DISTANCE_SQUARED = 400; // (20px)^2
 export const MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED = 22500; // (150px)^2 - adjust as needed
 export const HYPERJUMP_CHARGE_TIME_MS = 3000; // 3 seconds
 export const HYPERJUMP_DENIED_MESSAGE_DURATION_MS = 3000; // 3 seconds
+

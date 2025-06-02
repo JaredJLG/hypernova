@@ -32,3 +32,4 @@ module.exports = {
     // MAP_WIDTH: 800, // Example, if needed for arrival points
     // MAP_HEIGHT: 600, // Example
 };
+

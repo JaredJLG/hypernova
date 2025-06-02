@@ -1,7 +1,6 @@
 # .replit
 run = "node hypernova/server/server.js"
-# entrypoint = "index.js"
-modules = ["nodejs-22"]
+modules = ["nodejs-22", "python-3.11"]
 hidden = [".config", "package-lock.json"]
 
 [gitHubImport]
