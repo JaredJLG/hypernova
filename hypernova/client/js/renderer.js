@@ -8,6 +8,8 @@ import {
 
 let ctx = null;
 let canvas = null;
+let minimapCanvas = null; // For the new minimap
+let minimapCtx = null;
 let initialized = false;
 
 // Parallax background properties
@@ -37,15 +39,15 @@ const PARALLAX_LAYERS = [
         opacity: 0.8,
     },
 ];
-let lastCameraX = 0;
-let lastCameraY = 0;
+// let lastCameraX = 0; // Not currently used, but kept if needed later
+// let lastCameraY = 0;
 
 function getRandom(min, max) {
     return Math.random() * (max - min) + min;
 }
 
 function generateParallaxStars() {
-    if (!canvas) return; // Ensure canvas is available
+    if (!canvas) return;
     PARALLAX_LAYERS.forEach((layer) => {
         layer.stars = [];
         const numStars = Math.floor(
@@ -53,9 +55,7 @@ function generateParallaxStars() {
         );
         for (let i = 0; i < numStars; i++) {
             layer.stars.push({
-                // Store initial positions relative to a large world, not just screen
-                // For simplicity here, still using canvas width/height but imagine this as a section of a larger field
-                x: Math.random() * canvas.width * 3 - canvas.width, // Spread stars over a wider initial area
+                x: Math.random() * canvas.width * 3 - canvas.width,
                 y: Math.random() * canvas.height * 3 - canvas.height,
                 radius: getRandom(layer.minStarSize, layer.maxStarSize),
                 opacity: getRandom(layer.opacity * 0.5, layer.opacity),
@@ -65,15 +65,27 @@ function generateParallaxStars() {
 }
 
 export const Renderer = {
-    init(canvasElement) {
-        canvas = canvasElement;
+    init(mainCanvasElement) {
+        canvas = mainCanvasElement;
         ctx = canvas.getContext("2d");
-        // Fullscreen setup is handled in main.js, which also updates gameState.camera.width/height
+
+        minimapCanvas = document.getElementById("minimapCanvas");
+        if (minimapCanvas) {
+            minimapCtx = minimapCanvas.getContext("2d");
+            // Set minimap canvas fixed size or make it responsive based on its container
+            // For now, CSS sets its height, width is 100% of container.
+            // If its container size changes, this might need adjustment or call from resize.
+            minimapCanvas.width = minimapCanvas.clientWidth;
+            minimapCanvas.height = minimapCanvas.clientHeight;
+        } else {
+            console.warn("Minimap canvas not found!");
+        }
+
         gameState.camera.width = canvas.width;
         gameState.camera.height = canvas.height;
         generateParallaxStars();
-        lastCameraX = gameState.camera.x;
-        lastCameraY = gameState.camera.y;
+        // lastCameraX = gameState.camera.x; // Not currently used
+        // lastCameraY = gameState.camera.y; // Not currently used
         initialized = true;
         console.log(
             "Renderer initialized with canvas:",
@@ -88,17 +100,16 @@ export const Renderer = {
     },
 
     updateViewPort(width, height) {
-        if (canvas) {
-            // canvas.width and height are already set by main.js's resizeCanvas
-        }
+        // canvas.width and height are already set by main.js's resizeCanvas
         // gameState.camera.width and height are also set by main.js's resizeCanvas
-        generateParallaxStars();
-        console.log(
-            "Renderer viewport updated via main.js:",
-            width,
-            "x",
-            height,
-        );
+        generateParallaxStars(); // Regenerate parallax stars for new viewport size
+
+        // Update minimap canvas size if it's tied to viewport changes (optional)
+        if (minimapCanvas) {
+            minimapCanvas.width = minimapCanvas.clientWidth;
+            minimapCanvas.height = minimapCanvas.clientHeight;
+        }
+        console.log("Renderer viewport updated:", width, "x", height);
     },
 
     drawSystemBackground() {
@@ -114,25 +125,21 @@ export const Renderer = {
             if (bgImg) {
                 const camX = gameState.camera.x;
                 const camY = gameState.camera.y;
-                const parallaxFactor = 0.1; // Slowest layer for main background image
+                const parallaxFactor = 0.1;
 
                 const imgWidth = bgImg.width;
                 const imgHeight = bgImg.height;
 
-                // Calculate the starting tile based on camera position
-                // This ensures we only draw visible tiles + one extra for smooth scrolling
                 const startX =
                     Math.floor((camX * parallaxFactor) / imgWidth) * imgWidth;
                 const startY =
                     Math.floor((camY * parallaxFactor) / imgHeight) * imgHeight;
 
                 ctx.save();
-                // Translate context by the inverse of the parallax-affected camera position
                 ctx.translate(
                     -(camX * parallaxFactor),
                     -(camY * parallaxFactor),
                 );
-
                 for (
                     let x = startX - imgWidth;
                     x <
@@ -167,22 +174,16 @@ export const Renderer = {
         const camY = gameState.camera.y;
 
         PARALLAX_LAYERS.forEach((layer) => {
-            ctx.beginPath(); // Start a new path for each layer for performance
+            ctx.beginPath();
             layer.stars.forEach((star) => {
-                // Calculate star's apparent position on screen
-                // The star's own (x,y) are its "world" coordinates for that layer
-                // We offset by camera movement scaled by parallax speed
                 const screenX = (star.x - camX * layer.speed) % canvas.width;
                 const screenY = (star.y - camY * layer.speed) % canvas.height;
-
-                // Adjust for negative modulo results to keep it within canvas bounds
                 const finalX = screenX < 0 ? screenX + canvas.width : screenX;
                 const finalY = screenY < 0 ? screenY + canvas.height : screenY;
-
-                ctx.moveTo(finalX + star.radius, finalY); // moveTo before arc for batching
+                ctx.moveTo(finalX + star.radius, finalY);
                 ctx.arc(finalX, finalY, star.radius, 0, Math.PI * 2);
             });
-            ctx.fillStyle = `rgba(255, 255, 240, layer.opacity)`; // Use layer's base opacity
+            ctx.fillStyle = `rgba(255, 255, 240, ${layer.opacity})`; // Use layer's base opacity here, not string literal 'layer.opacity'
             ctx.fill();
         });
     },
@@ -233,7 +234,7 @@ export const Renderer = {
                     ctx.fillStyle = ship.color || "#0f0";
                     ctx.font = "12px monospace";
                     ctx.textAlign = "center";
-                    const displayName = ship.username || id.substring(0, 6); // Prefer username
+                    const displayName = ship.username || id.substring(0, 6);
                     ctx.fillText(displayName, ship.x, ship.y - labelOffset);
                     ctx.textAlign = "left";
                 }
@@ -241,13 +242,12 @@ export const Renderer = {
         }
         ctx.restore();
         this.drawHUD();
+        // Minimap is drawn on demand when panel is shown/updated by UIManager
     },
 
     drawPlanet(planet) {
         const img = gameState.loadedImages[planet.imageFile];
-        // Define a base render size for planets, then scale it.
-        // This base size should correspond to how large a 1.0 scale planet image is intended to be.
-        const BASE_PLANET_RENDER_SIZE = 128; // e.g., if your planet_hires.png are designed for this size at scale 1
+        const BASE_PLANET_RENDER_SIZE = 128;
         const scale = planet.planetImageScale || 1.0;
         const renderSize = BASE_PLANET_RENDER_SIZE * scale;
 
@@ -260,7 +260,6 @@ export const Renderer = {
                 renderSize,
                 renderSize,
             );
-
             ctx.globalCompositeOperation = "lighter";
             const glowRadius = renderSize * 0.65;
             const gradient = ctx.createRadialGradient(
@@ -279,31 +278,29 @@ export const Renderer = {
             ctx.arc(planet.x, planet.y, glowRadius, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalCompositeOperation = "source-over";
-
             ctx.restore();
         } else {
-            ctx.fillStyle = planet.fallbackColor || "#335577"; // Darker blue/grey fallback
+            ctx.fillStyle = planet.fallbackColor || "#335577";
             ctx.beginPath();
             ctx.arc(planet.x, planet.y, renderSize / 2, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        ctx.fillStyle = "#E0E8FF"; // Light, slightly bluish white for planet names
-        ctx.font = `${Math.max(10, 12 * scale)}px monospace`; // Ensure font not too small
+        ctx.fillStyle = "#E0E8FF";
+        ctx.font = `${Math.max(10, 12 * scale)}px monospace`;
         ctx.textAlign = "center";
-        ctx.shadowColor = "black"; // Text shadow for readability
+        ctx.shadowColor = "black";
         ctx.shadowBlur = 2;
         ctx.fillText(
             planet.name,
             planet.x,
             planet.y + renderSize / 2 + Math.max(12, 15 * scale),
         );
-        ctx.shadowBlur = 0; // Reset shadow
+        ctx.shadowBlur = 0;
         ctx.textAlign = "left";
     },
 
     drawShip(ship) {
-        /* ... (drawShip from previous, ensure scale is used if defined) ... */
         if (ship.destroyed || ship.type === undefined) return;
         const shipTypeDefinition =
             gameState.clientGameData.shipTypes[ship.type];
@@ -332,7 +329,6 @@ export const Renderer = {
     },
 
     drawProjectile(p) {
-        /* ... (drawProjectile from previous with glow) ... */
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.angle);
@@ -348,7 +344,6 @@ export const Renderer = {
     },
 
     drawHUD() {
-        /* ... (HUD drawing from previous) ... */
         ctx.font = "14px monospace";
         ctx.fillStyle = "#00FF00";
 
@@ -397,7 +392,7 @@ export const Renderer = {
             hudPadding + 14,
         );
         ctx.fillText(
-            `Credits: $${myShip.credits}`,
+            `Credits: $${myShip.credits.toLocaleString()}`,
             hudPadding,
             hudPadding + 32,
         );
@@ -518,5 +513,120 @@ export const Renderer = {
                 ctx.textAlign = "left";
             }
         }
+    },
+
+    drawMinimap() {
+        if (
+            !minimapCtx ||
+            !minimapCanvas ||
+            !gameState.myShip ||
+            gameState.myShip.system === undefined
+        ) {
+            if (minimapCtx) {
+                // Clear if context exists but cannot draw
+                minimapCtx.fillStyle = "#05080a";
+                minimapCtx.fillRect(
+                    0,
+                    0,
+                    minimapCanvas.width,
+                    minimapCanvas.height,
+                );
+            }
+            return;
+        }
+
+        minimapCtx.fillStyle = "#05080a"; // Very dark background
+        minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+
+        const currentSystemData =
+            gameState.clientGameData.systems[gameState.myShip.system];
+        if (!currentSystemData || !currentSystemData.planets) return;
+
+        // Determine bounds of the current system to scale to minimap
+        let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
+        currentSystemData.planets.forEach((p) => {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
+        // Include player ship in bounds calculation
+        if (gameState.myShip.x < minX) minX = gameState.myShip.x;
+        if (gameState.myShip.x > maxX) maxX = gameState.myShip.x;
+        if (gameState.myShip.y < minY) minY = gameState.myShip.y;
+        if (gameState.myShip.y > maxY) maxY = gameState.myShip.y;
+
+        const systemWidth = Math.max(500, maxX - minX); // Ensure a minimum extent
+        const systemHeight = Math.max(500, maxY - minY);
+        const systemCenterX = minX + systemWidth / 2;
+        const systemCenterY = minY + systemHeight / 2;
+
+        const mapPadding = 10; // Padding inside the minimap canvas
+        const mapDrawableWidth = minimapCanvas.width - 2 * mapPadding;
+        const mapDrawableHeight = minimapCanvas.height - 2 * mapPadding;
+
+        const scaleX = mapDrawableWidth / systemWidth;
+        const scaleY = mapDrawableHeight / systemHeight;
+        const scale = Math.min(scaleX, scaleY) * 0.9; // Use 90% of the smallest scale to ensure fit
+
+        minimapCtx.save();
+        minimapCtx.translate(minimapCanvas.width / 2, minimapCanvas.height / 2); // Center the drawing origin
+
+        // Draw planets
+        currentSystemData.planets.forEach((p) => {
+            const mapX = (p.x - systemCenterX) * scale;
+            const mapY = (p.y - systemCenterY) * scale;
+            const planetRadius = (p.planetImageScale || 1.0) * 3 * scale + 2; // Scaled radius
+
+            minimapCtx.fillStyle = p.fallbackColor || "#557799";
+            minimapCtx.beginPath();
+            minimapCtx.arc(
+                mapX,
+                mapY,
+                Math.max(2, planetRadius),
+                0,
+                Math.PI * 2,
+            );
+            minimapCtx.fill();
+
+            minimapCtx.fillStyle = "#ccc";
+            minimapCtx.font = `${Math.max(6, 8 * scale)}px monospace`;
+            minimapCtx.textAlign = "center";
+            minimapCtx.fillText(
+                p.name.substring(0, 3),
+                mapX,
+                mapY + planetRadius + 8 * scale,
+            );
+        });
+
+        // Draw player ship
+        const playerMapX = (gameState.myShip.x - systemCenterX) * scale;
+        const playerMapY = (gameState.myShip.y - systemCenterY) * scale;
+        minimapCtx.fillStyle = "#00FF00"; // Player color
+        minimapCtx.beginPath();
+        minimapCtx.arc(
+            playerMapX,
+            playerMapY,
+            Math.max(2, 3 * scale),
+            0,
+            Math.PI * 2,
+        ); // Player dot size
+        minimapCtx.fill();
+        // Simple triangle for player orientation
+        minimapCtx.save();
+        minimapCtx.translate(playerMapX, playerMapY);
+        minimapCtx.rotate(gameState.myShip.angle);
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(5 * scale, 0);
+        minimapCtx.lineTo(-2 * scale, -2 * scale);
+        minimapCtx.lineTo(-2 * scale, 2 * scale);
+        minimapCtx.closePath();
+        minimapCtx.fill();
+        minimapCtx.restore();
+
+        minimapCtx.restore();
     },
 };

@@ -1,13 +1,21 @@
 // client/js/ui_manager.js
 import { gameState } from "./game_state.js";
-import * as Network from "./network.js"; // To send actions like buy/sell/undock
+import * as Network from "./network.js";
+import { Renderer } from "./renderer.js"; // Import Renderer
 
 let uiContainer = null;
-let dockMenuElement = null;
+let dockMenuElement = null; // This is the container for the main station UI and sub-menus
+let rightHudPanel = null;
+let shipStatsContentDiv = null;
+let activeMissionsListUl = null;
 
 export const UIManager = {
     init(containerElement) {
         uiContainer = containerElement;
+        rightHudPanel = document.getElementById("right-hud-panel");
+        shipStatsContentDiv = document.getElementById("ship-stats-content");
+        activeMissionsListUl = document.getElementById("active-missions-list");
+        // Minimap canvas will be initialized and drawn by Renderer
     },
 
     isMenuOpen() {
@@ -15,24 +23,26 @@ export const UIManager = {
     },
 
     openDockMenu() {
-        if (dockMenuElement) this.closeDockMenu(); // Should not happen, but safeguard
+        // This is for the main station interaction UI
+        if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
+            uiContainer.removeChild(dockMenuElement);
+        }
 
         gameState.isMenuOpen = true;
-        gameState.activeSubMenu = null; // Start at main dock menu
+        gameState.activeSubMenu = null;
         document.body.classList.add("no-scroll");
 
         dockMenuElement = document.createElement("div");
-        dockMenuElement.className = "panel";
-        dockMenuElement.style.top = "50%";
-        dockMenuElement.style.left = "50%";
-        dockMenuElement.style.transform = "translate(-50%,-50%)";
-
-        this.renderMainMenu();
         uiContainer.appendChild(dockMenuElement);
+
+        this.renderDockedStationInterface();
+        this.showRightHudPanel(); // Show and update the side panel
     },
 
     closeDockMenu() {
+        // Closes the main station interaction UI
         if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
+            dockMenuElement.innerHTML = "";
             uiContainer.removeChild(dockMenuElement);
         }
         dockMenuElement = null;
@@ -43,56 +53,269 @@ export const UIManager = {
         gameState.selectedShipIndex = 0;
         gameState.selectedMissionIndex = 0;
         document.body.classList.remove("no-scroll");
+        // Hiding the right HUD panel is handled by undockCleanup
     },
 
-    // Called by network.js when server confirms undock or player jumps
     undockCleanup() {
         gameState.docked = false;
         gameState.dockedAtDetails = null;
         this.closeDockMenu();
-        // myShip.dockedAtPlanetIdentifier is set by server state update
+        this.hideRightHudPanel(); // Hide the side panel when undocking
     },
 
-    renderMainMenu() {
-        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
+    showRightHudPanel() {
+        if (rightHudPanel) {
+            rightHudPanel.classList.remove("hidden");
+            this.updateShipStatsPanel();
+            this.updateActiveMissionsPanel();
+            Renderer.drawMinimap(); // Tell the renderer to draw the minimap
+        }
+    },
+
+    hideRightHudPanel() {
+        if (rightHudPanel) {
+            rightHudPanel.classList.add("hidden");
+        }
+    },
+
+    updateShipStatsPanel() {
+        if (!shipStatsContentDiv || !gameState.myShip || !gameState.currentUser)
             return;
 
         const myShip = gameState.myShip;
-        const currentShipDef =
-            gameState.clientGameData.shipTypes[myShip.type || 0];
-        if (!currentShipDef) return; // Ship def not loaded
+        const shipType = gameState.clientGameData.shipTypes[myShip.type || 0];
+        const shipTypeName = shipType ? shipType.name : "Unknown";
+        const cargoCount = myShip.cargo
+            ? myShip.cargo.reduce((s, v) => s + v, 0)
+            : 0;
+        const maxCargo = shipType ? shipType.maxCargo : myShip.maxCargo || 0;
 
-        const cargoCount = myShip.cargo.reduce((s, v) => s + v, 0);
-
-        dockMenuElement.innerHTML = `
-          <div class="menu-item"><b>Docked at ${gameState.dockedAtDetails.planetName} (${gameState.dockedAtDetails.systemName})</b></div>
-          <div class="menu-item">Credits: $${myShip.credits}</div>
-          <div class="menu-item">Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>
-          <div class="menu-item">---</div>
-          <div class="menu-item">T - Trade</div>
-          <div class="menu-item">Y - Shipyard</div>
-          <div class="menu-item">O - Outfitter</div>
-          <div class="menu-item">M - Missions</div>
-          <div class="menu-item">U - Undock</div>
-          <div class="menu-item" style="margin-top: 10px; font-size: 0.9em;">(Use Arrow Keys, Enter/Specific Keys, Esc)</div>
+        shipStatsContentDiv.innerHTML = `
+            <div><span>Pilot:</span> ${gameState.currentUser.username}</div>
+            <div><span>Ship:</span> ${shipTypeName}</div>
+            <div><span>Credits:</span> $${myShip.credits.toLocaleString()}</div>
+            <div><span>Health:</span> ${myShip.health || 0} / ${myShip.maxHealth || 0}</div>
+            <div><span>Cargo:</span> ${cargoCount} / ${maxCargo}</div>
         `;
     },
 
-    renderTradeMenu() {
-        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
+    updateActiveMissionsPanel() {
+        if (!activeMissionsListUl || !gameState.myShip) return;
+
+        activeMissionsListUl.innerHTML = "";
+
+        if (
+            gameState.myShip.activeMissions &&
+            gameState.myShip.activeMissions.length > 0
+        ) {
+            gameState.myShip.activeMissions.slice(0, 5).forEach((mission) => {
+                const li = document.createElement("li");
+                let missionText = `<strong>${mission.title}</strong>`;
+                if (
+                    mission.type ===
+                    gameState.clientGameData.MISSION_TYPES.BOUNTY
+                ) {
+                    missionText += ` (${mission.targetsDestroyed || 0}/${mission.targetsRequired})`;
+                }
+                const timeRemainingMin = Math.max(
+                    0,
+                    Math.round((mission.timeLimit - Date.now()) / 60000),
+                );
+                missionText += ` (${timeRemainingMin}m left)`;
+                li.innerHTML = missionText;
+                activeMissionsListUl.appendChild(li);
+            });
+        } else {
+            activeMissionsListUl.innerHTML = "<li>No active missions.</li>";
+        }
+    },
+
+    _prepareSubMenuHost() {
+        if (!dockMenuElement) {
+            console.error(
+                "Dock menu element does not exist. Cannot prepare sub-menu host.",
+            );
+            this.openDockMenu();
+            if (!dockMenuElement) return null;
+        }
+        let stationUI = dockMenuElement.querySelector("#docked-station-ui");
+        if (!stationUI) {
+            this.renderDockedStationInterface();
+            stationUI = dockMenuElement.querySelector("#docked-station-ui");
+            if (!stationUI) {
+                console.error(
+                    "Failed to create #docked-station-ui for sub-menu.",
+                );
+                return null;
+            }
+        }
+
+        stationUI.classList.add("submenu-active");
+        const contentHost = stationUI.querySelector(".station-content-area");
+        if (!contentHost) {
+            console.error(
+                ".station-content-area not found within #docked-station-ui",
+            );
+            return null;
+        }
+        contentHost.innerHTML = "";
+        return contentHost;
+    },
+
+    renderDockedStationInterface() {
+        if (!dockMenuElement) {
+            if (uiContainer) {
+                dockMenuElement = document.createElement("div");
+                uiContainer.appendChild(dockMenuElement);
+            } else {
+                console.error(
+                    "UIManager: uiContainer not initialized, cannot create dockMenuElement.",
+                );
+                return;
+            }
+        }
+        if (!gameState.dockedAtDetails || !gameState.myShip) {
             return;
+        }
+
+        gameState.activeSubMenu = null;
+        dockMenuElement.innerHTML = "";
+
+        const planetName = gameState.dockedAtDetails.planetName;
+        const systemName = gameState.dockedAtDetails.systemName;
+        const planetDescriptions = {
+            Alpha: "A bustling trade hub in the Greek system, known for its agricultural surplus.",
+            Delta: "Rich in mineral wealth, Delta is a key mining outpost.",
+            Sol: "The cradle of humanity in the Roman system, a political and cultural center.",
+            Mars: "A rugged, terraformed world, primarily exporting raw ores.",
+            Beta: "A temperate planet in Nordic space, balancing agriculture and mining.",
+            Nile: "An arid world in the Egyptian system with surprisingly fertile river valleys.",
+            Giza: "Known for its ancient alien ruins and valuable ore deposits.",
+            Tara: "A verdant, spiritual center in the Celtic system, specializing in advanced medicines.",
+            Avalon: "A technologically advanced world, famous for its electronics manufacturing.",
+        };
+        const description =
+            planetDescriptions[planetName] ||
+            "No detailed information available for this planet.";
+
+        const html = `
+            <div id="docked-station-ui">
+                <div class="station-viewscreen">
+                    Docked at ${planetName} Station Control<br/>
+                    System: ${systemName}
+                </div>
+                <div class="station-dialogue-area">
+                    <p>Welcome to ${planetName}, Captain ${gameState.currentUser.username}. All systems nominal. Please select an option from the terminal.</p>
+                    <button id="station-dialogue-okay">Okay</button>
+                </div>
+                <div class="station-content-area">
+                    <div class="station-button-column">
+                        <button id="station-bar-btn" class="station-action-button">Bar</button>
+                        <button id="station-missions-btn" class="station-action-button">Mission BBS</button>
+                        <button id="station-trade-btn" class="station-action-button">Trade Center</button>
+                    </div>
+                    <div class="station-planet-info">
+                        <h3>${planetName} - ${systemName}</h3>
+                        <p>${description}</p>
+                        <p>Credits: $${gameState.myShip.credits.toLocaleString()}</p>
+                    </div>
+                    <div class="station-button-column">
+                        <button id="station-shipyard-btn" class="station-action-button">Shipyard</button>
+                        <button id="station-outfitter-btn" class="station-action-button">Outfitter</button>
+                        <button id="station-recharge-btn" class="station-action-button">Recharge</button>
+                        <button id="station-leave-btn" class="station-action-button">Leave</button>
+                    </div>
+                </div>
+                <div class="station-footer-text main-footer">HyperNova Secure Terminal v2.7.4</div>
+            </div>
+        `;
+        dockMenuElement.innerHTML = html;
+
+        document
+            .getElementById("station-dialogue-okay")
+            ?.addEventListener("click", () => {
+                const dialogueBox = dockMenuElement.querySelector(
+                    ".station-dialogue-area",
+                );
+                if (dialogueBox) dialogueBox.style.display = "none";
+            });
+        document
+            .getElementById("station-bar-btn")
+            ?.addEventListener("click", () => alert("Bar: Not implemented."));
+        document
+            .getElementById("station-recharge-btn")
+            ?.addEventListener("click", () =>
+                alert("Recharge: Not implemented."),
+            );
+        document
+            .getElementById("station-leave-btn")
+            ?.addEventListener("click", () => Network.undock());
+
+        document
+            .getElementById("station-trade-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "trade";
+                gameState.selectedTradeIndex = 0;
+                this.renderTradeMenu();
+            });
+        document
+            .getElementById("station-shipyard-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "shipyard";
+                gameState.selectedShipIndex = 0;
+                this.renderShipyardMenu();
+            });
+        document
+            .getElementById("station-outfitter-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "outfitter";
+                const weaponKeysList = Object.keys(
+                    gameState.clientGameData.weapons,
+                );
+                if (
+                    !gameState.selectedWeaponKey ||
+                    !weaponKeysList.includes(gameState.selectedWeaponKey)
+                ) {
+                    gameState.selectedWeaponKey = weaponKeysList[0] || null;
+                }
+                this.renderOutfitterMenu();
+            });
+        document
+            .getElementById("station-missions-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "missions";
+                gameState.selectedMissionIndex = 0;
+                gameState.availableMissionsForCurrentPlanet = [];
+                this.renderMissionsMenu();
+                if (gameState.dockedAtDetails) {
+                    Network.requestMissions(
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+            });
+    },
+
+    renderTradeMenu() {
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.dockedAtDetails || !gameState.myShip) return;
+
         const myShip = gameState.myShip;
         const currentShipDef =
             gameState.clientGameData.shipTypes[myShip.type || 0];
         if (!currentShipDef) return;
-
-        const cargoCount = myShip.cargo.reduce((s, v) => s + v, 0);
-        let html = `<div class="menu-item"><b>Trade at ${gameState.dockedAtDetails.planetName}</b></div>`;
-        html += `<div class="menu-item">Credits: $${myShip.credits} Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Good&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Qty&nbsp;&nbsp;&nbsp;Buy&nbsp;&nbsp;&nbsp;&nbsp;Sell&nbsp;&nbsp;&nbsp;Stock</u></div>`;
-
-        // Use dockedAtDetails for prices/stock, as it's updated on tradeSuccess directly
+        const cargoCount = myShip.cargo
+            ? myShip.cargo.reduce((s, v) => s + v, 0)
+            : 0;
         const planetEco = gameState.dockedAtDetails;
+
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Good</span>
+                            <span class="station-submenu-col col-qty">Qty</span>
+                            <span class="station-submenu-col col-price">Buy</span>
+                            <span class="station-submenu-col col-price">Sell</span>
+                            <span class="station-submenu-col col-stock">Stock</span>
+                         </div>`;
 
         if (
             !planetEco ||
@@ -100,7 +323,8 @@ export const UIManager = {
             !planetEco.sellPrices ||
             !planetEco.stock
         ) {
-            html += "<div>Loading prices...</div>";
+            itemsHtml +=
+                "<div class='station-submenu-item'>Loading prices...</div>";
         } else {
             gameState.clientGameData.tradeGoods.forEach((g, i) => {
                 const buyP =
@@ -116,102 +340,178 @@ export const UIManager = {
                         ? planetEco.stock[g.name]
                         : 0;
                 const selectedClass =
-                    i === gameState.selectedTradeIndex
-                        ? "trade-item-selected"
-                        : "";
-
-                html +=
-                    `<div class="menu-item ${selectedClass}">${g.name.padEnd(12, " ")} ${myShip.cargo[i].toString().padStart(3, " ")} ` +
-                    `$${buyP.toString().padStart(4, " ")} $${sellP.toString().padStart(4, " ")} ${stockVal.toString().padStart(5, " ")}</div>`;
+                    i === gameState.selectedTradeIndex ? "selected" : "";
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name">${g.name}</span>
+                        <span class="station-submenu-col col-qty">${myShip.cargo[i]}</span>
+                        <span class="station-submenu-col col-price">$${buyP}</span>
+                        <span class="station-submenu-col col-price">$${sellP}</span>
+                        <span class="station-submenu-col col-stock">${stockVal}</span>
+                    </div>`;
             });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy. S: Sell. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Trade Center - ${planetEco.planetName}</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()} | Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buy-btn" class="station-action-button">Buy (B)</button>
+                    <button id="submenu-sell-btn" class="station-action-button">Sell (S)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-buy-btn")
+            ?.addEventListener("click", () =>
+                Network.buyGood(gameState.selectedTradeIndex),
+            );
+        document
+            .getElementById("submenu-sell-btn")
+            ?.addEventListener("click", () =>
+                Network.sellGood(gameState.selectedTradeIndex),
+            );
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 
     renderOutfitterMenu() {
-        if (
-            !dockMenuElement ||
-            !gameState.myShip ||
-            !gameState.clientGameData.weapons
-        )
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.myShip || !gameState.clientGameData.weapons)
             return;
-        const myShip = gameState.myShip;
-        let html = `<div class="menu-item"><b>Outfitter</b></div>`;
-        html += `<div class="menu-item">Credits: $${myShip.credits}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Weapon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Price&nbsp;&nbsp;&nbsp;Dmg&nbsp;&nbsp;Owned</u></div>`;
 
-        if (Object.keys(gameState.clientGameData.weapons).length === 0) {
-            html +=
-                "<div class='menu-item'>(No weapons available for purchase)</div>";
+        const myShip = gameState.myShip;
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Weapon</span>
+                            <span class="station-submenu-col col-price">Price</span>
+                            <span class="station-submenu-col col-qty">Dmg</span>
+                            <span class="station-submenu-col col-owned">Owned</span>
+                         </div>`;
+
+        const weaponKeys = Object.keys(gameState.clientGameData.weapons);
+        if (weaponKeys.length === 0) {
+            itemsHtml +=
+                "<div class='station-submenu-item'>(No weapons available)</div>";
         } else {
-            // Ensure selectedWeaponKey is valid
-            const weaponKeys = Object.keys(gameState.clientGameData.weapons);
             if (
                 !gameState.selectedWeaponKey ||
                 !weaponKeys.includes(gameState.selectedWeaponKey)
             ) {
                 gameState.selectedWeaponKey = weaponKeys[0] || null;
             }
-
-            Object.entries(gameState.clientGameData.weapons).forEach(
-                ([wKey, wDef]) => {
-                    const owned =
-                        myShip.weapons && myShip.weapons.includes(wKey)
-                            ? "*"
-                            : " ";
-                    const selectedClass =
-                        wKey === gameState.selectedWeaponKey
-                            ? "trade-item-selected"
-                            : "";
-                    html += `<div class="menu-item ${selectedClass}">${wKey.padEnd(12, " ")} $${wDef.price.toString().padEnd(5, " ")} ${wDef.damage.toString().padEnd(3, " ")} ${owned}</div>`;
-                },
-            );
+            weaponKeys.forEach((wKey) => {
+                const wDef = gameState.clientGameData.weapons[wKey];
+                const owned =
+                    myShip.weapons && myShip.weapons.includes(wKey)
+                        ? "Yes"
+                        : "No";
+                const selectedClass =
+                    wKey === gameState.selectedWeaponKey ? "selected" : "";
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-key="${wKey}">
+                        <span class="station-submenu-col col-name">${wDef.name}</span>
+                        <span class="station-submenu-col col-price">$${wDef.price.toLocaleString()}</span>
+                        <span class="station-submenu-col col-qty">${wDef.damage}</span>
+                        <span class="station-submenu-col col-owned">${owned}</span>
+                    </div>`;
+            });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy/Equip. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Outfitter</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buyequip-btn" class="station-action-button">Buy/Equip (B)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-buyequip-btn")
+            ?.addEventListener("click", () => {
+                if (gameState.selectedWeaponKey)
+                    Network.equipWeapon(gameState.selectedWeaponKey);
+            });
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 
     renderShipyardMenu() {
-        if (!dockMenuElement || !gameState.myShip) return;
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.myShip) return;
+
         const myShip = gameState.myShip;
-        let html = `<div class="menu-item"><b>Shipyard</b></div>`;
-        html += `<div class="menu-item">Credits: $${myShip.credits}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Ship&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Price&nbsp;&nbsp;&nbsp;Cargo&nbsp;&nbsp;Current</u></div>`;
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Ship</span>
+                            <span class="station-submenu-col col-price">Price</span>
+                            <span class="station-submenu-col col-cargo">Cargo</span>
+                            <span class="station-submenu-col col-current">Current</span>
+                         </div>`;
 
         if (gameState.clientGameData.shipTypes.length === 0) {
-            html += "<div class='menu-item'>(No ships available)</div>";
+            itemsHtml +=
+                "<div class='station-submenu-item'>(No ships available)</div>";
         } else {
             gameState.clientGameData.shipTypes.forEach((s, i) => {
-                const cur = myShip.type === i ? "*" : " ";
+                const cur = myShip.type === i ? "Yes" : "No";
                 const selectedClass =
-                    i === gameState.selectedShipIndex
-                        ? "trade-item-selected"
-                        : "";
-                html +=
-                    `<div class="menu-item ${selectedClass}">${s.name.padEnd(12, " ")} $${s.price.toString().padEnd(5, " ")} ` +
-                    `${s.maxCargo.toString().padEnd(3, " ")} ${cur}</div>`;
+                    i === gameState.selectedShipIndex ? "selected" : "";
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name">${s.name}</span>
+                        <span class="station-submenu-col col-price">$${s.price.toLocaleString()}</span>
+                        <span class="station-submenu-col col-cargo">${s.maxCargo}</span>
+                        <span class="station-submenu-col col-current">${cur}</span>
+                    </div>`;
             });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Shipyard</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buy-btn" class="station-action-button">Buy Ship (B)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+        document
+            .getElementById("submenu-buy-btn")
+            ?.addEventListener("click", () =>
+                Network.buyShip(gameState.selectedShipIndex),
+            );
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 
     renderMissionsMenu() {
-        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
-            return;
-        let html = `<div class="menu-item"><b>Missions at ${gameState.dockedAtDetails.planetName}</b></div>`;
-        html += `<div class="menu-item">Credits: $${gameState.myShip.credits}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Title&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Reward</u></div>`;
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.dockedAtDetails || !gameState.myShip) return;
+
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name" style="flex-basis: 70%;">Title</span>
+                            <span class="station-submenu-col col-reward">Reward</span>
+                         </div>`;
 
         if (gameState.availableMissionsForCurrentPlanet.length === 0) {
-            html +=
-                "<div class='menu-item'>(No missions currently available)</div>";
+            itemsHtml +=
+                "<div class='station-submenu-item'>(No missions currently available)</div>";
         } else {
-            // Ensure selectedMissionIndex is valid
             if (
                 gameState.selectedMissionIndex >=
                 gameState.availableMissionsForCurrentPlanet.length
@@ -224,29 +524,30 @@ export const UIManager = {
 
             gameState.availableMissionsForCurrentPlanet.forEach((m, i) => {
                 const selectedClass =
-                    i === gameState.selectedMissionIndex
-                        ? "trade-item-selected"
-                        : "";
+                    i === gameState.selectedMissionIndex ? "selected" : "";
                 let titleDisplay =
-                    m.title.length > 45
-                        ? m.title.substring(0, 42) + "..."
+                    m.title.length > 60
+                        ? m.title.substring(0, 57) + "..."
                         : m.title;
-                html += `<div class="menu-item ${selectedClass}">${titleDisplay.padEnd(45, " ")} $${m.rewardCredits.toString().padStart(6, " ")}</div>`;
-
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name" style="flex-basis: 70%;">${titleDisplay}</span>
+                        <span class="station-submenu-col col-reward">$${m.rewardCredits.toLocaleString()}</span>
+                    </div>`;
                 if (i === gameState.selectedMissionIndex) {
-                    // Display details for selected mission
-                    html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; ${m.description}</div>`;
                     const timeLeftMs = m.timeLimit - Date.now();
                     const timeLeftMin = Math.max(
                         0,
                         Math.round(timeLeftMs / 60000),
                     );
-                    html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Time Limit: ${timeLeftMin} min. Penalty: $${m.penaltyCredits}</div>`;
+                    itemsHtml += `<div class="mission-details-section">
+                                    <p><strong>Description:</strong> ${m.description}</p>
+                                    <p><strong>Time Limit:</strong> ${timeLeftMin} min | <strong>Penalty:</strong> $${m.penaltyCredits.toLocaleString()}</p>`;
                     if (
                         m.type ===
                         gameState.clientGameData.MISSION_TYPES.CARGO_DELIVERY
                     ) {
-                        html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Deliver: ${m.cargoQuantity} ${m.cargoGoodName}</div>`;
+                        itemsHtml += `<p><strong>Deliver:</strong> ${m.cargoQuantity} ${m.cargoGoodName}</p>`;
                     } else if (
                         m.type === gameState.clientGameData.MISSION_TYPES.BOUNTY
                     ) {
@@ -254,13 +555,48 @@ export const UIManager = {
                             gameState.clientGameData.systems[
                                 m.targetSystemIndex
                             ]?.name || "Unknown System";
-                        html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Target: ${m.targetsRequired} ${m.targetShipName}(s) in ${targetSysName}</div>`;
+                        itemsHtml += `<p><strong>Target:</strong> ${m.targetsRequired} ${m.targetShipName}(s) in ${targetSysName}</p>`;
                     }
+                    itemsHtml += `</div>`;
                 }
             });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. A: Accept. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Mission BBS - ${gameState.dockedAtDetails.planetName}</h3>
+                <div>Credits: $${gameState.myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-accept-btn" class="station-action-button">Accept (A)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-accept-btn")
+            ?.addEventListener("click", () => {
+                if (
+                    gameState.availableMissionsForCurrentPlanet.length > 0 &&
+                    gameState.availableMissionsForCurrentPlanet[
+                        gameState.selectedMissionIndex
+                    ]
+                ) {
+                    const missionToAccept =
+                        gameState.availableMissionsForCurrentPlanet[
+                            gameState.selectedMissionIndex
+                        ];
+                    Network.acceptMission(
+                        missionToAccept.id,
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+            });
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 };

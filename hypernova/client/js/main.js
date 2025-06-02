@@ -3,21 +3,18 @@
 console.log("main.js script started");
 
 import { gameState } from "./game_state.js";
-window.gameState = gameState;
+window.gameState = gameState; // For debugging
 
 import { initNetwork } from "./network.js";
 import { Renderer } from "./renderer.js";
 import { initInputListeners, processInputs } from "./input_handler.js";
 import { UIManager } from "./ui_manager.js";
 
-// --- DYNAMIC LOGIN BACKGROUND & MUSIC (from previous update) ---
+// --- DYNAMIC LOGIN BACKGROUND & MUSIC ---
 let loginBgCanvas, loginBgCtx;
 let stars = [];
 let shootingStars = [];
 let loginAnimationId = null;
-
-// const STAR_COLORS = ["#FFFFFF", "#FFFFE0", "#ADD8E6", "#FFDAB9"]; // Not used if stars are white
-// const SHOOTING_STAR_COLOR = "rgba(220, 220, 255, 0.8)"; // Defined in ShootingStar class draw
 
 function getRandom(min, max) {
     return Math.random() * (max - min) + min;
@@ -56,7 +53,7 @@ class ShootingStar {
     }
     reset() {
         this.active = true;
-        this.x = Math.random() * loginBgCanvas.width;
+        this.x = Math.random() * (loginBgCanvas?.width || window.innerWidth);
         this.y = 0;
         this.length = getRandom(150, 300);
         this.angle = getRandom(Math.PI * 0.35, Math.PI * 0.65);
@@ -64,17 +61,19 @@ class ShootingStar {
         this.opacity = 1;
         this.life = 1;
         const side = Math.random();
+        const canvasWidth = loginBgCanvas?.width || window.innerWidth;
+        const canvasHeight = loginBgCanvas?.height || window.innerHeight;
         if (side < 0.4) {
-            this.x = Math.random() * loginBgCanvas.width;
+            this.x = Math.random() * canvasWidth;
             this.y = -this.length;
             this.angle = getRandom(Math.PI * 0.4, Math.PI * 0.6);
         } else if (side < 0.7) {
             this.x = -this.length;
-            this.y = Math.random() * loginBgCanvas.height * 0.7;
+            this.y = Math.random() * canvasHeight * 0.7;
             this.angle = getRandom(Math.PI * 0.15, Math.PI * 0.35);
         } else {
-            this.x = loginBgCanvas.width + this.length;
-            this.y = Math.random() * loginBgCanvas.height * 0.7;
+            this.x = canvasWidth + this.length;
+            this.y = Math.random() * canvasHeight * 0.7;
             this.angle = getRandom(Math.PI * 0.65, Math.PI * 0.85);
         }
         this.vx = Math.cos(this.angle) * this.speed;
@@ -85,12 +84,10 @@ class ShootingStar {
         this.x += this.vx * deltaTime;
         this.y += this.vy * deltaTime;
         this.life -= 0.5 * deltaTime;
-        if (this.life <= 0) {
-            this.active = false;
-        }
+        if (this.life <= 0) this.active = false;
     }
     draw(ctx) {
-        if (!this.active) return;
+        if (!this.active || !ctx) return;
         const tailX = this.x - Math.cos(this.angle) * this.length;
         const tailY = this.y - Math.sin(this.angle) * this.length;
         const gradient = ctx.createLinearGradient(this.x, this.y, tailX, tailY);
@@ -112,6 +109,7 @@ class ShootingStar {
     }
 }
 function createStars() {
+    if (!loginBgCanvas) return;
     stars = [];
     const numStars = Math.floor(
         (loginBgCanvas.width * loginBgCanvas.height) / 6000,
@@ -125,6 +123,11 @@ function createStars() {
     }
 }
 function animateLoginBackground() {
+    if (!loginBgCtx || !loginBgCanvas) {
+        // Ensure canvas and context exist
+        if (loginAnimationId) cancelAnimationFrame(loginAnimationId);
+        return;
+    }
     loginAnimationId = requestAnimationFrame(animateLoginBackground);
     loginBgCtx.fillStyle = "#00000A";
     loginBgCtx.fillRect(0, 0, loginBgCanvas.width, loginBgCanvas.height);
@@ -134,11 +137,9 @@ function animateLoginBackground() {
     });
     if (Math.random() < 0.015) {
         let newShootingStar = shootingStars.find((s) => !s.active);
-        if (newShootingStar) {
-            newShootingStar.reset();
-        } else if (shootingStars.length < 10) {
+        if (newShootingStar) newShootingStar.reset();
+        else if (shootingStars.length < 10)
             shootingStars.push(new ShootingStar());
-        }
     }
     const now = performance.now();
     const deltaTime = (now - (animateLoginBackground.lastTime || now)) / 1000;
@@ -153,18 +154,12 @@ function setupLoginMusic() {
     if (music) {
         music.volume = 0.3;
         music.play().catch((error) => {
-            console.warn(
-                "Login music autoplay was prevented by the browser:",
-                error.message,
-            );
+            console.warn("Login music autoplay was prevented:", error.message);
             const playMusicOnClick = () => {
                 music
                     .play()
                     .catch((e) =>
-                        console.warn(
-                            "Still couldn't play music after interaction:",
-                            e.message,
-                        ),
+                        console.warn("Still couldn't play music:", e.message),
                     );
                 document.body.removeEventListener("click", playMusicOnClick);
                 document.body.removeEventListener("keydown", playMusicOnClick);
@@ -176,15 +171,11 @@ function setupLoginMusic() {
                 once: true,
             });
         });
-    } else {
-        console.warn("Login music audio element not found.");
-    }
+    } else console.warn("Login music audio element not found.");
 }
 function stopLoginScreenVisualsAndMusic() {
-    if (loginAnimationId) {
-        cancelAnimationFrame(loginAnimationId);
-        loginAnimationId = null;
-    }
+    if (loginAnimationId) cancelAnimationFrame(loginAnimationId);
+    loginAnimationId = null;
     const music = document.getElementById("login-music");
     if (music) {
         music.pause();
@@ -206,7 +197,7 @@ function initLoginScreenVisuals() {
         return;
     }
     loginBgCtx = loginBgCanvas.getContext("2d");
-    handleLoginResize();
+    handleLoginResize(); // Initial size and star creation
     animateLoginBackground.lastTime = performance.now();
     animateLoginBackground();
     setupLoginMusic();
@@ -224,21 +215,19 @@ function setupGameCanvasFullscreen() {
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        gameState.camera.width = canvas.width; // Update camera state
+        gameState.camera.width = canvas.width;
         gameState.camera.height = canvas.height;
-
-        if (Renderer.isInitialized()) {
+        if (Renderer.isInitialized())
             Renderer.updateViewPort(canvas.width, canvas.height);
-        }
         console.log(`Game canvas resized to: ${canvas.width}x${canvas.height}`);
     }
     window.addEventListener("resize", resizeCanvas, false);
-    resizeCanvas(); // Initial resize
+    resizeCanvas();
 }
 // --- END FULLSCREEN GAMEPLAY SETUP ---
 
 async function loadImages(imagePaths) {
-    console.log("main.js/loadImages function called with paths:", imagePaths);
+    console.log("main.js/loadImages called with paths:", imagePaths);
     const imagePromises = imagePaths.map((path) => {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -254,22 +243,16 @@ async function loadImages(imagePaths) {
             img.src = path;
         });
     });
-
     try {
         await Promise.all(imagePromises);
-        console.log(
-            "main.js/loadImages: All images to be loaded have been processed.",
-        );
+        console.log("main.js/loadImages: All images processed.");
     } catch (error) {
-        console.error(
-            "main.js/loadImages: Error during image loading process:",
-            error,
-        );
+        console.error("main.js/loadImages: Error during image loading:", error);
     }
 }
 
 async function handleLoginSubmit(username, password) {
-    console.log(`main.js/handleLoginSubmit called for user: ${username}`);
+    console.log(`main.js/handleLoginSubmit for user: ${username}`);
     const loginErrorEl = document.getElementById("login-error");
     const loginMessageEl = document.getElementById("login-message");
     loginErrorEl.textContent = "";
@@ -282,52 +265,40 @@ async function handleLoginSubmit(username, password) {
             body: JSON.stringify({ username, password }),
         });
         const result = await response.json();
-        console.log("main.js/handleLoginSubmit: Login API response:", result);
+        console.log("main.js/handleLoginSubmit: API response:", result);
 
         if (response.ok && result.success) {
             loginMessageEl.textContent = result.message || "Success!";
             gameState.currentUser = { username: result.username };
-
             stopLoginScreenVisualsAndMusic();
-
             document.getElementById("login-screen").classList.add("hidden");
-            const gameContainer = document.getElementById("game-container");
-            gameContainer.classList.remove("hidden");
-
-            setupGameCanvasFullscreen(); // <<<<<<< SETUP FULLSCREEN GAME CANVAS HERE
+            document
+                .getElementById("game-container")
+                .classList.remove("hidden");
+            setupGameCanvasFullscreen();
 
             initNetwork(async () => {
                 console.log(
                     "main.js/onReadyCallback (from initNetwork): START.",
                 );
-
-                // Collect all image paths including system backgrounds
                 const systemBackgroundPaths = gameState.clientGameData.systems
-                    .filter((sys) => sys.backgroundFile) // Make sure backgroundFile exists
+                    .filter((sys) => sys.backgroundFile)
                     .map(
                         (sys) =>
                             `assets/images/backgrounds/${sys.backgroundFile}`,
                     );
-
                 const allImagePaths = [
                     ...new Set([
                         ...gameState.imagePathsToLoad,
                         ...systemBackgroundPaths,
                     ]),
                 ];
-                // gameState.imagePathsToLoad = allImagePaths; // Update master list if needed elsewhere
+                if (allImagePaths.length > 0) await loadImages(allImagePaths);
+                else console.log("main.js/onReadyCallback: No images to load.");
 
-                if (allImagePaths.length > 0) {
-                    await loadImages(allImagePaths);
-                    console.log(
-                        "main.js/onReadyCallback: Image loading process complete for all images.",
-                    );
-                } else {
-                    console.log("main.js/onReadyCallback: No images to load.");
-                }
+                await loadProgress(); // Load progress after images and gameData are ready
 
-                await loadProgress();
-
+                // Ensure myShip defaults are set if necessary after progress load
                 if (gameState.myId && !gameState.myShip) {
                     gameState.allShips[gameState.myId] =
                         gameState.allShips[gameState.myId] || {};
@@ -340,9 +311,10 @@ async function handleLoginSubmit(username, password) {
                 ) {
                     gameState.defaultShipProps(gameState.myShip);
                 }
-
-                const canvas = document.getElementById("gameCanvas");
-                if (canvas) canvas.focus();
+                // UIManager.init might need to be called here if it depends on elements only visible after login
+                // However, it's currently called on DOMContentLoaded. Ensure #ui is present.
+                const canvasEl = document.getElementById("gameCanvas");
+                if (canvasEl) canvasEl.focus();
 
                 lastTime = performance.now();
                 requestAnimationFrame(gameLoop);
@@ -352,20 +324,15 @@ async function handleLoginSubmit(username, password) {
                 result.message || "Login/Registration failed.";
         }
     } catch (error) {
-        console.error(
-            "main.js/handleLoginSubmit: Login request fetch failed:",
-            error,
-        );
+        console.error("main.js/handleLoginSubmit: Fetch failed:", error);
         loginErrorEl.textContent = "Login request error. Check console.";
     }
 }
 
 async function loadProgress() {
-    console.log("main.js/loadProgress: Function called.");
+    console.log("main.js/loadProgress: Called.");
     if (!gameState.currentUser || !gameState.currentUser.username) {
-        console.log(
-            "main.js/loadProgress: No current user or username, returning.",
-        );
+        console.log("main.js/loadProgress: No current user, returning.");
         return;
     }
     try {
@@ -376,10 +343,11 @@ async function loadProgress() {
             const progress = await response.json();
             if (progress && progress.shipData) {
                 if (gameState.myId) {
-                    if (!gameState.allShips[gameState.myId]) {
+                    // If myId is already known (init from network happened)
+                    if (!gameState.allShips[gameState.myId])
                         gameState.allShips[gameState.myId] = {};
-                    }
-                    gameState.updateShipData(gameState.myId, progress.shipData);
+                    gameState.updateShipData(gameState.myId, progress.shipData); // This calls defaultShipProps
+
                     const syncData = {
                         credits: progress.shipData.credits,
                         cargo: progress.shipData.cargo,
@@ -404,26 +372,28 @@ async function loadProgress() {
                         syncData.vy = progress.shipData.vy;
                         syncData.system = progress.shipData.system;
                     }
-                    if (gameState.socket) {
+                    if (gameState.socket)
                         gameState.socket.emit(
                             "clientLoadedDockedState",
                             syncData,
                         );
-                    }
                 } else {
+                    // myId not known yet, store progress to apply once 'init' is received
                     gameState.pendingProgressToApply = progress;
                 }
             } else {
+                // No progress data or empty shipData
                 gameState.docked = false;
                 gameState.dockedAtDetails = null;
             }
         } else {
+            // Response not OK
             gameState.docked = false;
             gameState.dockedAtDetails = null;
         }
     } catch (error) {
         console.error(
-            "main.js/loadProgress: Error during fetch/processing in loadProgress:",
+            "main.js/loadProgress: Error during fetch/processing:",
             error,
         );
         gameState.docked = false;
@@ -443,8 +413,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const canvas = document.getElementById("gameCanvas");
-    const uiContainer = document.getElementById("ui");
-    const gameContainer = document.getElementById("game-container");
+    const uiContainer = document.getElementById("ui"); // UIManager uses this
+    const gameContainer = document.getElementById("game-container"); // Not directly used by modules but good to check
 
     if (!canvas || !uiContainer || !gameContainer) {
         console.error(
@@ -452,14 +422,12 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         return;
     }
-    if (canvas) {
-        if (!canvas.hasAttribute("tabindex")) {
-            canvas.setAttribute("tabindex", "0");
-        }
+    if (canvas && !canvas.hasAttribute("tabindex")) {
+        canvas.setAttribute("tabindex", "0");
     }
 
-    Renderer.init(canvas);
-    UIManager.init(uiContainer);
+    Renderer.init(canvas); // Renderer now also inits minimap canvas
+    UIManager.init(uiContainer); // UIManager inits its references, including to right-hud-panel elements
     initInputListeners(canvas);
 
     const loginForm = document.getElementById("login-form");
@@ -478,35 +446,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-let gameLoopFrameCount = 0;
+// let gameLoopFrameCount = 0; // Not currently used
 let lastTime = 0;
 
 function gameLoop(timestamp) {
-    gameLoopFrameCount++;
+    // gameLoopFrameCount++; // Not currently used
+    const deltaTime = (timestamp - lastTime) / 1000; // Delta time in seconds
     lastTime = timestamp;
 
-    // const canvas = document.getElementById("gameCanvas"); // Not needed here directly
-
     if (gameState.currentUser && gameState.myId && gameState.myShip) {
-        // Update camera to follow player
         if (gameState.myShip) {
-            // Simple direct centering
             gameState.camera.x =
                 gameState.myShip.x - gameState.camera.width / 2;
             gameState.camera.y =
                 gameState.myShip.y - gameState.camera.height / 2;
-
-            // Optional: Smooth camera movement (lerp)
-            // const targetX = gameState.myShip.x - gameState.camera.width / 2;
-            // const targetY = gameState.myShip.y - gameState.camera.height / 2;
-            // gameState.camera.x += (targetX - gameState.camera.x) * gameState.camera.lerpFactor;
-            // gameState.camera.y += (targetY - gameState.camera.y) * gameState.camera.lerpFactor;
         }
 
         if (!gameState.docked) {
-            processInputs(); // Canvas argument no longer needed as it refers to gameState.camera
+            processInputs();
+        } else {
+            // If docked, and right HUD panel is visible, potentially update its content periodically
+            // For now, it's updated on openDockMenu.
+            // If stats like credits can change while docked through other means, this would be a place to call:
+            // UIManager.updateShipStatsPanel();
+            // UIManager.updateActiveMissionsPanel();
         }
-        Renderer.draw();
+        Renderer.draw(); // Main game renderer
     }
     requestAnimationFrame(gameLoop);
 }
