@@ -185,7 +185,6 @@ function tryDockAction() {
 }
 
 function hyperJumpAction() {
-    // ... (hyperJumpAction from previous version, canvas argument removed as it's not directly used for world logic) ...
     if (
         !gameState.myShip ||
         gameState.myShip.destroyed ||
@@ -210,7 +209,6 @@ function hyperJumpAction() {
             const distSq =
                 (gameState.myShip.x - planet.x) ** 2 +
                 (gameState.myShip.y - planet.y) ** 2;
-            // Make min distance scale with planet, or use a larger fixed value for full screen
             const minJumpDistSq =
                 MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED *
                 Math.pow(planet.planetImageScale || 1.0, 2) *
@@ -229,11 +227,10 @@ function hyperJumpAction() {
         }
     }
     console.log("Attempting to request hyperjump from server.");
-    Network.requestHyperjump(); // Server will handle destination selection logic now
+    Network.requestHyperjump();
 }
 
 function cycleWeaponAction(direction) {
-    // ... (cycleWeaponAction from previous version is fine) ...
     if (
         !gameState.myShip ||
         !gameState.myShip.weapons ||
@@ -250,24 +247,24 @@ function cycleWeaponAction(direction) {
 }
 
 function handleMenuKeyDown(keyLower) {
-    // ... (handleMenuKeyDown from previous version is fine) ...
     if (!gameState.docked || !gameState.myShip) {
         gameState.activeSubMenu = null;
         return;
     }
     if (!gameState.activeSubMenu) {
+        // We are on the main docked station screen
         switch (keyLower) {
-            case "t":
+            case "t": // Trade Center
                 gameState.activeSubMenu = "trade";
                 gameState.selectedTradeIndex = 0;
                 UIManager.renderTradeMenu();
                 break;
-            case "y":
+            case "y": // Shipyard
                 gameState.activeSubMenu = "shipyard";
                 gameState.selectedShipIndex = 0;
                 UIManager.renderShipyardMenu();
                 break;
-            case "o":
+            case "o": // Outfitter
                 gameState.activeSubMenu = "outfitter";
                 const weaponKeysList = Object.keys(
                     gameState.clientGameData.weapons,
@@ -280,7 +277,7 @@ function handleMenuKeyDown(keyLower) {
                 }
                 UIManager.renderOutfitterMenu();
                 break;
-            case "m":
+            case "m": // Mission BBS
                 gameState.activeSubMenu = "missions";
                 gameState.selectedMissionIndex = 0;
                 gameState.availableMissionsForCurrentPlanet = [];
@@ -292,11 +289,12 @@ function handleMenuKeyDown(keyLower) {
                     );
                 }
                 break;
-            case "u":
+            case "u": // Undock / Leave
                 Network.undock();
                 break;
         }
     } else {
+        // We are in a sub-menu
         if (keyLower === "escape") {
             gameState.activeSubMenu = null;
             UIManager.renderDockedStationInterface(); // Go back to new main docked UI
@@ -320,7 +318,7 @@ function handleMenuKeyDown(keyLower) {
                     Network.buyGood(gameState.selectedTradeIndex);
                 else if (keyLower === "s" && numTradeGoods > 0)
                     Network.sellGood(gameState.selectedTradeIndex);
-                UIManager.renderTradeMenu();
+                UIManager.renderTradeMenu(); // Re-render to show selection/update
                 break;
             case "outfitter":
                 const weaponKeys = Object.keys(
@@ -398,7 +396,6 @@ function handleMenuKeyDown(keyLower) {
 }
 
 export function processInputs() {
-    // Removed canvas argument, will use gameState.camera or world bounds
     if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked) {
         if (
             gameState.myShip &&
@@ -411,8 +408,6 @@ export function processInputs() {
             myShip.vy *= DAMPING;
             myShip.x += myShip.vx;
             myShip.y += myShip.vy;
-            // Player position is not wrapped on client; server is authoritative.
-            // If local world bounds were defined, wrapping would happen here against those.
             Network.sendControls();
         }
         gameState.controls.accelerating = false;
@@ -441,7 +436,7 @@ export function processInputs() {
 
     if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;
     if (gameState.controls.rotatingRight) myShip.angle += rotSpd;
-    myShip.angle = wrap(myShip.angle, 2 * Math.PI); // Angles always wrap
+    myShip.angle = wrap(myShip.angle, 2 * Math.PI);
 
     if (gameState.controls.accelerating) {
         myShip.vx += thrust * Math.cos(myShip.angle);
@@ -457,12 +452,6 @@ export function processInputs() {
 
     myShip.x += myShip.vx;
     myShip.y += myShip.vy;
-
-    // Player position wrapping to screen edges is REMOVED.
-    // The server will handle world boundaries if any.
-    // The camera keeps the player in view.
-    // myShip.x = wrap(myShip.x, gameState.camera.width); // No longer wrapping to camera/screen
-    // myShip.y = wrap(myShip.y, gameState.camera.height); // No longer wrapping to camera/screen
 
     Network.sendControls();
 }

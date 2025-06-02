@@ -51,9 +51,34 @@
         <div id="game-container" class="hidden">
             {/* This container will be made full-screen */ }
             <canvas id="gameCanvas"></canvas> {/* This canvas will be resized by
-            JS */ }
+            JS */}
             <div id="ui"></div>
-            {/* UI remains an overlay */}
+            {/* UI remains an overlay for menus */} {/* ===== NEW RIGHT HUD
+            PANEL ===== */}
+            <div id="right-hud-panel" class="hidden">
+                <div class="panel-section" id="ship-stats-section">
+                    <h4>PILOT STATUS</h4>
+                    <div id="ship-stats-content">
+                        {/*
+                        <!-- Ship stats will be populated by JS -->
+                        */}
+                    </div>
+                </div>
+                <div class="panel-section" id="active-missions-section">
+                    <h4>MISSION LOG</h4>
+                    <ul id="active-missions-list">
+                        {/*
+                        <!-- Active missions will be populated by JS -->
+                        */}
+                    </ul>
+                </div>
+                <div class="panel-section" id="minimap-section">
+                    <h4>SYSTEM MAP</h4>
+                    <canvas id="minimapCanvas"></canvas>
+                </div>
+                <div class="panel-footer">HN OS v3.1</div>
+            </div>
+            {/* ===== END OF NEW RIGHT HUD PANEL ===== */}
         </div>
 
         <audio id="login-music" loop>

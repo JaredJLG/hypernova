@@ -35,18 +35,24 @@ body {
   pointer-events: none;
   z-index: 10; /* Ensure UI is above game canvas */
 }
-.panel { /* This style is for the old/sub-menus */
+/* .panel class is no longer primarily used for docked menus, but kept for potential other uses or if sub-menus revert styling */
+.panel {
   position: absolute;
-  background: rgba(0, 20, 30, 0.85); /* Darker, more thematic panel */
-  border: 1px solid rgba(0, 200, 255, 0.5); /* Cyan border */
+  background: rgba(0, 20, 30, 0.85);
+  border: 1px solid rgba(0, 200, 255, 0.5);
   box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
   padding: 15px;
-  max-width: 520px; /* Slightly wider for more text */
+  max-width: 520px;
   pointer-events: auto;
-  color: #99FFFF; /* Lighter cyan text for panels */
+  color: #99FFFF;
   font-family: inherit;
   border-radius: 5px;
+  /* Centering for old panel style if used */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
 }
+
 
 button {
   background: rgba(0, 100, 150, 0.6);
@@ -72,12 +78,13 @@ button:hover {
   background: #0f0;
   color: #000;
 }
+/* .trade-item-selected and .menu-item might be deprecated if not used by new sub-menu style */
 .trade-item-selected {
-  background-color: rgba(0, 100, 100, 0.3); /* More thematic selection */
+  background-color: rgba(0, 100, 100, 0.3);
   border-left: 2px solid #00f2ea;
 }
 .menu-item {
-  padding: 4px 2px; /* More spacing */
+  padding: 4px 2px;
 }
 .menu-item div {
   padding: 2px 0;
@@ -387,7 +394,7 @@ body.no-scroll {
 }
 
 
-.footer-text {
+.footer-text { /* General footer text for login */
     margin-top: 30px;
     font-size: 0.75em;
     color: rgba(0, 255, 255, 0.4);
@@ -405,29 +412,29 @@ body.no-scroll {
 
 /* ===== NEW DOCKED STATION UI STYLES ===== */
 #docked-station-ui {
-    position: fixed;
+    position: fixed; /* Changed from absolute to fixed if #ui container is not full screen */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 800px; /* Approximate width from image */
-    height: 600px; /* Approximate height from image */
-    background-color: #1a1a1e; /* Dark metallic base */
-    border: 3px solid #4a4e54; /* Outer border */
+    width: 800px;
+    height: 600px;
+    background-color: #1a1a1e;
+    border: 3px solid #4a4e54;
     box-shadow: 0 0 20px rgba(0,0,0,0.7);
-    color: #c0c0c0; /* Light grey text */
+    color: #c0c0c0;
     font-family: 'Courier New', Courier, monospace;
     display: flex;
     flex-direction: column;
     padding: 15px;
     box-sizing: border-box;
-    pointer-events: auto; /* Allow interaction */
-    z-index: 20; /* Make sure it's above other UI elements if #ui is used for sub-menus */
+    pointer-events: auto;
+    z-index: 20;
 }
 
 .station-viewscreen {
-    background-color: #08080a; /* Darker screen area */
+    background-color: #08080a;
     border: 2px solid #333;
-    height: 200px; /* Adjust as needed */
+    height: 180px; /* Adjusted height */
     margin-bottom: 10px;
     display: flex;
     align-items: center;
@@ -435,24 +442,24 @@ body.no-scroll {
     text-align: center;
     padding: 10px;
     font-size: 1.2em;
-    color: #50a0f0; /* Placeholder text color */
+    color: #50a0f0;
 }
 
 .station-dialogue-area {
     background-color: #111315;
     border: 1px solid #333;
-    padding: 15px;
+    padding: 10px 15px; /* Adjusted padding */
     margin-bottom: 10px;
     font-size: 0.9em;
-    min-height: 60px;
+    min-height: 50px; /* Adjusted height */
     line-height: 1.4;
 }
 
 .station-dialogue-area button {
     display: block;
-    margin: 10px auto 0;
-    padding: 8px 25px;
-    background-color: #900000; /* Dark red */
+    margin: 8px auto 0; /* Adjusted margin */
+    padding: 6px 20px; /* Adjusted padding */
+    background-color: #900000;
     color: #ddd;
     border: 1px solid #c00000;
     border-radius: 4px;
@@ -468,14 +475,15 @@ body.no-scroll {
     display: flex;
     flex-grow: 1;
     gap: 15px;
+    overflow: hidden; /* Prevent content from breaking layout */
 }
 
 .station-button-column {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Align buttons to the top of their space */
+    justify-content: flex-start;
     gap: 10px;
-    width: 150px; /* Fixed width for button columns */
+    width: 150px;
 }
 
 .station-planet-info {
@@ -487,30 +495,29 @@ body.no-scroll {
 }
 .station-planet-info h3 {
     margin-top: 0;
-    color: #00f2ea; /* Cyan title */
+    color: #00f2ea;
     border-bottom: 1px solid #00887a;
     padding-bottom: 5px;
 }
 
 .station-action-button {
     padding: 10px 15px;
-    background: linear-gradient(to bottom, #a00000, #700000); /* Red gradient */
+    background: linear-gradient(to bottom, #a00000, #700000);
     color: #f0f0f0;
     border: 2px outset #c03030;
-    border-radius: 20px; /* Capsule shape */
+    border-radius: 20px;
     text-align: center;
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
     box-shadow: 0 2px 3px rgba(0,0,0,0.4);
     transition: background 0.2s, transform 0.1s;
-    /* Ensure button styles from general button tag are overridden or not conflicting */
-    margin: 0; /* Override general button margin if needed */
+    margin: 0;
 }
 .station-action-button:hover {
     background: linear-gradient(to bottom, #b00000, #800000);
     border-color: #d04040;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5); /* Slightly more pronounced hover shadow */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 .station-action-button:active {
     transform: translateY(1px);
@@ -518,13 +525,237 @@ body.no-scroll {
     border-style: inset;
 }
 
-.station-footer-text { /* Similar to login footer */
+.station-footer-text {
     text-align: center;
     font-size: 0.75em;
     color: rgba(0, 255, 255, 0.4);
     letter-spacing: 1px;
-    margin-top: 10px;
-    padding-top: 5px;
+    margin-top: auto; /* Push footer to bottom of flex container */
+    padding-top: 10px;
     border-top: 1px solid #333;
+}
+
+/* ===== STYLES FOR SUB-MENUS WITHIN DOCKED STATION UI ===== */
+.station-submenu-content {
+    width: 100%; /* Take full width of its host (.station-content-area) */
+    height: 100%; /* Take full height */
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #0c0e10; /* Slightly different dark bg for sub-menu */
+    border: 1px solid #222; /* Inner border for sub-menu area */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.station-submenu-content h3 {
+    color: #00f2ea;
+    border-bottom: 1px solid #00887a;
+    padding-bottom: 8px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.4em;
+}
+.station-submenu-content > div:first-of-type { /* For Credits/Cargo line */
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+    font-size: 0.95em;
+    color: #aaa;
+}
+
+
+.station-submenu-item-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 1px solid #25282c;
+    background-color: #101214;
+}
+
+.station-submenu-header, .station-submenu-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid #2a2e34;
+    font-size: 0.9em;
+    color: #b0b0b0; /* Default item text color */
+}
+
+.station-submenu-header {
+    font-weight: bold;
+    color: #99FFFF;
+    background-color: rgba(0, 50, 70, 0.3);
+}
+
+.station-submenu-item:last-child {
+    border-bottom: none;
+}
+
+.station-submenu-item:hover {
+    background-color: rgba(0, 100, 100, 0.2);
+    color: #e0e0e0;
+}
+
+.station-submenu-item.selected {
+    background-color: rgba(0, 150, 150, 0.4) !important; /* Ensure override */
+    border-left: 3px solid #00f2ea;
+    padding-left: 7px;
+    color: #ffffff !important;
+}
+
+.station-submenu-col {
+    text-align: left;
+    padding: 0 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.station-submenu-col.col-name { flex: 1 1 30%; min-width: 120px;} /* Allow shrinking but prefer 30% */
+.station-submenu-col.col-qty  { flex: 0 0 80px; text-align: right; } /* Fixed width */
+.station-submenu-col.col-price { flex: 0 0 90px; text-align: right; }/* Fixed width */
+.station-submenu-col.col-stock { flex: 0 0 90px; text-align: right; }/* Fixed width */
+.station-submenu-col.col-owned { flex: 0 0 70px; text-align: center; }/* Fixed width */
+.station-submenu-col.col-current { flex: 0 0 70px; text-align: center; }/* Fixed width */
+.station-submenu-col.col-cargo { flex: 0 0 80px; text-align: right;}/* Fixed width */
+.station-submenu-col.col-reward { flex: 0 0 100px; text-align: right;}/* Fixed width */
+
+
+.station-submenu-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: center; /* Center buttons */
+    gap: 15px; /* Space between buttons */
+}
+
+.station-submenu-actions .station-action-button { /* Sub-menu buttons can use the main style */
+    min-width: 120px;
+}
+
+
+.mission-details-section {
+    margin-top: 5px;
+    padding: 8px;
+    background-color: rgba(10, 40, 50, 0.5);
+    border-radius: 3px;
+    font-size: 0.85em;
+    color: #99FFFF;
+    border-left: 2px solid #00776a; /* Accent for details */
+}
+.mission-details-section p {
+    margin: 4px 0;
+    line-height: 1.3;
+}
+.mission-details-section strong {
+    color: #00f2ea;
+}
+
+
+/* Hide elements of main station UI when sub-menu is active */
+#docked-station-ui.submenu-active .station-viewscreen,
+#docked-station-ui.submenu-active .station-dialogue-area,
+#docked-station-ui.submenu-active .station-button-column, /* Hides both button columns */
+#docked-station-ui.submenu-active .station-planet-info,
+#docked-station-ui.submenu-active .station-footer-text.main-footer {
+    display: none !important;
+}
+
+/* ===== RIGHT HUD PANEL STYLES ===== */
+#right-hud-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 280px; /* Adjust width as needed */
+    height: 100%;
+    background-color: rgba(5, 15, 30, 0.9); /* Dark, slightly transparent */
+    border-left: 2px solid rgba(0, 255, 255, 0.4); /* Cyan border */
+    box-shadow: -5px 0 15px rgba(0, 150, 200, 0.2);
+    color: #99FFFF; /* Light cyan text */
+    font-family: 'Courier New', Courier, monospace;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between sections */
+    z-index: 15; /* Below docked station UI but above game canvas */
+    overflow-y: auto; /* Allow scrolling if content overflows */
+}
+
+#right-hud-panel.hidden {
+    display: none !important;
+}
+
+#right-hud-panel .panel-section {
+    background-color: rgba(0, 30, 40, 0.7);
+    border: 1px solid rgba(0, 150, 200, 0.3);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+#right-hud-panel h4 {
+    color: #00f2ea; /* Bright Cyan */
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+}
+
+#ship-stats-content div {
+    margin-bottom: 5px;
+    font-size: 0.85em;
+}
+#ship-stats-content span {
+    display: inline-block;
+    min-width: 70px; /* For label alignment */
+    color: #00AACC; /* Darker cyan for labels */
+}
+
+#active-missions-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8em;
+}
+#active-missions-list li {
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(0, 150, 200, 0.2);
+    line-height: 1.3;
+}
+#active-missions-list li:last-child {
+    border-bottom: none;
+}
+#active-missions-list li strong { /* Mission title */
+    color: #66FF99; /* Light green */
+}
+
+
+#minimap-section {
+    flex-grow: 1; /* Allow minimap to take remaining space if needed */
+    display: flex;
+    flex-direction: column;
+    min-height: 150px; /* Ensure it has some minimum height */
+}
+#minimapCanvas {
+    width: 100%;
+    /* Height will be set based on aspect ratio or fixed value */
+    height: 200px; /* Example fixed height, adjust as needed */
+    background-color: #05080a; /* Very dark background for minimap */
+    border: 1px solid rgba(0, 100, 120, 0.5);
+    border-radius: 3px;
+    display: block; /* Remove extra space below canvas */
+}
+
+#right-hud-panel .panel-footer {
+    margin-top: auto; /* Push to bottom */
+    text-align: center;
+    font-size: 0.7em;
+    color: rgba(0, 255, 255, 0.3);
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 150, 200, 0.2);
 }
 /* ===== END: hypernova/client/css/style.css ===== */
