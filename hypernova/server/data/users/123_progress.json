@@ -1,10 +1,10 @@
 {
   "username": "123",
-  "lastSaved": "2025-06-02T04:53:31.287Z",
+  "lastSaved": "2025-06-02T05:14:38.682Z",
   "shipData": {
-    "x": 500,
-    "y": 320,
-    "angle": 4.271370614359139,
+    "x": 130,
+    "y": 480,
+    "angle": 0,
     "vx": 0,
     "vy": 0,
     "type": 0,
@@ -20,33 +20,25 @@
     "maxHealth": 100,
     "weapons": [],
     "activeWeapon": null,
-    "system": 0,
-    "activeMissions": []
+    "system": 2,
+    "activeMissions": [
+      {
+        "id": "mission_1748840872602_zdi96tf",
+        "type": "BOUNTY",
+        "title": "Bounty: 1 Pirate in Nordic",
+        "description": "Hostile elements reported in Nordic system. Originated near Alpha (Greek). Eliminate 1 of them.",
+        "originSystemIndex": 0,
+        "originPlanetIndex": 0,
+        "targetSystemIndex": 2,
+        "targetShipName": "Pirate",
+        "targetsRequired": 1,
+        "targetsDestroyed": 0,
+        "rewardCredits": 700,
+        "penaltyCredits": 140,
+        "timeLimit": 1748841292602,
+        "status": "ACCEPTED"
+      }
+    ]
   },
-  "dockedAtDetails": {
-    "systemIndex": 0,
-    "planetIndex": 1,
-    "planetName": "Delta",
-    "systemName": "Greek",
-    "buyPrices": {
-      "Food": 11,
-      "Ore": 37,
-      "Medicine": 147,
-      "Electronics": 210
-    },
-    "sellPrices": {
-      "Food": 10,
-      "Ore": 33,
-      "Medicine": 133,
-      "Electronics": 190
-    },
-    "stock": {
-      "Food": 1000,
-      "Ore": 2000,
-      "Medicine": 500,
-      "Electronics": 1000
-    },
-    "playerX": 500,
-    "playerY": 320
-  }
+  "dockedAtDetails": null
 }
