@@ -1,10 +1,10 @@
 {
   "username": "jofro",
-  "lastSaved": "2025-06-01T19:37:37.914Z",
+  "lastSaved": "2025-06-02T00:53:09.999Z",
   "shipData": {
-    "x": 380,
-    "y": 480,
-    "angle": -2.94,
+    "x": 500,
+    "y": 320,
+    "angle": 4.846814692820459,
     "vx": 0,
     "vy": 0,
     "type": 0,
@@ -16,39 +16,39 @@
       0
     ],
     "maxCargo": 10,
-    "health": 100,
+    "health": 90,
     "maxHealth": 100,
     "weapons": [
       "Laser"
     ],
     "activeWeapon": "Laser",
-    "system": 2,
+    "system": 0,
     "activeMissions": []
   },
   "dockedAtDetails": {
-    "systemIndex": 2,
-    "planetIndex": 0,
-    "planetName": "Beta",
-    "systemName": "Nordic",
+    "systemIndex": 0,
+    "planetIndex": 1,
+    "planetName": "Delta",
+    "systemName": "Greek",
     "buyPrices": {
-      "Food": 8,
+      "Food": 11,
       "Ore": 37,
       "Medicine": 147,
-      "Electronics": 294
+      "Electronics": 210
     },
     "sellPrices": {
-      "Food": 7,
+      "Food": 10,
       "Ore": 33,
       "Medicine": 133,
-      "Electronics": 266
+      "Electronics": 190
     },
     "stock": {
-      "Food": 2000,
+      "Food": 1000,
       "Ore": 2000,
       "Medicine": 500,
-      "Electronics": 500
+      "Electronics": 1000
     },
-    "playerX": 380,
-    "playerY": 480
+    "playerX": 500,
+    "playerY": 320
   }
 }

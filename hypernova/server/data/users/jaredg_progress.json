@@ -1,6 +1,7 @@
 {
   "username": "jaredg",
   "lastSaved": "2025-06-02T03:30:21.043Z",
+
   "shipData": {
     "x": 380,
     "y": 480,
@@ -9,18 +10,11 @@
     "vy": 0,
     "type": 0,
     "credits": 467,
-    "cargo": [
-      3,
-      0,
-      0,
-      0
-    ],
+    "cargo": [3, 0, 0, 0],
     "maxCargo": 10,
     "health": 100,
     "maxHealth": 100,
-    "weapons": [
-      "Laser"
-    ],
+    "weapons": ["Laser"],
     "activeWeapon": "Laser",
     "system": 2,
     "activeMissions": []

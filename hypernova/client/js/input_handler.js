@@ -11,11 +11,14 @@ import {
     HYPERJUMP_DENIED_MESSAGE_DURATION_MS,
 } from "./client_config.js";
 
+// `wrap` function is primarily for angles now.
+// World position wrapping needs to be handled by server or based on world boundaries.
 function wrap(value, max) {
-    return ((value % max) + max) % max; // Ensure positive result for negative inputs
+    return ((value % max) + max) % max;
 }
 
 export function initInputListeners(canvas) {
+    // canvas is gameCanvas
     window.addEventListener("keydown", (e) => {
         const targetElement = e.target;
         const isInputFocused =
@@ -55,7 +58,6 @@ export function initInputListeners(canvas) {
         }
 
         if (gameState.hyperjumpDeniedMessage && keyLower !== "h") {
-            // Clear message on most key presses, but allow 'h' to re-attempt
             clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
             gameState.hyperjumpDeniedMessage = null;
             gameState.hyperjumpDeniedMessageTimeoutId = null;
@@ -66,7 +68,6 @@ export function initInputListeners(canvas) {
         }
 
         if (!gameState.docked) {
-            // Flight controls
             if (e.code === "Space" && !gameState.isChargingHyperjump)
                 Network.fireWeapon();
             switch (keyLower) {
@@ -87,11 +88,10 @@ export function initInputListeners(canvas) {
                         gameState.controls.rotatingRight = true;
                     break;
                 case "d":
-                    if (!gameState.isChargingHyperjump) tryDockAction(canvas);
+                    if (!gameState.isChargingHyperjump) tryDockAction();
                     break;
                 case "h":
-                    // No !isChargingHyperjump check here, hyperJumpAction handles its own state
-                    hyperJumpAction(canvas);
+                    hyperJumpAction();
                     break;
                 case "q":
                     if (!gameState.isChargingHyperjump) cycleWeaponAction(-1);
@@ -101,7 +101,6 @@ export function initInputListeners(canvas) {
                     break;
             }
         } else {
-            // Docked menu controls
             handleMenuKeyDown(keyLower);
         }
     });
@@ -123,7 +122,6 @@ export function initInputListeners(canvas) {
             gameState.myShip.destroyed ||
             gameState.docked
         ) {
-            // No need to check isChargingHyperjump here, as controls are already false if it was true during keydown
             gameState.controls.accelerating = false;
             gameState.controls.decelerating = false;
             gameState.controls.rotatingLeft = false;
@@ -148,7 +146,7 @@ export function initInputListeners(canvas) {
     });
 }
 
-function tryDockAction(canvas) {
+function tryDockAction() {
     if (
         !gameState.myShip ||
         !gameState.clientGameData.systems[gameState.myShip.system]
@@ -160,6 +158,11 @@ function tryDockAction(canvas) {
         nearestPlanetIndex = -1;
 
     planetsInCurrentSystem.forEach((p, index) => {
+        const planetScale = p.planetImageScale || 1.0;
+        // Adjust docking distance based on planet scale, make it more generous
+        const effectiveDockingDistanceSq =
+            DOCKING_DISTANCE_SQUARED * Math.pow(planetScale, 2) * 2.5;
+
         const d2 =
             (gameState.myShip.x - p.x) ** 2 + (gameState.myShip.y - p.y) ** 2;
         if (d2 < nearestDistSq) {
@@ -167,13 +170,22 @@ function tryDockAction(canvas) {
             nearestPlanetIndex = index;
         }
     });
+    const planetForDocking = planetsInCurrentSystem[nearestPlanetIndex];
+    const effectiveDockingDistanceSq =
+        DOCKING_DISTANCE_SQUARED *
+        Math.pow(planetForDocking?.planetImageScale || 1.0, 2) *
+        2.5;
 
-    if (nearestPlanetIndex !== -1 && nearestDistSq < DOCKING_DISTANCE_SQUARED) {
+    if (
+        nearestPlanetIndex !== -1 &&
+        nearestDistSq < effectiveDockingDistanceSq
+    ) {
         Network.requestDock(gameState.myShip.system, nearestPlanetIndex);
     }
 }
 
-function hyperJumpAction(canvas) {
+function hyperJumpAction() {
+    // ... (hyperJumpAction from previous version, canvas argument removed as it's not directly used for world logic) ...
     if (
         !gameState.myShip ||
         gameState.myShip.destroyed ||
@@ -182,24 +194,15 @@ function hyperJumpAction(canvas) {
     ) {
         return;
     }
-
     if (gameState.isChargingHyperjump) {
-        // Optional: Allow canceling jump. For now, pressing H again does nothing if already charging.
-        // If implementing cancel: Network.cancelHyperjump();
-        console.log(
-            "Hyperjump already charging. Pressing H again does nothing for now.",
-        );
+        console.log("Hyperjump already charging.");
         return;
     }
-
-    // Clear any previous denied message if player tries again
     if (gameState.hyperjumpDeniedMessage) {
         clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
         gameState.hyperjumpDeniedMessage = null;
         gameState.hyperjumpDeniedMessageTimeoutId = null;
     }
-
-    // Check distance from planets
     const currentSystemData =
         gameState.clientGameData.systems[gameState.myShip.system];
     if (currentSystemData && currentSystemData.planets) {
@@ -207,12 +210,16 @@ function hyperJumpAction(canvas) {
             const distSq =
                 (gameState.myShip.x - planet.x) ** 2 +
                 (gameState.myShip.y - planet.y) ** 2;
-            if (distSq < MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED) {
+            // Make min distance scale with planet, or use a larger fixed value for full screen
+            const minJumpDistSq =
+                MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED *
+                Math.pow(planet.planetImageScale || 1.0, 2) *
+                1.5;
+            if (distSq < minJumpDistSq) {
                 gameState.hyperjumpDeniedMessage =
                     "Too close to a celestial body to engage hyperdrive.";
-                if (gameState.hyperjumpDeniedMessageTimeoutId) {
+                if (gameState.hyperjumpDeniedMessageTimeoutId)
                     clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
-                }
                 gameState.hyperjumpDeniedMessageTimeoutId = setTimeout(() => {
                     gameState.hyperjumpDeniedMessage = null;
                     gameState.hyperjumpDeniedMessageTimeoutId = null;
@@ -221,14 +228,12 @@ function hyperJumpAction(canvas) {
             }
         }
     }
-
-    // If clear, request hyperjump from server
     console.log("Attempting to request hyperjump from server.");
-    Network.requestHyperjump();
-    // Client does NOT set charging state optimistically anymore. Server will inform via 'hyperjumpChargeStarted'.
+    Network.requestHyperjump(); // Server will handle destination selection logic now
 }
 
 function cycleWeaponAction(direction) {
+    // ... (cycleWeaponAction from previous version is fine) ...
     if (
         !gameState.myShip ||
         !gameState.myShip.weapons ||
@@ -245,14 +250,12 @@ function cycleWeaponAction(direction) {
 }
 
 function handleMenuKeyDown(keyLower) {
-    // ... (existing menu key down logic, ensure no conflicts if hyperjump state was relevant here, but it's for !docked state)
+    // ... (handleMenuKeyDown from previous version is fine) ...
     if (!gameState.docked || !gameState.myShip) {
         gameState.activeSubMenu = null;
         return;
     }
-
     if (!gameState.activeSubMenu) {
-        // Main dock menu
         switch (keyLower) {
             case "t":
                 gameState.activeSubMenu = "trade";
@@ -294,7 +297,6 @@ function handleMenuKeyDown(keyLower) {
                 break;
         }
     } else {
-        // In a sub-menu
         if (keyLower === "escape") {
             gameState.activeSubMenu = null;
             UIManager.renderMainMenu();
@@ -330,7 +332,6 @@ function handleMenuKeyDown(keyLower) {
                     );
                     if (currentWKeyIndex === -1 && weaponKeys.length > 0)
                         currentWKeyIndex = 0;
-
                     if (keyLower === "arrowup")
                         currentWKeyIndex = Math.max(0, currentWKeyIndex - 1);
                     else if (keyLower === "arrowdown")
@@ -396,9 +397,9 @@ function handleMenuKeyDown(keyLower) {
     }
 }
 
-export function processInputs(canvas) {
+export function processInputs() {
+    // Removed canvas argument, will use gameState.camera or world bounds
     if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked) {
-        // If ship is just drifting while charging hyperjump, apply damping & update position
         if (
             gameState.myShip &&
             !gameState.myShip.destroyed &&
@@ -410,12 +411,10 @@ export function processInputs(canvas) {
             myShip.vy *= DAMPING;
             myShip.x += myShip.vx;
             myShip.y += myShip.vy;
-            myShip.x = wrap(myShip.x, canvas.width);
-            myShip.y = wrap(myShip.y, canvas.height);
-            Network.sendControls(); // Still send position updates from drift
+            // Player position is not wrapped on client; server is authoritative.
+            // If local world bounds were defined, wrapping would happen here against those.
+            Network.sendControls();
         }
-        // Reset controls if not accelerating/rotating due to being docked or destroyed.
-        // If charging hyperjump, keydown handlers already prevent setting controls to true.
         gameState.controls.accelerating = false;
         gameState.controls.decelerating = false;
         gameState.controls.rotatingLeft = false;
@@ -423,12 +422,9 @@ export function processInputs(canvas) {
         return;
     }
 
-    // If execution reaches here, player is not docked, not destroyed, and not charging hyperjump.
-    // So, normal input processing applies.
-
     const myShip = gameState.myShip;
-
     if (
+        !myShip ||
         myShip.type === undefined ||
         myShip.type === null ||
         !gameState.clientGameData.shipTypes ||
@@ -445,6 +441,7 @@ export function processInputs(canvas) {
 
     if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;
     if (gameState.controls.rotatingRight) myShip.angle += rotSpd;
+    myShip.angle = wrap(myShip.angle, 2 * Math.PI); // Angles always wrap
 
     if (gameState.controls.accelerating) {
         myShip.vx += thrust * Math.cos(myShip.angle);
@@ -461,8 +458,11 @@ export function processInputs(canvas) {
     myShip.x += myShip.vx;
     myShip.y += myShip.vy;
 
-    myShip.x = wrap(myShip.x, canvas.width);
-    myShip.y = wrap(myShip.y, canvas.height);
+    // Player position wrapping to screen edges is REMOVED.
+    // The server will handle world boundaries if any.
+    // The camera keeps the player in view.
+    // myShip.x = wrap(myShip.x, gameState.camera.width); // No longer wrapping to camera/screen
+    // myShip.y = wrap(myShip.y, gameState.camera.height); // No longer wrapping to camera/screen
 
     Network.sendControls();
 }
