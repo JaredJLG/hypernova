@@ -3,38 +3,66 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>HyperNova Game</title>
+        <title>HyperNova OS Boot</title>
         <link rel="stylesheet" href="css/style.css" />
-        <!-- Assuming you have a style.css -->
     </head>
     <body>
         <div id="login-screen">
-            <h2>Login</h2>
-            <form id="login-form">
-                <div>
-                    <label for="username">Name:</label>
-                    <input type="text" id="username" name="username" required />
-                </div>
-                <div>
-                    <label for="password">Password:</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        required
-                    />
-                </div>
-                <button type="submit">Login / Register</button>
-                <!-- Simple combined for now -->
-            </form>
-            <p id="login-error" style="color: red"></p>
-            <p id="login-message" style="color: lightgreen"></p>
+            <canvas id="login-background-canvas"></canvas>
+
+            <div id="login-vfx-container">
+                <div class="scanline"></div>
+            </div>
+            <div class="login-form-container">
+                <h2 class="glitch" data-text="SYSTEM ACCESS">SYSTEM ACCESS</h2>
+                <form id="login-form">
+                    <div>
+                        <label for="username">PILOT ID:</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            required
+                            placeholder="Enter Callsign"
+                        />
+                    </div>
+                    <div>
+                        <label for="password">PASSCODE:</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            required
+                            placeholder="Enter Secure Key"
+                        />
+                    </div>
+                    <button type="submit" class="cybr-btn">
+                        Engage
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </button>
+                </form>
+                <p id="login-error" class="login-feedback"></p>
+                <p id="login-message" class="login-feedback"></p>
+                <div class="footer-text">HyperNova Secure Terminal v2.7.3</div>
+            </div>
         </div>
 
         <div id="game-container" class="hidden">
-            <canvas id="gameCanvas"></canvas>
+            {/* This container will be made full-screen */ }
+            <canvas id="gameCanvas"></canvas> {/* This canvas will be resized by
+            JS */ }
             <div id="ui"></div>
+            {/* UI remains an overlay */}
         </div>
+
+        <audio id="login-music" loop>
+            <source
+                src="assets/audio/upbeat-space-theme.mp3"
+                type="audio/mpeg"
+            />
+            Your browser does not support the audio element.
+        </audio>
 
         <script src="/socket.io/socket.io.js"></script>
         <script type="module" src="js/main.js"></script>

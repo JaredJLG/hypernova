@@ -1,15 +1,30 @@
 /* Existing styles from your file */
 body {
   margin: 0;
-  background-color: #000; /* Updated to background-color, kept user's color */
-  color: #0f0;
-  font-family: monospace;
-  overflow: hidden; /* Added from instructions: Prevent scrollbars if game is full screen */
+  background-color: #000; /* Fallback for body */
+  color: #00FF00; 
+  font-family: 'Courier New', Courier, monospace; 
+  overflow: hidden; /* Critical for full-screen */
 }
+
+#game-container {
+    position: fixed; /* Take up full viewport */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000; /* Background of the container if canvas doesn't fill it */
+}
+
 #gameCanvas {
   display: block;
-  background: #111;
+  /* background: #000; */ /* Background will be drawn by renderer now */
+  /* Width and height will be set by JavaScript */
+  position: absolute;
+  top: 0;
+  left: 0;
 }
+
 #ui {
   position: absolute;
   top: 0;
@@ -17,118 +32,372 @@ body {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 10; /* Ensure UI is above game canvas */
 }
 .panel {
   position: absolute;
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid #0f0;
-  padding: 10px;
-  max-width: 480px; /* Increased width for mission descriptions */
+  background: rgba(0, 20, 30, 0.85); /* Darker, more thematic panel */
+  border: 1px solid rgba(0, 200, 255, 0.5); /* Cyan border */
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+  padding: 15px;
+  max-width: 520px; /* Slightly wider for more text */
   pointer-events: auto;
-  color: #0f0; /* Ensure panel text is also green */
-  font-family: monospace; /* Ensure panel font matches */
+  color: #99FFFF; /* Lighter cyan text for panels */
+  font-family: inherit; 
+  border-radius: 5px;
 }
-button { /* Though not used in current UI, good to have */
-  background: #000;
-  color: #0f0;
-  border: 1px solid #0f0;
-  padding: 5px;
-  margin: 2px;
+
+button { 
+  background: rgba(0, 100, 150, 0.6);
+  color: #66FFFF;
+  border: 1px solid #00AACC;
+  padding: 8px 15px;
+  margin: 5px;
   pointer-events: auto;
-  font-family: monospace;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
 }
+button:hover {
+    background: rgba(0, 150, 200, 0.8);
+    box-shadow: 0 0 8px rgba(0, 200, 255, 0.5);
+}
+
+
 ::selection {
   background: #0f0;
   color: #000;
 }
 .trade-item-selected {
-  background-color: #030;
+  background-color: rgba(0, 100, 100, 0.3); /* More thematic selection */
+  border-left: 2px solid #00f2ea;
 }
 .menu-item {
-  padding: 2px 0;
+  padding: 4px 2px; /* More spacing */
 }
-.menu-item div { /* For nested divs within menu items, like mission descriptions */
-  padding: 1px 0;
+.menu-item div {
+  padding: 2px 0;
 }
 body.no-scroll {
   overflow: hidden;
 }
 
-/* Added styles from instructions */
+/* ===== HYPER COOL SCI-FI LOGIN SCREEN STYLES ===== */
+
 #login-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #000D1A; /* Dark blue space theme */
-    color: #00FF00; /* Green retro text */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    font-family: 'Courier New', Courier, monospace;
-    border: 2px solid #00FF00;
-    box-shadow: 0 0 15px #00FF00;
+    font-family: 'Courier New', Courier, monospace; 
+    overflow: hidden; 
+    background-color: #000000; 
+    color: #00FF00; 
 }
 
-#login-screen h2 {
-    border-bottom: 1px solid #00FF00;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+#login-background-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; 
 }
+
+#login-vfx-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; 
+    z-index: 1; 
+}
+
+.scanline {
+    width: 100%;
+    height: 100px; 
+    position: absolute;
+    top: -100px; 
+    left: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(20, 100, 200, 0), 
+        rgba(50, 150, 255, 0.08) 40%, 
+        rgba(50, 150, 255, 0.12) 50%,
+        rgba(50, 150, 255, 0.08) 60%,
+        rgba(20, 100, 200, 0) 
+    );
+    animation: scan 7s linear infinite;
+    opacity: 0.6;
+}
+
+@keyframes scan {
+    0% { top: -100px; }
+    100% { top: 100%; }
+}
+
+.login-form-container {
+    position: relative; 
+    z-index: 2; 
+    background: rgba(5, 15, 30, 0.85); 
+    padding: 30px 40px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 255, 0.3); 
+    box-shadow: 0 0 25px rgba(0, 200, 255, 0.3), 
+                inset 0 0 15px rgba(0, 150, 200, 0.2);
+    text-align: center;
+    width: 380px; 
+    animation: fadeInForm 1s ease-out forwards;
+}
+
+@keyframes fadeInForm {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#login-screen h2 { 
+    font-size: 2em;
+    color: #66FFFF; 
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    padding-bottom: 15px;
+    text-shadow: 0 0 5px #66FFFF, 0 0 10px #66FFFF;
+}
+
+.glitch {
+    position: relative;
+    color: #66FFFF;
+    text-shadow: 0 0 5px #66FFFF, 0 0 10px #66FFFF;
+}
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit; 
+    overflow: hidden;
+}
+.glitch::before {
+    left: 2px;
+    text-shadow: -1px 0 red;
+    animation: glitch-anim-1 2s infinite linear alternate-reverse;
+}
+.glitch::after {
+    left: -2px;
+    text-shadow: -1px 0 blue, 2px 2px yellow;
+    animation: glitch-anim-2 2s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim-1 {
+    0% { clip: rect(35px, 9999px, 92px, 0); }
+    25% { clip: rect(32px, 9999px, 1px, 0); }
+    50% { clip: rect(45px, 9999px, 36px, 0); }
+    75% { clip: rect(11px, 9999px, 5px, 0); }
+    100% { clip: rect(62px, 9999px, 77px, 0); }
+}
+@keyframes glitch-anim-2 {
+    0% { clip: rect(70px, 9999px, 10px, 0); }
+    25% { clip: rect(3px, 9999px, 48px, 0); }
+    50% { clip: rect(90px, 9999px, 50px, 0); }
+    75% { clip: rect(22px, 9999px, 79px, 0); }
+    100% { clip: rect(5px, 9999px, 60px, 0); }
+}
+
 
 #login-form div {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     display: flex;
-    align-items: center;
+    flex-direction: column; 
+    align-items: flex-start; 
 }
 
 #login-form label {
-    display: inline-block;
-    width: 90px;
-    margin-right: 10px;
+    display: block; 
+    width: auto; 
+    margin-right: 0;
+    margin-bottom: 8px; 
+    color: #00AACC; 
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
 }
 
 #login-form input[type="text"],
 #login-form input[type="password"] {
-    background-color: #002233;
-    border: 1px solid #00FF00;
-    color: #00FF00;
-    padding: 8px;
-    font-family: 'Courier New', Courier, monospace;
+    background-color: rgba(0, 50, 70, 0.5); 
+    border: 1px solid #007799; 
+    color: #99FFFF; 
+    padding: 12px 15px;
+    font-family: inherit;
+    border-radius: 4px;
+    width: calc(100% - 30px); 
+    box-shadow: inset 0 0 8px rgba(0, 100, 150, 0.3);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    caret-color: #66FFFF; 
 }
 
-#login-form button {
-    background-color: #003344;
-    border: 1px solid #00FF00;
-    color: #00FF00;
-    padding: 10px 20px;
+#login-form input[type="text"]::placeholder,
+#login-form input[type="password"]::placeholder {
+    color: #007799;
+    opacity: 0.7;
+}
+
+#login-form input[type="text"]:focus,
+#login-form input[type="password"]:focus {
+    outline: none;
+    border-color: #66FFFF; 
+    box-shadow: 0 0 10px rgba(102, 255, 255, 0.5), 
+                inset 0 0 10px rgba(102, 255, 255, 0.3);
+}
+
+/* ===== NEW FANCY SCI-FI ENGAGE BUTTON ===== */
+.cybr-btn {
+    --btn-color-primary: #00f2ea; /* Bright Teal/Cyan */
+    --btn-color-secondary: #7DF9FF; /* Electric Blue / Lighter Cyan */
+    --btn-glow-color: rgba(0, 242, 234, 0.5);
+    --btn-bg-color: rgba(10, 30, 50, 0.6); /* Slightly transparent dark blue */
+    --btn-border-size: 2px;
+
+    position: relative;
+    padding: 12px 30px;
+    margin-top: 25px; 
+    font-family: 'Courier New', Courier, monospace; 
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--btn-color-primary);
+    background-color: var(--btn-bg-color);
+    border: var(--btn-border-size) solid var(--btn-color-primary);
+    border-radius: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
     cursor: pointer;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    outline: none;
+    overflow: hidden; 
+    transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    z-index: 1; 
 }
 
-#login-form button:hover {
-    background-color: #005566;
-    box-shadow: 0 0 10px #00FF00;
+.cybr-btn::before,
+.cybr-btn::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: var(--btn-border-size);
+    background-color: var(--btn-color-secondary);
+    transition: width 0.4s ease-out;
+    z-index: -1; 
 }
+
+.cybr-btn::before { 
+    top: 0;
+    left: 50%; 
+    transform: translateX(-50%);
+}
+
+.cybr-btn::after { 
+    bottom: 0;
+    right: 50%; 
+    transform: translateX(50%);
+}
+
+.cybr-btn:hover::before,
+.cybr-btn:hover::after {
+    width: 105%; 
+}
+
+.cybr-btn span[aria-hidden="true"] {
+    display: block;
+    position: absolute;
+    width: var(--btn-border-size);
+    height: 0%;
+    background-color: var(--btn-color-secondary);
+    opacity: 0;
+    transition: height 0.4s ease-out 0.2s, opacity 0.3s ease-out 0.2s; 
+}
+
+.cybr-btn span[aria-hidden="true"]:first-of-type {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+}
+
+.cybr-btn span[aria-hidden="true"]:nth-of-type(2) {
+    bottom: 50%; 
+    right: 0;
+    transform: translateY(50%);
+}
+
+.cybr-btn:hover span[aria-hidden="true"] {
+    height: 105%; 
+    opacity: 1;
+}
+
+.cybr-btn:hover {
+    color: #ffffff; 
+    background-color: rgba(0, 242, 234, 0.15); 
+    border-color: var(--btn-color-secondary);
+    box-shadow: 0 0 15px var(--btn-glow-color), 0 0 25px var(--btn-glow-color);
+}
+
+.cybr-btn:active {
+    color: var(--btn-color-primary);
+    background-color: rgba(0, 242, 234, 0.25);
+    box-shadow: 0 0 5px var(--btn-glow-color), inset 0 0 10px var(--btn-glow-color);
+    transform: translateY(1px); 
+}
+/* ===== END OF NEW BUTTON STYLES ===== */
+
 
 #login-error, #login-message {
-    margin-top: 15px;
-    min-height: 1em; /* Keep space even if empty */
+    margin-top: 20px;
+    min-height: 1.2em;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
 }
+#login-error {
+    color: #FF6666; 
+    text-shadow: 0 0 5px #FF6666;
+}
+#login-message {
+    color: #66FF99; 
+    text-shadow: 0 0 5px #66FF99;
+}
+.login-feedback { 
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+.login-feedback:not(:empty) { 
+    opacity: 1;
+}
+
+
+.footer-text {
+    margin-top: 30px;
+    font-size: 0.75em;
+    color: rgba(0, 255, 255, 0.4); 
+    letter-spacing: 1px;
+}
+
 
 .hidden {
     display: none !important;
 }
 
-/* Ensure game container takes full space when visible */
-#game-container {
-    width: 100%;
-    height: 100%;
-    /* display: flex; /* Or however you manage layout */
-    /* flex-direction: column; */
-    /* align-items: center; */
-    /* justify-content: center; */
-}
+/* Universe Map Specific (if ever HTML based, good to have a placeholder) */
+.universe-map-container { }
+.system-entry { }
