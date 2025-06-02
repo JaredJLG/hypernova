@@ -1,3 +1,4 @@
+/* ===== START: hypernova/client/js/network.js ===== */
 // hypernova/client/js/network.js
 import { gameState } from "./game_state.js";
 import { UIManager } from "./ui_manager.js";
@@ -325,25 +326,253 @@ export function initNetwork(onReadyCallback) {
     });
     socket.on("actionSuccess", ({ message }) => {
         console.log("network.js/actionSuccess:", message);
+        // Could show a brief success message/toast here if desired
     });
 
     socket.on("tradeSuccess", (data) => {
-        // ... (existing tradeSuccess logic) ...
+        console.log("network.js/tradeSuccess: Trade successful", data);
+        if (gameState.myShip) {
+            gameState.myShip.credits = data.credits;
+            gameState.myShip.cargo = data.cargo;
+
+            // Update planet economy data shown in trade menu if it's the current planet
+            if (
+                gameState.dockedAtDetails &&
+                data.updatedPlanetData &&
+                gameState.dockedAtDetails.systemIndex ===
+                    data.updatedPlanetData.systemIndex &&
+                gameState.dockedAtDetails.planetIndex ===
+                    data.updatedPlanetData.planetIndex
+            ) {
+                gameState.dockedAtDetails.buyPrices =
+                    data.updatedPlanetData.buyPrices;
+                gameState.dockedAtDetails.sellPrices =
+                    data.updatedPlanetData.sellPrices;
+                gameState.dockedAtDetails.stock = data.updatedPlanetData.stock;
+            }
+
+            if (gameState.activeSubMenu === "trade") {
+                UIManager.renderTradeMenu(); // Re-render to show updated player/planet data
+            }
+            UIManager.updateShipStatsPanel(); // Update HUD/Side Panel
+            saveProgress(); // Save progress after successful trade
+        }
     });
+
     socket.on("updatePlanetEconomies", (updatedSystemsEconomies) => {
-        // ... (existing updatePlanetEconomies logic) ...
+        console.log(
+            "network.js/updatePlanetEconomies: Received global economy update.",
+        );
+        gameState.clientPlanetEconomies = updatedSystemsEconomies; // Store the full list
+
+        // If player is docked and the trade menu is open for the current planet,
+        // update its data and re-render.
+        if (
+            gameState.docked &&
+            gameState.dockedAtDetails &&
+            gameState.activeSubMenu === "trade"
+        ) {
+            const currentSystemEco =
+                updatedSystemsEconomies[gameState.dockedAtDetails.systemIndex];
+            if (currentSystemEco) {
+                const currentPlanetEco =
+                    currentSystemEco.planets[
+                        gameState.dockedAtDetails.planetIndex
+                    ];
+                if (currentPlanetEco) {
+                    gameState.dockedAtDetails.buyPrices =
+                        currentPlanetEco.buyPrices;
+                    gameState.dockedAtDetails.sellPrices =
+                        currentPlanetEco.sellPrices;
+                    gameState.dockedAtDetails.stock = currentPlanetEco.stock;
+                    UIManager.renderTradeMenu();
+                }
+            }
+        }
     });
+
     socket.on("planetEconomyUpdate", (data) => {
-        // ... (existing planetEconomyUpdate logic) ...
+        console.log(
+            "network.js/planetEconomyUpdate: Received specific planet economy update:",
+            data.name,
+        );
+        // Update the specific planet in clientPlanetEconomies
+        if (
+            gameState.clientPlanetEconomies[data.systemIndex] &&
+            gameState.clientPlanetEconomies[data.systemIndex].planets[
+                data.planetIndex
+            ]
+        ) {
+            gameState.clientPlanetEconomies[data.systemIndex].planets[
+                data.planetIndex
+            ].buyPrices = data.buyPrices;
+            gameState.clientPlanetEconomies[data.systemIndex].planets[
+                data.planetIndex
+            ].sellPrices = data.sellPrices;
+            gameState.clientPlanetEconomies[data.systemIndex].planets[
+                data.planetIndex
+            ].stock = data.stock;
+        }
+
+        // If player is docked at THIS planet and trade menu is open, update and re-render
+        if (
+            gameState.docked &&
+            gameState.dockedAtDetails &&
+            gameState.dockedAtDetails.systemIndex === data.systemIndex &&
+            gameState.dockedAtDetails.planetIndex === data.planetIndex &&
+            gameState.activeSubMenu === "trade"
+        ) {
+            gameState.dockedAtDetails.buyPrices = data.buyPrices;
+            gameState.dockedAtDetails.sellPrices = data.sellPrices;
+            gameState.dockedAtDetails.stock = data.stock;
+            UIManager.renderTradeMenu();
+        }
     });
+
     socket.on("availableMissionsList", (data) => {
-        // ... (existing availableMissionsList logic) ...
+        console.log(
+            "network.js/availableMissionsList: Received missions:",
+            data,
+        );
+        if (
+            gameState.dockedAtDetails &&
+            gameState.dockedAtDetails.systemIndex === data.systemIndex &&
+            gameState.dockedAtDetails.planetIndex === data.planetIndex
+        ) {
+            gameState.availableMissionsForCurrentPlanet = data.missions || [];
+            // Ensure selectedMissionIndex is valid after updating the list
+            gameState.selectedMissionIndex = Math.max(
+                0,
+                Math.min(
+                    gameState.selectedMissionIndex,
+                    gameState.availableMissionsForCurrentPlanet.length - 1,
+                ),
+            );
+            if (gameState.availableMissionsForCurrentPlanet.length === 0) {
+                gameState.selectedMissionIndex = 0; // Or -1 if you prefer no selection
+            }
+
+            // If the mission menu is the active sub-menu, re-render it
+            if (gameState.activeSubMenu === "missions") {
+                UIManager.renderMissionsMenu();
+            }
+        } else {
+            console.log(
+                "network.js/availableMissionsList: Received missions for a planet I'm not (or no longer) docked at.",
+                data,
+            );
+        }
     });
+
     socket.on("missionAccepted", (data) => {
-        // ... (existing missionAccepted logic) ...
+        console.log(
+            "network.js/missionAccepted: Mission accepted:",
+            data.mission,
+        );
+        if (gameState.myShip && data.mission) {
+            if (!gameState.myShip.activeMissions) {
+                gameState.myShip.activeMissions = [];
+            }
+            // Add to active missions if not already there (server 'state' update will be authoritative)
+            const existingMission = gameState.myShip.activeMissions.find(
+                (m) => m.id === data.mission.id,
+            );
+            if (!existingMission) {
+                gameState.myShip.activeMissions.push(data.mission);
+            }
+
+            // Remove from available list for current planet
+            gameState.availableMissionsForCurrentPlanet =
+                gameState.availableMissionsForCurrentPlanet.filter(
+                    (m) => m.id !== data.mission.id,
+                );
+            // Adjust selectedMissionIndex if needed
+            gameState.selectedMissionIndex = Math.max(
+                0,
+                Math.min(
+                    gameState.selectedMissionIndex,
+                    gameState.availableMissionsForCurrentPlanet.length - 1,
+                ),
+            );
+            if (gameState.availableMissionsForCurrentPlanet.length === 0) {
+                gameState.selectedMissionIndex = 0;
+            }
+
+            // Re-render mission menu if it's active
+            if (gameState.activeSubMenu === "missions") {
+                UIManager.renderMissionsMenu();
+            }
+            // Update HUD/Side Panel
+            UIManager.updateActiveMissionsPanel();
+            saveProgress(); // Save progress after accepting a mission
+        }
     });
+
     socket.on("missionUpdate", (data) => {
-        // ... (existing missionUpdate logic) ...
+        console.log("network.js/missionUpdate: Received mission update:", data);
+        if (gameState.myShip && gameState.myShip.activeMissions) {
+            const missionIndex = gameState.myShip.activeMissions.findIndex(
+                (m) => m.id === data.missionId,
+            );
+            let missionCompletedOrFailed = false;
+
+            if (missionIndex !== -1) {
+                if (
+                    data.status === "COMPLETED" ||
+                    data.status === "FAILED_TIME" ||
+                    data.status === "FAILED_OTHER"
+                ) {
+                    gameState.myShip.activeMissions.splice(missionIndex, 1);
+                    missionCompletedOrFailed = true;
+                    // Credits are typically handled by server and synced via 'state', but can be updated here for responsiveness
+                    if (data.reward && data.status === "COMPLETED")
+                        gameState.myShip.credits += data.reward;
+                    if (data.penalty && data.status !== "COMPLETED")
+                        gameState.myShip.credits -= data.penalty; // Server should enforce this too
+                    gameState.myShip.credits = Math.max(
+                        0,
+                        gameState.myShip.credits,
+                    );
+                } else if (
+                    data.status === "ACCEPTED" &&
+                    data.targetsDestroyed !== undefined
+                ) {
+                    // For bounty progress from server, or other state changes
+                    gameState.myShip.activeMissions[
+                        missionIndex
+                    ].targetsDestroyed = data.targetsDestroyed;
+                } else {
+                    // Potentially update other mission properties if server sends them
+                    Object.assign(
+                        gameState.myShip.activeMissions[missionIndex],
+                        data,
+                    );
+                }
+            }
+
+            UIManager.updateActiveMissionsPanel();
+            UIManager.updateShipStatsPanel(); // If credits changed
+
+            if (
+                missionCompletedOrFailed &&
+                gameState.activeSubMenu === "missions"
+            ) {
+                // If a mission was completed/failed AND the mission board is open,
+                // it's good to refresh the available missions list in case new ones populated
+                // or to ensure the completed one isn't selectable (though it should be gone).
+                if (gameState.dockedAtDetails) {
+                    Network.requestMissions(
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+            }
+
+            if (data.message) {
+                console.log("Mission Update Message:", data.message);
+                // alert(`Mission Update: ${data.message}`); // Simple alert, or use a more sophisticated notification
+            }
+        }
     });
 
     // Hyperjump related handlers
@@ -401,9 +630,10 @@ export function initNetwork(onReadyCallback) {
             gameState.myShip.dockedAtPlanetIdentifier = null;
         }
         gameState.docked = false;
-        UIManager.undockCleanup();
+        UIManager.undockCleanup(); // Ensures any docked UI is closed
         // Client is now in the new system, position set by server.
         // The regular 'state' update from server will also reflect this for other players.
+        saveProgress(); // Save progress after successful hyperjump
     });
 }
 
@@ -480,34 +710,110 @@ export function undock() {
     }
     console.log("undock: Emitting 'undock' to server.");
     gameState.socket.emit("undock");
-    saveProgress();
+    // saveProgress() is called in dockConfirmed and undockConfirmed already by server response.
+    // If desired for immediate client-side save before server ack, can add here.
 }
 
 export function buyGood(goodIndex) {
-    // ... (existing buyGood, no direct hyperjump interaction needed as it requires docking) ...
+    if (!gameState.socket || !gameState.myShip || !gameState.dockedAtDetails) {
+        console.warn(
+            "buyGood: Pre-conditions not met (socket, ship, or dockedAtDetails missing).",
+        );
+        return;
+    }
+    if (
+        goodIndex < 0 ||
+        goodIndex >= gameState.clientGameData.tradeGoods.length
+    ) {
+        console.error("buyGood: Invalid goodIndex:", goodIndex);
+        return;
+    }
+
+    const goodName = gameState.clientGameData.tradeGoods[goodIndex].name;
+    const quantity = 1; // For now, buy 1 unit. UI could be extended for more.
+
+    console.log(
+        `buyGood: Emitting 'buyGood' for ${goodName}, quantity ${quantity}`,
+    );
+    gameState.socket.emit("buyGood", {
+        goodName: goodName,
+        quantity: quantity,
+        systemIndex: gameState.dockedAtDetails.systemIndex,
+        planetIndex: gameState.dockedAtDetails.planetIndex,
+    });
 }
+
 export function sellGood(goodIndex) {
-    // ... (existing sellGood) ...
+    if (!gameState.socket || !gameState.myShip || !gameState.dockedAtDetails) {
+        console.warn("sellGood: Pre-conditions not met.");
+        return;
+    }
+    if (
+        goodIndex < 0 ||
+        goodIndex >= gameState.clientGameData.tradeGoods.length
+    ) {
+        console.error("sellGood: Invalid goodIndex:", goodIndex);
+        return;
+    }
+    if (!gameState.myShip.cargo || gameState.myShip.cargo[goodIndex] <= 0) {
+        console.warn("sellGood: No goods of this type to sell.");
+        UIManager.renderTradeMenu(); // Re-render to ensure UI is accurate if there's a mismatch
+        return;
+    }
+
+    const goodName = gameState.clientGameData.tradeGoods[goodIndex].name;
+    const quantity = 1; // For now, sell 1 unit.
+
+    console.log(
+        `sellGood: Emitting 'sellGood' for ${goodName}, quantity ${quantity}`,
+    );
+    gameState.socket.emit("sellGood", {
+        goodName: goodName,
+        quantity: quantity,
+        systemIndex: gameState.dockedAtDetails.systemIndex,
+        planetIndex: gameState.dockedAtDetails.planetIndex,
+    });
 }
+
 export function buyShip(shipTypeIndex) {
     if (
         !gameState.socket ||
         !gameState.myShip ||
         gameState.isChargingHyperjump
     ) {
-        // Prevent buying ship if charging
         if (gameState.isChargingHyperjump)
             console.warn("buyShip: Cannot buy ship while charging hyperjump.");
         return;
     }
-    // ... rest of buyShip logic ...
+    if (
+        shipTypeIndex < 0 ||
+        shipTypeIndex >= gameState.clientGameData.shipTypes.length
+    ) {
+        console.error("buyShip: Invalid shipTypeIndex:", shipTypeIndex);
+        return;
+    }
+    console.log(`buyShip: Emitting 'buyShip' for type index ${shipTypeIndex}.`);
+    gameState.socket.emit("buyShip", { shipTypeIndex: shipTypeIndex });
 }
 
 export function requestMissions(systemIndex, planetIndex) {
-    // ... (existing requestMissions) ...
+    if (!gameState.socket) return;
+    console.log(
+        `requestMissions: Emitting for system ${systemIndex}, planet ${planetIndex}.`,
+    );
+    gameState.socket.emit("requestMissions", { systemIndex, planetIndex });
 }
+
 export function acceptMission(missionId, systemIndex, planetIndex) {
-    // ... (existing acceptMission) ...
+    if (!gameState.socket) return;
+    console.log(
+        `acceptMission: Emitting for mission ${missionId} at S:${systemIndex} P:${planetIndex}.`,
+    );
+    gameState.socket.emit("acceptMission", {
+        missionId,
+        systemIndex,
+        planetIndex,
+    });
 }
 
 // New function for hyperjump request
@@ -539,3 +845,5 @@ export function cancelHyperjumpRequest() {
     // gameState.isChargingHyperjump = false; // Let server message handle this state change fully
     // gameState.hyperjumpChargeStartTime = null;
 }
+
+/* ===== END: hypernova/client/js/network.js ===== */

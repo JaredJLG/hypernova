@@ -54,9 +54,34 @@
         <div id="game-container" class="hidden">
             {/* This container will be made full-screen */ }
             <canvas id="gameCanvas"></canvas> {/* This canvas will be resized by
-            JS */ }
+            JS */}
             <div id="ui"></div>
-            {/* UI remains an overlay */}
+            {/* UI remains an overlay for menus */} {/* ===== NEW RIGHT HUD
+            PANEL ===== */}
+            <div id="right-hud-panel" class="hidden">
+                <div class="panel-section" id="ship-stats-section">
+                    <h4>PILOT STATUS</h4>
+                    <div id="ship-stats-content">
+                        {/*
+                        <!-- Ship stats will be populated by JS -->
+                        */}
+                    </div>
+                </div>
+                <div class="panel-section" id="active-missions-section">
+                    <h4>MISSION LOG</h4>
+                    <ul id="active-missions-list">
+                        {/*
+                        <!-- Active missions will be populated by JS -->
+                        */}
+                    </ul>
+                </div>
+                <div class="panel-section" id="minimap-section">
+                    <h4>SYSTEM MAP</h4>
+                    <canvas id="minimapCanvas"></canvas>
+                </div>
+                <div class="panel-footer">HN OS v3.1</div>
+            </div>
+            {/* ===== END OF NEW RIGHT HUD PANEL ===== */}
         </div>
 
         <audio id="login-music" loop>
@@ -76,12 +101,13 @@
 
 
 /* ===== START: hypernova/client/css/style.css ===== */
+/* ===== START: hypernova/client/css/style.css ===== */
 /* Existing styles from your file */
 body {
   margin: 0;
   background-color: #000; /* Fallback for body */
-  color: #00FF00; 
-  font-family: 'Courier New', Courier, monospace; 
+  color: #00FF00;
+  font-family: 'Courier New', Courier, monospace;
   overflow: hidden; /* Critical for full-screen */
 }
 
@@ -112,20 +138,26 @@ body {
   pointer-events: none;
   z-index: 10; /* Ensure UI is above game canvas */
 }
+/* .panel class is no longer primarily used for docked menus, but kept for potential other uses or if sub-menus revert styling */
 .panel {
   position: absolute;
-  background: rgba(0, 20, 30, 0.85); /* Darker, more thematic panel */
-  border: 1px solid rgba(0, 200, 255, 0.5); /* Cyan border */
+  background: rgba(0, 20, 30, 0.85);
+  border: 1px solid rgba(0, 200, 255, 0.5);
   box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
   padding: 15px;
-  max-width: 520px; /* Slightly wider for more text */
+  max-width: 520px;
   pointer-events: auto;
-  color: #99FFFF; /* Lighter cyan text for panels */
-  font-family: inherit; 
+  color: #99FFFF;
+  font-family: inherit;
   border-radius: 5px;
+  /* Centering for old panel style if used */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
 }
 
-button { 
+
+button {
   background: rgba(0, 100, 150, 0.6);
   color: #66FFFF;
   border: 1px solid #00AACC;
@@ -149,12 +181,13 @@ button:hover {
   background: #0f0;
   color: #000;
 }
+/* .trade-item-selected and .menu-item might be deprecated if not used by new sub-menu style */
 .trade-item-selected {
-  background-color: rgba(0, 100, 100, 0.3); /* More thematic selection */
+  background-color: rgba(0, 100, 100, 0.3);
   border-left: 2px solid #00f2ea;
 }
 .menu-item {
-  padding: 4px 2px; /* More spacing */
+  padding: 4px 2px;
 }
 .menu-item div {
   padding: 2px 0;
@@ -175,10 +208,10 @@ body.no-scroll {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-family: 'Courier New', Courier, monospace; 
-    overflow: hidden; 
-    background-color: #000000; 
-    color: #00FF00; 
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+    background-color: #000000;
+    color: #00FF00;
 }
 
 #login-background-canvas {
@@ -187,7 +220,7 @@ body.no-scroll {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 0; 
+    z-index: 0;
 }
 
 #login-vfx-container {
@@ -196,23 +229,23 @@ body.no-scroll {
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none; 
-    z-index: 1; 
+    pointer-events: none;
+    z-index: 1;
 }
 
 .scanline {
     width: 100%;
-    height: 100px; 
+    height: 100px;
     position: absolute;
-    top: -100px; 
+    top: -100px;
     left: 0;
     background: linear-gradient(
         to bottom,
-        rgba(20, 100, 200, 0), 
-        rgba(50, 150, 255, 0.08) 40%, 
+        rgba(20, 100, 200, 0),
+        rgba(50, 150, 255, 0.08) 40%,
         rgba(50, 150, 255, 0.12) 50%,
         rgba(50, 150, 255, 0.08) 60%,
-        rgba(20, 100, 200, 0) 
+        rgba(20, 100, 200, 0)
     );
     animation: scan 7s linear infinite;
     opacity: 0.6;
@@ -224,16 +257,16 @@ body.no-scroll {
 }
 
 .login-form-container {
-    position: relative; 
-    z-index: 2; 
-    background: rgba(5, 15, 30, 0.85); 
+    position: relative;
+    z-index: 2;
+    background: rgba(5, 15, 30, 0.85);
     padding: 30px 40px;
     border-radius: 8px;
-    border: 1px solid rgba(0, 255, 255, 0.3); 
-    box-shadow: 0 0 25px rgba(0, 200, 255, 0.3), 
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 25px rgba(0, 200, 255, 0.3),
                 inset 0 0 15px rgba(0, 150, 200, 0.2);
     text-align: center;
-    width: 380px; 
+    width: 380px;
     animation: fadeInForm 1s ease-out forwards;
 }
 
@@ -242,9 +275,9 @@ body.no-scroll {
     to { opacity: 1; transform: translateY(0); }
 }
 
-#login-screen h2 { 
+#login-screen h2 {
     font-size: 2em;
-    color: #66FFFF; 
+    color: #66FFFF;
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-bottom: 30px;
@@ -266,7 +299,7 @@ body.no-scroll {
     left: 0;
     width: 100%;
     height: 100%;
-    background: inherit; 
+    background: inherit;
     overflow: hidden;
 }
 .glitch::before {
@@ -299,16 +332,16 @@ body.no-scroll {
 #login-form div {
     margin-bottom: 20px;
     display: flex;
-    flex-direction: column; 
-    align-items: flex-start; 
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 #login-form label {
-    display: block; 
-    width: auto; 
+    display: block;
+    width: auto;
     margin-right: 0;
-    margin-bottom: 8px; 
-    color: #00AACC; 
+    margin-bottom: 8px;
+    color: #00AACC;
     font-size: 0.9em;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -317,16 +350,16 @@ body.no-scroll {
 
 #login-form input[type="text"],
 #login-form input[type="password"] {
-    background-color: rgba(0, 50, 70, 0.5); 
-    border: 1px solid #007799; 
-    color: #99FFFF; 
+    background-color: rgba(0, 50, 70, 0.5);
+    border: 1px solid #007799;
+    color: #99FFFF;
     padding: 12px 15px;
     font-family: inherit;
     border-radius: 4px;
-    width: calc(100% - 30px); 
+    width: calc(100% - 30px);
     box-shadow: inset 0 0 8px rgba(0, 100, 150, 0.3);
     transition: border-color 0.3s, box-shadow 0.3s;
-    caret-color: #66FFFF; 
+    caret-color: #66FFFF;
 }
 
 #login-form input[type="text"]::placeholder,
@@ -338,8 +371,8 @@ body.no-scroll {
 #login-form input[type="text"]:focus,
 #login-form input[type="password"]:focus {
     outline: none;
-    border-color: #66FFFF; 
-    box-shadow: 0 0 10px rgba(102, 255, 255, 0.5), 
+    border-color: #66FFFF;
+    box-shadow: 0 0 10px rgba(102, 255, 255, 0.5),
                 inset 0 0 10px rgba(102, 255, 255, 0.3);
 }
 
@@ -353,8 +386,8 @@ body.no-scroll {
 
     position: relative;
     padding: 12px 30px;
-    margin-top: 25px; 
-    font-family: 'Courier New', Courier, monospace; 
+    margin-top: 25px;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 1.1em;
     font-weight: bold;
     color: var(--btn-color-primary);
@@ -365,9 +398,9 @@ body.no-scroll {
     letter-spacing: 1.5px;
     cursor: pointer;
     outline: none;
-    overflow: hidden; 
+    overflow: hidden;
     transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-    z-index: 1; 
+    z-index: 1;
 }
 
 .cybr-btn::before,
@@ -378,24 +411,24 @@ body.no-scroll {
     height: var(--btn-border-size);
     background-color: var(--btn-color-secondary);
     transition: width 0.4s ease-out;
-    z-index: -1; 
+    z-index: -1;
 }
 
-.cybr-btn::before { 
+.cybr-btn::before {
     top: 0;
-    left: 50%; 
+    left: 50%;
     transform: translateX(-50%);
 }
 
-.cybr-btn::after { 
+.cybr-btn::after {
     bottom: 0;
-    right: 50%; 
+    right: 50%;
     transform: translateX(50%);
 }
 
 .cybr-btn:hover::before,
 .cybr-btn:hover::after {
-    width: 105%; 
+    width: 105%;
 }
 
 .cybr-btn span[aria-hidden="true"] {
@@ -405,7 +438,7 @@ body.no-scroll {
     height: 0%;
     background-color: var(--btn-color-secondary);
     opacity: 0;
-    transition: height 0.4s ease-out 0.2s, opacity 0.3s ease-out 0.2s; 
+    transition: height 0.4s ease-out 0.2s, opacity 0.3s ease-out 0.2s;
 }
 
 .cybr-btn span[aria-hidden="true"]:first-of-type {
@@ -415,19 +448,19 @@ body.no-scroll {
 }
 
 .cybr-btn span[aria-hidden="true"]:nth-of-type(2) {
-    bottom: 50%; 
+    bottom: 50%;
     right: 0;
     transform: translateY(50%);
 }
 
 .cybr-btn:hover span[aria-hidden="true"] {
-    height: 105%; 
+    height: 105%;
     opacity: 1;
 }
 
 .cybr-btn:hover {
-    color: #ffffff; 
-    background-color: rgba(0, 242, 234, 0.15); 
+    color: #ffffff;
+    background-color: rgba(0, 242, 234, 0.15);
     border-color: var(--btn-color-secondary);
     box-shadow: 0 0 15px var(--btn-glow-color), 0 0 25px var(--btn-glow-color);
 }
@@ -436,7 +469,7 @@ body.no-scroll {
     color: var(--btn-color-primary);
     background-color: rgba(0, 242, 234, 0.25);
     box-shadow: 0 0 5px var(--btn-glow-color), inset 0 0 10px var(--btn-glow-color);
-    transform: translateY(1px); 
+    transform: translateY(1px);
 }
 /* ===== END OF NEW BUTTON STYLES ===== */
 
@@ -448,26 +481,26 @@ body.no-scroll {
     letter-spacing: 0.5px;
 }
 #login-error {
-    color: #FF6666; 
+    color: #FF6666;
     text-shadow: 0 0 5px #FF6666;
 }
 #login-message {
-    color: #66FF99; 
+    color: #66FF99;
     text-shadow: 0 0 5px #66FF99;
 }
-.login-feedback { 
+.login-feedback {
     opacity: 0;
     transition: opacity 0.5s;
 }
-.login-feedback:not(:empty) { 
+.login-feedback:not(:empty) {
     opacity: 1;
 }
 
 
-.footer-text {
+.footer-text { /* General footer text for login */
     margin-top: 30px;
     font-size: 0.75em;
-    color: rgba(0, 255, 255, 0.4); 
+    color: rgba(0, 255, 255, 0.4);
     letter-spacing: 1px;
 }
 
@@ -479,6 +512,356 @@ body.no-scroll {
 /* Universe Map Specific (if ever HTML based, good to have a placeholder) */
 .universe-map-container { }
 .system-entry { }
+
+/* ===== NEW DOCKED STATION UI STYLES ===== */
+#docked-station-ui {
+    position: fixed; /* Changed from absolute to fixed if #ui container is not full screen */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 600px;
+    background-color: #1a1a1e;
+    border: 3px solid #4a4e54;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    color: #c0c0c0;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+    pointer-events: auto;
+    z-index: 20;
+}
+
+.station-viewscreen {
+    background-color: #08080a;
+    border: 2px solid #333;
+    height: 180px; /* Adjusted height */
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px;
+    font-size: 1.2em;
+    color: #50a0f0;
+}
+
+.station-dialogue-area {
+    background-color: #111315;
+    border: 1px solid #333;
+    padding: 10px 15px; /* Adjusted padding */
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    min-height: 50px; /* Adjusted height */
+    line-height: 1.4;
+}
+
+.station-dialogue-area button {
+    display: block;
+    margin: 8px auto 0; /* Adjusted margin */
+    padding: 6px 20px; /* Adjusted padding */
+    background-color: #900000;
+    color: #ddd;
+    border: 1px solid #c00000;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+    cursor: pointer;
+}
+.station-dialogue-area button:hover {
+    background-color: #b00000;
+}
+
+.station-content-area {
+    display: flex;
+    flex-grow: 1;
+    gap: 15px;
+    overflow: hidden; /* Prevent content from breaking layout */
+}
+
+.station-button-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 150px;
+}
+
+.station-planet-info {
+    flex-grow: 1;
+    background-color: #111315;
+    border: 1px solid #333;
+    padding: 15px;
+    overflow-y: auto;
+}
+.station-planet-info h3 {
+    margin-top: 0;
+    color: #00f2ea;
+    border-bottom: 1px solid #00887a;
+    padding-bottom: 5px;
+}
+
+.station-action-button {
+    padding: 10px 15px;
+    background: linear-gradient(to bottom, #a00000, #700000);
+    color: #f0f0f0;
+    border: 2px outset #c03030;
+    border-radius: 20px;
+    text-align: center;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+    transition: background 0.2s, transform 0.1s;
+    margin: 0;
+}
+.station-action-button:hover {
+    background: linear-gradient(to bottom, #b00000, #800000);
+    border-color: #d04040;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.station-action-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.4);
+    border-style: inset;
+}
+
+.station-footer-text {
+    text-align: center;
+    font-size: 0.75em;
+    color: rgba(0, 255, 255, 0.4);
+    letter-spacing: 1px;
+    margin-top: auto; /* Push footer to bottom of flex container */
+    padding-top: 10px;
+    border-top: 1px solid #333;
+}
+
+/* ===== STYLES FOR SUB-MENUS WITHIN DOCKED STATION UI ===== */
+.station-submenu-content {
+    width: 100%; /* Take full width of its host (.station-content-area) */
+    height: 100%; /* Take full height */
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #0c0e10; /* Slightly different dark bg for sub-menu */
+    border: 1px solid #222; /* Inner border for sub-menu area */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.station-submenu-content h3 {
+    color: #00f2ea;
+    border-bottom: 1px solid #00887a;
+    padding-bottom: 8px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.4em;
+}
+.station-submenu-content > div:first-of-type { /* For Credits/Cargo line */
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+    font-size: 0.95em;
+    color: #aaa;
+}
+
+
+.station-submenu-item-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 1px solid #25282c;
+    background-color: #101214;
+}
+
+.station-submenu-header, .station-submenu-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid #2a2e34;
+    font-size: 0.9em;
+    color: #b0b0b0; /* Default item text color */
+}
+
+.station-submenu-header {
+    font-weight: bold;
+    color: #99FFFF;
+    background-color: rgba(0, 50, 70, 0.3);
+}
+
+.station-submenu-item:last-child {
+    border-bottom: none;
+}
+
+.station-submenu-item:hover {
+    background-color: rgba(0, 100, 100, 0.2);
+    color: #e0e0e0;
+}
+
+.station-submenu-item.selected {
+    background-color: rgba(0, 150, 150, 0.4) !important; /* Ensure override */
+    border-left: 3px solid #00f2ea;
+    padding-left: 7px;
+    color: #ffffff !important;
+}
+
+.station-submenu-col {
+    text-align: left;
+    padding: 0 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.station-submenu-col.col-name { flex: 1 1 30%; min-width: 120px;} /* Allow shrinking but prefer 30% */
+.station-submenu-col.col-qty  { flex: 0 0 80px; text-align: right; } /* Fixed width */
+.station-submenu-col.col-price { flex: 0 0 90px; text-align: right; }/* Fixed width */
+.station-submenu-col.col-stock { flex: 0 0 90px; text-align: right; }/* Fixed width */
+.station-submenu-col.col-owned { flex: 0 0 70px; text-align: center; }/* Fixed width */
+.station-submenu-col.col-current { flex: 0 0 70px; text-align: center; }/* Fixed width */
+.station-submenu-col.col-cargo { flex: 0 0 80px; text-align: right;}/* Fixed width */
+.station-submenu-col.col-reward { flex: 0 0 100px; text-align: right;}/* Fixed width */
+
+
+.station-submenu-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: center; /* Center buttons */
+    gap: 15px; /* Space between buttons */
+}
+
+.station-submenu-actions .station-action-button { /* Sub-menu buttons can use the main style */
+    min-width: 120px;
+}
+
+
+.mission-details-section {
+    margin-top: 5px;
+    padding: 8px;
+    background-color: rgba(10, 40, 50, 0.5);
+    border-radius: 3px;
+    font-size: 0.85em;
+    color: #99FFFF;
+    border-left: 2px solid #00776a; /* Accent for details */
+}
+.mission-details-section p {
+    margin: 4px 0;
+    line-height: 1.3;
+}
+.mission-details-section strong {
+    color: #00f2ea;
+}
+
+
+/* Hide elements of main station UI when sub-menu is active */
+#docked-station-ui.submenu-active .station-viewscreen,
+#docked-station-ui.submenu-active .station-dialogue-area,
+#docked-station-ui.submenu-active .station-button-column, /* Hides both button columns */
+#docked-station-ui.submenu-active .station-planet-info,
+#docked-station-ui.submenu-active .station-footer-text.main-footer {
+    display: none !important;
+}
+
+/* ===== RIGHT HUD PANEL STYLES ===== */
+#right-hud-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 280px; /* Adjust width as needed */
+    height: 100%;
+    background-color: rgba(5, 15, 30, 0.9); /* Dark, slightly transparent */
+    border-left: 2px solid rgba(0, 255, 255, 0.4); /* Cyan border */
+    box-shadow: -5px 0 15px rgba(0, 150, 200, 0.2);
+    color: #99FFFF; /* Light cyan text */
+    font-family: 'Courier New', Courier, monospace;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between sections */
+    z-index: 15; /* Below docked station UI but above game canvas */
+    overflow-y: auto; /* Allow scrolling if content overflows */
+}
+
+#right-hud-panel.hidden {
+    display: none !important;
+}
+
+#right-hud-panel .panel-section {
+    background-color: rgba(0, 30, 40, 0.7);
+    border: 1px solid rgba(0, 150, 200, 0.3);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+#right-hud-panel h4 {
+    color: #00f2ea; /* Bright Cyan */
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+}
+
+#ship-stats-content div {
+    margin-bottom: 5px;
+    font-size: 0.85em;
+}
+#ship-stats-content span {
+    display: inline-block;
+    min-width: 70px; /* For label alignment */
+    color: #00AACC; /* Darker cyan for labels */
+}
+
+#active-missions-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8em;
+}
+#active-missions-list li {
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(0, 150, 200, 0.2);
+    line-height: 1.3;
+}
+#active-missions-list li:last-child {
+    border-bottom: none;
+}
+#active-missions-list li strong { /* Mission title */
+    color: #66FF99; /* Light green */
+}
+
+
+#minimap-section {
+    flex-grow: 1; /* Allow minimap to take remaining space if needed */
+    display: flex;
+    flex-direction: column;
+    min-height: 150px; /* Ensure it has some minimum height */
+}
+#minimapCanvas {
+    width: 100%;
+    /* Height will be set based on aspect ratio or fixed value */
+    height: 200px; /* Example fixed height, adjust as needed */
+    background-color: #05080a; /* Very dark background for minimap */
+    border: 1px solid rgba(0, 100, 120, 0.5);
+    border-radius: 3px;
+    display: block; /* Remove extra space below canvas */
+}
+
+#right-hud-panel .panel-footer {
+    margin-top: auto; /* Push to bottom */
+    text-align: center;
+    font-size: 0.7em;
+    color: rgba(0, 255, 255, 0.3);
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 150, 200, 0.2);
+}
+/* ===== END: hypernova/client/css/style.css ===== */
 /* ===== END: hypernova/client/css/style.css ===== */
 
 
@@ -795,7 +1178,6 @@ function tryDockAction() {
 }
 
 function hyperJumpAction() {
-    // ... (hyperJumpAction from previous version, canvas argument removed as it's not directly used for world logic) ...
     if (
         !gameState.myShip ||
         gameState.myShip.destroyed ||
@@ -820,7 +1202,6 @@ function hyperJumpAction() {
             const distSq =
                 (gameState.myShip.x - planet.x) ** 2 +
                 (gameState.myShip.y - planet.y) ** 2;
-            // Make min distance scale with planet, or use a larger fixed value for full screen
             const minJumpDistSq =
                 MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED *
                 Math.pow(planet.planetImageScale || 1.0, 2) *
@@ -839,11 +1220,10 @@ function hyperJumpAction() {
         }
     }
     console.log("Attempting to request hyperjump from server.");
-    Network.requestHyperjump(); // Server will handle destination selection logic now
+    Network.requestHyperjump();
 }
 
 function cycleWeaponAction(direction) {
-    // ... (cycleWeaponAction from previous version is fine) ...
     if (
         !gameState.myShip ||
         !gameState.myShip.weapons ||
@@ -860,24 +1240,24 @@ function cycleWeaponAction(direction) {
 }
 
 function handleMenuKeyDown(keyLower) {
-    // ... (handleMenuKeyDown from previous version is fine) ...
     if (!gameState.docked || !gameState.myShip) {
         gameState.activeSubMenu = null;
         return;
     }
     if (!gameState.activeSubMenu) {
+        // We are on the main docked station screen
         switch (keyLower) {
-            case "t":
+            case "t": // Trade Center
                 gameState.activeSubMenu = "trade";
                 gameState.selectedTradeIndex = 0;
                 UIManager.renderTradeMenu();
                 break;
-            case "y":
+            case "y": // Shipyard
                 gameState.activeSubMenu = "shipyard";
                 gameState.selectedShipIndex = 0;
                 UIManager.renderShipyardMenu();
                 break;
-            case "o":
+            case "o": // Outfitter
                 gameState.activeSubMenu = "outfitter";
                 const weaponKeysList = Object.keys(
                     gameState.clientGameData.weapons,
@@ -890,7 +1270,7 @@ function handleMenuKeyDown(keyLower) {
                 }
                 UIManager.renderOutfitterMenu();
                 break;
-            case "m":
+            case "m": // Mission BBS
                 gameState.activeSubMenu = "missions";
                 gameState.selectedMissionIndex = 0;
                 gameState.availableMissionsForCurrentPlanet = [];
@@ -902,14 +1282,15 @@ function handleMenuKeyDown(keyLower) {
                     );
                 }
                 break;
-            case "u":
+            case "u": // Undock / Leave
                 Network.undock();
                 break;
         }
     } else {
+        // We are in a sub-menu
         if (keyLower === "escape") {
             gameState.activeSubMenu = null;
-            UIManager.renderMainMenu();
+            UIManager.renderDockedStationInterface(); // Go back to new main docked UI
             return;
         }
         switch (gameState.activeSubMenu) {
@@ -930,7 +1311,7 @@ function handleMenuKeyDown(keyLower) {
                     Network.buyGood(gameState.selectedTradeIndex);
                 else if (keyLower === "s" && numTradeGoods > 0)
                     Network.sellGood(gameState.selectedTradeIndex);
-                UIManager.renderTradeMenu();
+                UIManager.renderTradeMenu(); // Re-render to show selection/update
                 break;
             case "outfitter":
                 const weaponKeys = Object.keys(
@@ -1008,7 +1389,6 @@ function handleMenuKeyDown(keyLower) {
 }
 
 export function processInputs() {
-    // Removed canvas argument, will use gameState.camera or world bounds
     if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked) {
         if (
             gameState.myShip &&
@@ -1021,8 +1401,6 @@ export function processInputs() {
             myShip.vy *= DAMPING;
             myShip.x += myShip.vx;
             myShip.y += myShip.vy;
-            // Player position is not wrapped on client; server is authoritative.
-            // If local world bounds were defined, wrapping would happen here against those.
             Network.sendControls();
         }
         gameState.controls.accelerating = false;
@@ -1051,7 +1429,7 @@ export function processInputs() {
 
     if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;
     if (gameState.controls.rotatingRight) myShip.angle += rotSpd;
-    myShip.angle = wrap(myShip.angle, 2 * Math.PI); // Angles always wrap
+    myShip.angle = wrap(myShip.angle, 2 * Math.PI);
 
     if (gameState.controls.accelerating) {
         myShip.vx += thrust * Math.cos(myShip.angle);
@@ -1068,12 +1446,6 @@ export function processInputs() {
     myShip.x += myShip.vx;
     myShip.y += myShip.vy;
 
-    // Player position wrapping to screen edges is REMOVED.
-    // The server will handle world boundaries if any.
-    // The camera keeps the player in view.
-    // myShip.x = wrap(myShip.x, gameState.camera.width); // No longer wrapping to camera/screen
-    // myShip.y = wrap(myShip.y, gameState.camera.height); // No longer wrapping to camera/screen
-
     Network.sendControls();
 }
 
@@ -1086,21 +1458,18 @@ export function processInputs() {
 console.log("main.js script started");
 
 import { gameState } from "./game_state.js";
-window.gameState = gameState;
+window.gameState = gameState; // For debugging
 
 import { initNetwork } from "./network.js";
 import { Renderer } from "./renderer.js";
 import { initInputListeners, processInputs } from "./input_handler.js";
 import { UIManager } from "./ui_manager.js";
 
-// --- DYNAMIC LOGIN BACKGROUND & MUSIC (from previous update) ---
+// --- DYNAMIC LOGIN BACKGROUND & MUSIC ---
 let loginBgCanvas, loginBgCtx;
 let stars = [];
 let shootingStars = [];
 let loginAnimationId = null;
-
-// const STAR_COLORS = ["#FFFFFF", "#FFFFE0", "#ADD8E6", "#FFDAB9"]; // Not used if stars are white
-// const SHOOTING_STAR_COLOR = "rgba(220, 220, 255, 0.8)"; // Defined in ShootingStar class draw
 
 function getRandom(min, max) {
     return Math.random() * (max - min) + min;
@@ -1139,7 +1508,7 @@ class ShootingStar {
     }
     reset() {
         this.active = true;
-        this.x = Math.random() * loginBgCanvas.width;
+        this.x = Math.random() * (loginBgCanvas?.width || window.innerWidth);
         this.y = 0;
         this.length = getRandom(150, 300);
         this.angle = getRandom(Math.PI * 0.35, Math.PI * 0.65);
@@ -1147,17 +1516,19 @@ class ShootingStar {
         this.opacity = 1;
         this.life = 1;
         const side = Math.random();
+        const canvasWidth = loginBgCanvas?.width || window.innerWidth;
+        const canvasHeight = loginBgCanvas?.height || window.innerHeight;
         if (side < 0.4) {
-            this.x = Math.random() * loginBgCanvas.width;
+            this.x = Math.random() * canvasWidth;
             this.y = -this.length;
             this.angle = getRandom(Math.PI * 0.4, Math.PI * 0.6);
         } else if (side < 0.7) {
             this.x = -this.length;
-            this.y = Math.random() * loginBgCanvas.height * 0.7;
+            this.y = Math.random() * canvasHeight * 0.7;
             this.angle = getRandom(Math.PI * 0.15, Math.PI * 0.35);
         } else {
-            this.x = loginBgCanvas.width + this.length;
-            this.y = Math.random() * loginBgCanvas.height * 0.7;
+            this.x = canvasWidth + this.length;
+            this.y = Math.random() * canvasHeight * 0.7;
             this.angle = getRandom(Math.PI * 0.65, Math.PI * 0.85);
         }
         this.vx = Math.cos(this.angle) * this.speed;
@@ -1168,12 +1539,10 @@ class ShootingStar {
         this.x += this.vx * deltaTime;
         this.y += this.vy * deltaTime;
         this.life -= 0.5 * deltaTime;
-        if (this.life <= 0) {
-            this.active = false;
-        }
+        if (this.life <= 0) this.active = false;
     }
     draw(ctx) {
-        if (!this.active) return;
+        if (!this.active || !ctx) return;
         const tailX = this.x - Math.cos(this.angle) * this.length;
         const tailY = this.y - Math.sin(this.angle) * this.length;
         const gradient = ctx.createLinearGradient(this.x, this.y, tailX, tailY);
@@ -1195,6 +1564,7 @@ class ShootingStar {
     }
 }
 function createStars() {
+    if (!loginBgCanvas) return;
     stars = [];
     const numStars = Math.floor(
         (loginBgCanvas.width * loginBgCanvas.height) / 6000,
@@ -1208,6 +1578,11 @@ function createStars() {
     }
 }
 function animateLoginBackground() {
+    if (!loginBgCtx || !loginBgCanvas) {
+        // Ensure canvas and context exist
+        if (loginAnimationId) cancelAnimationFrame(loginAnimationId);
+        return;
+    }
     loginAnimationId = requestAnimationFrame(animateLoginBackground);
     loginBgCtx.fillStyle = "#00000A";
     loginBgCtx.fillRect(0, 0, loginBgCanvas.width, loginBgCanvas.height);
@@ -1217,11 +1592,9 @@ function animateLoginBackground() {
     });
     if (Math.random() < 0.015) {
         let newShootingStar = shootingStars.find((s) => !s.active);
-        if (newShootingStar) {
-            newShootingStar.reset();
-        } else if (shootingStars.length < 10) {
+        if (newShootingStar) newShootingStar.reset();
+        else if (shootingStars.length < 10)
             shootingStars.push(new ShootingStar());
-        }
     }
     const now = performance.now();
     const deltaTime = (now - (animateLoginBackground.lastTime || now)) / 1000;
@@ -1236,18 +1609,12 @@ function setupLoginMusic() {
     if (music) {
         music.volume = 0.3;
         music.play().catch((error) => {
-            console.warn(
-                "Login music autoplay was prevented by the browser:",
-                error.message,
-            );
+            console.warn("Login music autoplay was prevented:", error.message);
             const playMusicOnClick = () => {
                 music
                     .play()
                     .catch((e) =>
-                        console.warn(
-                            "Still couldn't play music after interaction:",
-                            e.message,
-                        ),
+                        console.warn("Still couldn't play music:", e.message),
                     );
                 document.body.removeEventListener("click", playMusicOnClick);
                 document.body.removeEventListener("keydown", playMusicOnClick);
@@ -1259,15 +1626,11 @@ function setupLoginMusic() {
                 once: true,
             });
         });
-    } else {
-        console.warn("Login music audio element not found.");
-    }
+    } else console.warn("Login music audio element not found.");
 }
 function stopLoginScreenVisualsAndMusic() {
-    if (loginAnimationId) {
-        cancelAnimationFrame(loginAnimationId);
-        loginAnimationId = null;
-    }
+    if (loginAnimationId) cancelAnimationFrame(loginAnimationId);
+    loginAnimationId = null;
     const music = document.getElementById("login-music");
     if (music) {
         music.pause();
@@ -1289,7 +1652,7 @@ function initLoginScreenVisuals() {
         return;
     }
     loginBgCtx = loginBgCanvas.getContext("2d");
-    handleLoginResize();
+    handleLoginResize(); // Initial size and star creation
     animateLoginBackground.lastTime = performance.now();
     animateLoginBackground();
     setupLoginMusic();
@@ -1307,21 +1670,19 @@ function setupGameCanvasFullscreen() {
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        gameState.camera.width = canvas.width; // Update camera state
+        gameState.camera.width = canvas.width;
         gameState.camera.height = canvas.height;
-
-        if (Renderer.isInitialized()) {
+        if (Renderer.isInitialized())
             Renderer.updateViewPort(canvas.width, canvas.height);
-        }
         console.log(`Game canvas resized to: ${canvas.width}x${canvas.height}`);
     }
     window.addEventListener("resize", resizeCanvas, false);
-    resizeCanvas(); // Initial resize
+    resizeCanvas();
 }
 // --- END FULLSCREEN GAMEPLAY SETUP ---
 
 async function loadImages(imagePaths) {
-    console.log("main.js/loadImages function called with paths:", imagePaths);
+    console.log("main.js/loadImages called with paths:", imagePaths);
     const imagePromises = imagePaths.map((path) => {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -1337,22 +1698,16 @@ async function loadImages(imagePaths) {
             img.src = path;
         });
     });
-
     try {
         await Promise.all(imagePromises);
-        console.log(
-            "main.js/loadImages: All images to be loaded have been processed.",
-        );
+        console.log("main.js/loadImages: All images processed.");
     } catch (error) {
-        console.error(
-            "main.js/loadImages: Error during image loading process:",
-            error,
-        );
+        console.error("main.js/loadImages: Error during image loading:", error);
     }
 }
 
 async function handleLoginSubmit(username, password) {
-    console.log(`main.js/handleLoginSubmit called for user: ${username}`);
+    console.log(`main.js/handleLoginSubmit for user: ${username}`);
     const loginErrorEl = document.getElementById("login-error");
     const loginMessageEl = document.getElementById("login-message");
     loginErrorEl.textContent = "";
@@ -1365,52 +1720,40 @@ async function handleLoginSubmit(username, password) {
             body: JSON.stringify({ username, password }),
         });
         const result = await response.json();
-        console.log("main.js/handleLoginSubmit: Login API response:", result);
+        console.log("main.js/handleLoginSubmit: API response:", result);
 
         if (response.ok && result.success) {
             loginMessageEl.textContent = result.message || "Success!";
             gameState.currentUser = { username: result.username };
-
             stopLoginScreenVisualsAndMusic();
-
             document.getElementById("login-screen").classList.add("hidden");
-            const gameContainer = document.getElementById("game-container");
-            gameContainer.classList.remove("hidden");
-
-            setupGameCanvasFullscreen(); // <<<<<<< SETUP FULLSCREEN GAME CANVAS HERE
+            document
+                .getElementById("game-container")
+                .classList.remove("hidden");
+            setupGameCanvasFullscreen();
 
             initNetwork(async () => {
                 console.log(
                     "main.js/onReadyCallback (from initNetwork): START.",
                 );
-
-                // Collect all image paths including system backgrounds
                 const systemBackgroundPaths = gameState.clientGameData.systems
-                    .filter((sys) => sys.backgroundFile) // Make sure backgroundFile exists
+                    .filter((sys) => sys.backgroundFile)
                     .map(
                         (sys) =>
                             `assets/images/backgrounds/${sys.backgroundFile}`,
                     );
-
                 const allImagePaths = [
                     ...new Set([
                         ...gameState.imagePathsToLoad,
                         ...systemBackgroundPaths,
                     ]),
                 ];
-                // gameState.imagePathsToLoad = allImagePaths; // Update master list if needed elsewhere
+                if (allImagePaths.length > 0) await loadImages(allImagePaths);
+                else console.log("main.js/onReadyCallback: No images to load.");
 
-                if (allImagePaths.length > 0) {
-                    await loadImages(allImagePaths);
-                    console.log(
-                        "main.js/onReadyCallback: Image loading process complete for all images.",
-                    );
-                } else {
-                    console.log("main.js/onReadyCallback: No images to load.");
-                }
+                await loadProgress(); // Load progress after images and gameData are ready
 
-                await loadProgress();
-
+                // Ensure myShip defaults are set if necessary after progress load
                 if (gameState.myId && !gameState.myShip) {
                     gameState.allShips[gameState.myId] =
                         gameState.allShips[gameState.myId] || {};
@@ -1423,9 +1766,10 @@ async function handleLoginSubmit(username, password) {
                 ) {
                     gameState.defaultShipProps(gameState.myShip);
                 }
-
-                const canvas = document.getElementById("gameCanvas");
-                if (canvas) canvas.focus();
+                // UIManager.init might need to be called here if it depends on elements only visible after login
+                // However, it's currently called on DOMContentLoaded. Ensure #ui is present.
+                const canvasEl = document.getElementById("gameCanvas");
+                if (canvasEl) canvasEl.focus();
 
                 lastTime = performance.now();
                 requestAnimationFrame(gameLoop);
@@ -1435,20 +1779,15 @@ async function handleLoginSubmit(username, password) {
                 result.message || "Login/Registration failed.";
         }
     } catch (error) {
-        console.error(
-            "main.js/handleLoginSubmit: Login request fetch failed:",
-            error,
-        );
+        console.error("main.js/handleLoginSubmit: Fetch failed:", error);
         loginErrorEl.textContent = "Login request error. Check console.";
     }
 }
 
 async function loadProgress() {
-    console.log("main.js/loadProgress: Function called.");
+    console.log("main.js/loadProgress: Called.");
     if (!gameState.currentUser || !gameState.currentUser.username) {
-        console.log(
-            "main.js/loadProgress: No current user or username, returning.",
-        );
+        console.log("main.js/loadProgress: No current user, returning.");
         return;
     }
     try {
@@ -1459,10 +1798,11 @@ async function loadProgress() {
             const progress = await response.json();
             if (progress && progress.shipData) {
                 if (gameState.myId) {
-                    if (!gameState.allShips[gameState.myId]) {
+                    // If myId is already known (init from network happened)
+                    if (!gameState.allShips[gameState.myId])
                         gameState.allShips[gameState.myId] = {};
-                    }
-                    gameState.updateShipData(gameState.myId, progress.shipData);
+                    gameState.updateShipData(gameState.myId, progress.shipData); // This calls defaultShipProps
+
                     const syncData = {
                         credits: progress.shipData.credits,
                         cargo: progress.shipData.cargo,
@@ -1487,26 +1827,28 @@ async function loadProgress() {
                         syncData.vy = progress.shipData.vy;
                         syncData.system = progress.shipData.system;
                     }
-                    if (gameState.socket) {
+                    if (gameState.socket)
                         gameState.socket.emit(
                             "clientLoadedDockedState",
                             syncData,
                         );
-                    }
                 } else {
+                    // myId not known yet, store progress to apply once 'init' is received
                     gameState.pendingProgressToApply = progress;
                 }
             } else {
+                // No progress data or empty shipData
                 gameState.docked = false;
                 gameState.dockedAtDetails = null;
             }
         } else {
+            // Response not OK
             gameState.docked = false;
             gameState.dockedAtDetails = null;
         }
     } catch (error) {
         console.error(
-            "main.js/loadProgress: Error during fetch/processing in loadProgress:",
+            "main.js/loadProgress: Error during fetch/processing:",
             error,
         );
         gameState.docked = false;
@@ -1526,8 +1868,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const canvas = document.getElementById("gameCanvas");
-    const uiContainer = document.getElementById("ui");
-    const gameContainer = document.getElementById("game-container");
+    const uiContainer = document.getElementById("ui"); // UIManager uses this
+    const gameContainer = document.getElementById("game-container"); // Not directly used by modules but good to check
 
     if (!canvas || !uiContainer || !gameContainer) {
         console.error(
@@ -1535,14 +1877,12 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         return;
     }
-    if (canvas) {
-        if (!canvas.hasAttribute("tabindex")) {
-            canvas.setAttribute("tabindex", "0");
-        }
+    if (canvas && !canvas.hasAttribute("tabindex")) {
+        canvas.setAttribute("tabindex", "0");
     }
 
-    Renderer.init(canvas);
-    UIManager.init(uiContainer);
+    Renderer.init(canvas); // Renderer now also inits minimap canvas
+    UIManager.init(uiContainer); // UIManager inits its references, including to right-hud-panel elements
     initInputListeners(canvas);
 
     const loginForm = document.getElementById("login-form");
@@ -1561,35 +1901,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-let gameLoopFrameCount = 0;
+// let gameLoopFrameCount = 0; // Not currently used
 let lastTime = 0;
 
 function gameLoop(timestamp) {
-    gameLoopFrameCount++;
+    // gameLoopFrameCount++; // Not currently used
+    const deltaTime = (timestamp - lastTime) / 1000; // Delta time in seconds
     lastTime = timestamp;
 
-    // const canvas = document.getElementById("gameCanvas"); // Not needed here directly
-
     if (gameState.currentUser && gameState.myId && gameState.myShip) {
-        // Update camera to follow player
         if (gameState.myShip) {
-            // Simple direct centering
             gameState.camera.x =
                 gameState.myShip.x - gameState.camera.width / 2;
             gameState.camera.y =
                 gameState.myShip.y - gameState.camera.height / 2;
-
-            // Optional: Smooth camera movement (lerp)
-            // const targetX = gameState.myShip.x - gameState.camera.width / 2;
-            // const targetY = gameState.myShip.y - gameState.camera.height / 2;
-            // gameState.camera.x += (targetX - gameState.camera.x) * gameState.camera.lerpFactor;
-            // gameState.camera.y += (targetY - gameState.camera.y) * gameState.camera.lerpFactor;
         }
 
         if (!gameState.docked) {
-            processInputs(); // Canvas argument no longer needed as it refers to gameState.camera
+            processInputs();
+        } else {
+            // If docked, and right HUD panel is visible, potentially update its content periodically
+            // For now, it's updated on openDockMenu.
+            // If stats like credits can change while docked through other means, this would be a place to call:
+            // UIManager.updateShipStatsPanel();
+            // UIManager.updateActiveMissionsPanel();
         }
-        Renderer.draw();
+        Renderer.draw(); // Main game renderer
     }
     requestAnimationFrame(gameLoop);
 }
@@ -2154,6 +2491,8 @@ import {
 
 let ctx = null;
 let canvas = null;
+let minimapCanvas = null; // For the new minimap
+let minimapCtx = null;
 let initialized = false;
 
 // Parallax background properties
@@ -2183,15 +2522,15 @@ const PARALLAX_LAYERS = [
         opacity: 0.8,
     },
 ];
-let lastCameraX = 0;
-let lastCameraY = 0;
+// let lastCameraX = 0; // Not currently used, but kept if needed later
+// let lastCameraY = 0;
 
 function getRandom(min, max) {
     return Math.random() * (max - min) + min;
 }
 
 function generateParallaxStars() {
-    if (!canvas) return; // Ensure canvas is available
+    if (!canvas) return;
     PARALLAX_LAYERS.forEach((layer) => {
         layer.stars = [];
         const numStars = Math.floor(
@@ -2199,9 +2538,7 @@ function generateParallaxStars() {
         );
         for (let i = 0; i < numStars; i++) {
             layer.stars.push({
-                // Store initial positions relative to a large world, not just screen
-                // For simplicity here, still using canvas width/height but imagine this as a section of a larger field
-                x: Math.random() * canvas.width * 3 - canvas.width, // Spread stars over a wider initial area
+                x: Math.random() * canvas.width * 3 - canvas.width,
                 y: Math.random() * canvas.height * 3 - canvas.height,
                 radius: getRandom(layer.minStarSize, layer.maxStarSize),
                 opacity: getRandom(layer.opacity * 0.5, layer.opacity),
@@ -2211,15 +2548,27 @@ function generateParallaxStars() {
 }
 
 export const Renderer = {
-    init(canvasElement) {
-        canvas = canvasElement;
+    init(mainCanvasElement) {
+        canvas = mainCanvasElement;
         ctx = canvas.getContext("2d");
-        // Fullscreen setup is handled in main.js, which also updates gameState.camera.width/height
+
+        minimapCanvas = document.getElementById("minimapCanvas");
+        if (minimapCanvas) {
+            minimapCtx = minimapCanvas.getContext("2d");
+            // Set minimap canvas fixed size or make it responsive based on its container
+            // For now, CSS sets its height, width is 100% of container.
+            // If its container size changes, this might need adjustment or call from resize.
+            minimapCanvas.width = minimapCanvas.clientWidth;
+            minimapCanvas.height = minimapCanvas.clientHeight;
+        } else {
+            console.warn("Minimap canvas not found!");
+        }
+
         gameState.camera.width = canvas.width;
         gameState.camera.height = canvas.height;
         generateParallaxStars();
-        lastCameraX = gameState.camera.x;
-        lastCameraY = gameState.camera.y;
+        // lastCameraX = gameState.camera.x; // Not currently used
+        // lastCameraY = gameState.camera.y; // Not currently used
         initialized = true;
         console.log(
             "Renderer initialized with canvas:",
@@ -2234,17 +2583,16 @@ export const Renderer = {
     },
 
     updateViewPort(width, height) {
-        if (canvas) {
-            // canvas.width and height are already set by main.js's resizeCanvas
-        }
+        // canvas.width and height are already set by main.js's resizeCanvas
         // gameState.camera.width and height are also set by main.js's resizeCanvas
-        generateParallaxStars();
-        console.log(
-            "Renderer viewport updated via main.js:",
-            width,
-            "x",
-            height,
-        );
+        generateParallaxStars(); // Regenerate parallax stars for new viewport size
+
+        // Update minimap canvas size if it's tied to viewport changes (optional)
+        if (minimapCanvas) {
+            minimapCanvas.width = minimapCanvas.clientWidth;
+            minimapCanvas.height = minimapCanvas.clientHeight;
+        }
+        console.log("Renderer viewport updated:", width, "x", height);
     },
 
     drawSystemBackground() {
@@ -2260,25 +2608,21 @@ export const Renderer = {
             if (bgImg) {
                 const camX = gameState.camera.x;
                 const camY = gameState.camera.y;
-                const parallaxFactor = 0.1; // Slowest layer for main background image
+                const parallaxFactor = 0.1;
 
                 const imgWidth = bgImg.width;
                 const imgHeight = bgImg.height;
 
-                // Calculate the starting tile based on camera position
-                // This ensures we only draw visible tiles + one extra for smooth scrolling
                 const startX =
                     Math.floor((camX * parallaxFactor) / imgWidth) * imgWidth;
                 const startY =
                     Math.floor((camY * parallaxFactor) / imgHeight) * imgHeight;
 
                 ctx.save();
-                // Translate context by the inverse of the parallax-affected camera position
                 ctx.translate(
                     -(camX * parallaxFactor),
                     -(camY * parallaxFactor),
                 );
-
                 for (
                     let x = startX - imgWidth;
                     x <
@@ -2313,22 +2657,16 @@ export const Renderer = {
         const camY = gameState.camera.y;
 
         PARALLAX_LAYERS.forEach((layer) => {
-            ctx.beginPath(); // Start a new path for each layer for performance
+            ctx.beginPath();
             layer.stars.forEach((star) => {
-                // Calculate star's apparent position on screen
-                // The star's own (x,y) are its "world" coordinates for that layer
-                // We offset by camera movement scaled by parallax speed
                 const screenX = (star.x - camX * layer.speed) % canvas.width;
                 const screenY = (star.y - camY * layer.speed) % canvas.height;
-
-                // Adjust for negative modulo results to keep it within canvas bounds
                 const finalX = screenX < 0 ? screenX + canvas.width : screenX;
                 const finalY = screenY < 0 ? screenY + canvas.height : screenY;
-
-                ctx.moveTo(finalX + star.radius, finalY); // moveTo before arc for batching
+                ctx.moveTo(finalX + star.radius, finalY);
                 ctx.arc(finalX, finalY, star.radius, 0, Math.PI * 2);
             });
-            ctx.fillStyle = `rgba(255, 255, 240, layer.opacity)`; // Use layer's base opacity
+            ctx.fillStyle = `rgba(255, 255, 240, ${layer.opacity})`; // Use layer's base opacity here, not string literal 'layer.opacity'
             ctx.fill();
         });
     },
@@ -2379,7 +2717,7 @@ export const Renderer = {
                     ctx.fillStyle = ship.color || "#0f0";
                     ctx.font = "12px monospace";
                     ctx.textAlign = "center";
-                    const displayName = ship.username || id.substring(0, 6); // Prefer username
+                    const displayName = ship.username || id.substring(0, 6);
                     ctx.fillText(displayName, ship.x, ship.y - labelOffset);
                     ctx.textAlign = "left";
                 }
@@ -2387,13 +2725,12 @@ export const Renderer = {
         }
         ctx.restore();
         this.drawHUD();
+        // Minimap is drawn on demand when panel is shown/updated by UIManager
     },
 
     drawPlanet(planet) {
         const img = gameState.loadedImages[planet.imageFile];
-        // Define a base render size for planets, then scale it.
-        // This base size should correspond to how large a 1.0 scale planet image is intended to be.
-        const BASE_PLANET_RENDER_SIZE = 128; // e.g., if your planet_hires.png are designed for this size at scale 1
+        const BASE_PLANET_RENDER_SIZE = 128;
         const scale = planet.planetImageScale || 1.0;
         const renderSize = BASE_PLANET_RENDER_SIZE * scale;
 
@@ -2406,7 +2743,6 @@ export const Renderer = {
                 renderSize,
                 renderSize,
             );
-
             ctx.globalCompositeOperation = "lighter";
             const glowRadius = renderSize * 0.65;
             const gradient = ctx.createRadialGradient(
@@ -2425,31 +2761,29 @@ export const Renderer = {
             ctx.arc(planet.x, planet.y, glowRadius, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalCompositeOperation = "source-over";
-
             ctx.restore();
         } else {
-            ctx.fillStyle = planet.fallbackColor || "#335577"; // Darker blue/grey fallback
+            ctx.fillStyle = planet.fallbackColor || "#335577";
             ctx.beginPath();
             ctx.arc(planet.x, planet.y, renderSize / 2, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        ctx.fillStyle = "#E0E8FF"; // Light, slightly bluish white for planet names
-        ctx.font = `${Math.max(10, 12 * scale)}px monospace`; // Ensure font not too small
+        ctx.fillStyle = "#E0E8FF";
+        ctx.font = `${Math.max(10, 12 * scale)}px monospace`;
         ctx.textAlign = "center";
-        ctx.shadowColor = "black"; // Text shadow for readability
+        ctx.shadowColor = "black";
         ctx.shadowBlur = 2;
         ctx.fillText(
             planet.name,
             planet.x,
             planet.y + renderSize / 2 + Math.max(12, 15 * scale),
         );
-        ctx.shadowBlur = 0; // Reset shadow
+        ctx.shadowBlur = 0;
         ctx.textAlign = "left";
     },
 
     drawShip(ship) {
-        /* ... (drawShip from previous, ensure scale is used if defined) ... */
         if (ship.destroyed || ship.type === undefined) return;
         const shipTypeDefinition =
             gameState.clientGameData.shipTypes[ship.type];
@@ -2478,7 +2812,6 @@ export const Renderer = {
     },
 
     drawProjectile(p) {
-        /* ... (drawProjectile from previous with glow) ... */
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.angle);
@@ -2494,7 +2827,6 @@ export const Renderer = {
     },
 
     drawHUD() {
-        /* ... (HUD drawing from previous) ... */
         ctx.font = "14px monospace";
         ctx.fillStyle = "#00FF00";
 
@@ -2543,7 +2875,7 @@ export const Renderer = {
             hudPadding + 14,
         );
         ctx.fillText(
-            `Credits: $${myShip.credits}`,
+            `Credits: $${myShip.credits.toLocaleString()}`,
             hudPadding,
             hudPadding + 32,
         );
@@ -2665,6 +2997,121 @@ export const Renderer = {
             }
         }
     },
+
+    drawMinimap() {
+        if (
+            !minimapCtx ||
+            !minimapCanvas ||
+            !gameState.myShip ||
+            gameState.myShip.system === undefined
+        ) {
+            if (minimapCtx) {
+                // Clear if context exists but cannot draw
+                minimapCtx.fillStyle = "#05080a";
+                minimapCtx.fillRect(
+                    0,
+                    0,
+                    minimapCanvas.width,
+                    minimapCanvas.height,
+                );
+            }
+            return;
+        }
+
+        minimapCtx.fillStyle = "#05080a"; // Very dark background
+        minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+
+        const currentSystemData =
+            gameState.clientGameData.systems[gameState.myShip.system];
+        if (!currentSystemData || !currentSystemData.planets) return;
+
+        // Determine bounds of the current system to scale to minimap
+        let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
+        currentSystemData.planets.forEach((p) => {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
+        // Include player ship in bounds calculation
+        if (gameState.myShip.x < minX) minX = gameState.myShip.x;
+        if (gameState.myShip.x > maxX) maxX = gameState.myShip.x;
+        if (gameState.myShip.y < minY) minY = gameState.myShip.y;
+        if (gameState.myShip.y > maxY) maxY = gameState.myShip.y;
+
+        const systemWidth = Math.max(500, maxX - minX); // Ensure a minimum extent
+        const systemHeight = Math.max(500, maxY - minY);
+        const systemCenterX = minX + systemWidth / 2;
+        const systemCenterY = minY + systemHeight / 2;
+
+        const mapPadding = 10; // Padding inside the minimap canvas
+        const mapDrawableWidth = minimapCanvas.width - 2 * mapPadding;
+        const mapDrawableHeight = minimapCanvas.height - 2 * mapPadding;
+
+        const scaleX = mapDrawableWidth / systemWidth;
+        const scaleY = mapDrawableHeight / systemHeight;
+        const scale = Math.min(scaleX, scaleY) * 0.9; // Use 90% of the smallest scale to ensure fit
+
+        minimapCtx.save();
+        minimapCtx.translate(minimapCanvas.width / 2, minimapCanvas.height / 2); // Center the drawing origin
+
+        // Draw planets
+        currentSystemData.planets.forEach((p) => {
+            const mapX = (p.x - systemCenterX) * scale;
+            const mapY = (p.y - systemCenterY) * scale;
+            const planetRadius = (p.planetImageScale || 1.0) * 3 * scale + 2; // Scaled radius
+
+            minimapCtx.fillStyle = p.fallbackColor || "#557799";
+            minimapCtx.beginPath();
+            minimapCtx.arc(
+                mapX,
+                mapY,
+                Math.max(2, planetRadius),
+                0,
+                Math.PI * 2,
+            );
+            minimapCtx.fill();
+
+            minimapCtx.fillStyle = "#ccc";
+            minimapCtx.font = `${Math.max(6, 8 * scale)}px monospace`;
+            minimapCtx.textAlign = "center";
+            minimapCtx.fillText(
+                p.name.substring(0, 3),
+                mapX,
+                mapY + planetRadius + 8 * scale,
+            );
+        });
+
+        // Draw player ship
+        const playerMapX = (gameState.myShip.x - systemCenterX) * scale;
+        const playerMapY = (gameState.myShip.y - systemCenterY) * scale;
+        minimapCtx.fillStyle = "#00FF00"; // Player color
+        minimapCtx.beginPath();
+        minimapCtx.arc(
+            playerMapX,
+            playerMapY,
+            Math.max(2, 3 * scale),
+            0,
+            Math.PI * 2,
+        ); // Player dot size
+        minimapCtx.fill();
+        // Simple triangle for player orientation
+        minimapCtx.save();
+        minimapCtx.translate(playerMapX, playerMapY);
+        minimapCtx.rotate(gameState.myShip.angle);
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(5 * scale, 0);
+        minimapCtx.lineTo(-2 * scale, -2 * scale);
+        minimapCtx.lineTo(-2 * scale, 2 * scale);
+        minimapCtx.closePath();
+        minimapCtx.fill();
+        minimapCtx.restore();
+
+        minimapCtx.restore();
+    },
 };
 
 /* ===== END: hypernova/client/js/renderer.js ===== */
@@ -2673,14 +3120,22 @@ export const Renderer = {
 /* ===== START: hypernova/client/js/ui_manager.js ===== */
 // client/js/ui_manager.js
 import { gameState } from "./game_state.js";
-import * as Network from "./network.js"; // To send actions like buy/sell/undock
+import * as Network from "./network.js";
+import { Renderer } from "./renderer.js"; // Import Renderer
 
 let uiContainer = null;
-let dockMenuElement = null;
+let dockMenuElement = null; // This is the container for the main station UI and sub-menus
+let rightHudPanel = null;
+let shipStatsContentDiv = null;
+let activeMissionsListUl = null;
 
 export const UIManager = {
     init(containerElement) {
         uiContainer = containerElement;
+        rightHudPanel = document.getElementById("right-hud-panel");
+        shipStatsContentDiv = document.getElementById("ship-stats-content");
+        activeMissionsListUl = document.getElementById("active-missions-list");
+        // Minimap canvas will be initialized and drawn by Renderer
     },
 
     isMenuOpen() {
@@ -2688,24 +3143,26 @@ export const UIManager = {
     },
 
     openDockMenu() {
-        if (dockMenuElement) this.closeDockMenu(); // Should not happen, but safeguard
+        // This is for the main station interaction UI
+        if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
+            uiContainer.removeChild(dockMenuElement);
+        }
 
         gameState.isMenuOpen = true;
-        gameState.activeSubMenu = null; // Start at main dock menu
+        gameState.activeSubMenu = null;
         document.body.classList.add("no-scroll");
 
         dockMenuElement = document.createElement("div");
-        dockMenuElement.className = "panel";
-        dockMenuElement.style.top = "50%";
-        dockMenuElement.style.left = "50%";
-        dockMenuElement.style.transform = "translate(-50%,-50%)";
-
-        this.renderMainMenu();
         uiContainer.appendChild(dockMenuElement);
+
+        this.renderDockedStationInterface();
+        this.showRightHudPanel(); // Show and update the side panel
     },
 
     closeDockMenu() {
+        // Closes the main station interaction UI
         if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
+            dockMenuElement.innerHTML = "";
             uiContainer.removeChild(dockMenuElement);
         }
         dockMenuElement = null;
@@ -2716,56 +3173,269 @@ export const UIManager = {
         gameState.selectedShipIndex = 0;
         gameState.selectedMissionIndex = 0;
         document.body.classList.remove("no-scroll");
+        // Hiding the right HUD panel is handled by undockCleanup
     },
 
-    // Called by network.js when server confirms undock or player jumps
     undockCleanup() {
         gameState.docked = false;
         gameState.dockedAtDetails = null;
         this.closeDockMenu();
-        // myShip.dockedAtPlanetIdentifier is set by server state update
+        this.hideRightHudPanel(); // Hide the side panel when undocking
     },
 
-    renderMainMenu() {
-        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
+    showRightHudPanel() {
+        if (rightHudPanel) {
+            rightHudPanel.classList.remove("hidden");
+            this.updateShipStatsPanel();
+            this.updateActiveMissionsPanel();
+            Renderer.drawMinimap(); // Tell the renderer to draw the minimap
+        }
+    },
+
+    hideRightHudPanel() {
+        if (rightHudPanel) {
+            rightHudPanel.classList.add("hidden");
+        }
+    },
+
+    updateShipStatsPanel() {
+        if (!shipStatsContentDiv || !gameState.myShip || !gameState.currentUser)
             return;
 
         const myShip = gameState.myShip;
-        const currentShipDef =
-            gameState.clientGameData.shipTypes[myShip.type || 0];
-        if (!currentShipDef) return; // Ship def not loaded
+        const shipType = gameState.clientGameData.shipTypes[myShip.type || 0];
+        const shipTypeName = shipType ? shipType.name : "Unknown";
+        const cargoCount = myShip.cargo
+            ? myShip.cargo.reduce((s, v) => s + v, 0)
+            : 0;
+        const maxCargo = shipType ? shipType.maxCargo : myShip.maxCargo || 0;
 
-        const cargoCount = myShip.cargo.reduce((s, v) => s + v, 0);
-
-        dockMenuElement.innerHTML = `
-          <div class="menu-item"><b>Docked at ${gameState.dockedAtDetails.planetName} (${gameState.dockedAtDetails.systemName})</b></div>
-          <div class="menu-item">Credits: $${myShip.credits}</div>
-          <div class="menu-item">Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>
-          <div class="menu-item">---</div>
-          <div class="menu-item">T - Trade</div>
-          <div class="menu-item">Y - Shipyard</div>
-          <div class="menu-item">O - Outfitter</div>
-          <div class="menu-item">M - Missions</div>
-          <div class="menu-item">U - Undock</div>
-          <div class="menu-item" style="margin-top: 10px; font-size: 0.9em;">(Use Arrow Keys, Enter/Specific Keys, Esc)</div>
+        shipStatsContentDiv.innerHTML = `
+            <div><span>Pilot:</span> ${gameState.currentUser.username}</div>
+            <div><span>Ship:</span> ${shipTypeName}</div>
+            <div><span>Credits:</span> $${myShip.credits.toLocaleString()}</div>
+            <div><span>Health:</span> ${myShip.health || 0} / ${myShip.maxHealth || 0}</div>
+            <div><span>Cargo:</span> ${cargoCount} / ${maxCargo}</div>
         `;
     },
 
-    renderTradeMenu() {
-        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
+    updateActiveMissionsPanel() {
+        if (!activeMissionsListUl || !gameState.myShip) return;
+
+        activeMissionsListUl.innerHTML = "";
+
+        if (
+            gameState.myShip.activeMissions &&
+            gameState.myShip.activeMissions.length > 0
+        ) {
+            gameState.myShip.activeMissions.slice(0, 5).forEach((mission) => {
+                const li = document.createElement("li");
+                let missionText = `<strong>${mission.title}</strong>`;
+                if (
+                    mission.type ===
+                    gameState.clientGameData.MISSION_TYPES.BOUNTY
+                ) {
+                    missionText += ` (${mission.targetsDestroyed || 0}/${mission.targetsRequired})`;
+                }
+                const timeRemainingMin = Math.max(
+                    0,
+                    Math.round((mission.timeLimit - Date.now()) / 60000),
+                );
+                missionText += ` (${timeRemainingMin}m left)`;
+                li.innerHTML = missionText;
+                activeMissionsListUl.appendChild(li);
+            });
+        } else {
+            activeMissionsListUl.innerHTML = "<li>No active missions.</li>";
+        }
+    },
+
+    _prepareSubMenuHost() {
+        if (!dockMenuElement) {
+            console.error(
+                "Dock menu element does not exist. Cannot prepare sub-menu host.",
+            );
+            this.openDockMenu();
+            if (!dockMenuElement) return null;
+        }
+        let stationUI = dockMenuElement.querySelector("#docked-station-ui");
+        if (!stationUI) {
+            this.renderDockedStationInterface();
+            stationUI = dockMenuElement.querySelector("#docked-station-ui");
+            if (!stationUI) {
+                console.error(
+                    "Failed to create #docked-station-ui for sub-menu.",
+                );
+                return null;
+            }
+        }
+
+        stationUI.classList.add("submenu-active");
+        const contentHost = stationUI.querySelector(".station-content-area");
+        if (!contentHost) {
+            console.error(
+                ".station-content-area not found within #docked-station-ui",
+            );
+            return null;
+        }
+        contentHost.innerHTML = "";
+        return contentHost;
+    },
+
+    renderDockedStationInterface() {
+        if (!dockMenuElement) {
+            if (uiContainer) {
+                dockMenuElement = document.createElement("div");
+                uiContainer.appendChild(dockMenuElement);
+            } else {
+                console.error(
+                    "UIManager: uiContainer not initialized, cannot create dockMenuElement.",
+                );
+                return;
+            }
+        }
+        if (!gameState.dockedAtDetails || !gameState.myShip) {
             return;
+        }
+
+        gameState.activeSubMenu = null;
+        dockMenuElement.innerHTML = "";
+
+        const planetName = gameState.dockedAtDetails.planetName;
+        const systemName = gameState.dockedAtDetails.systemName;
+        const planetDescriptions = {
+            Alpha: "A bustling trade hub in the Greek system, known for its agricultural surplus.",
+            Delta: "Rich in mineral wealth, Delta is a key mining outpost.",
+            Sol: "The cradle of humanity in the Roman system, a political and cultural center.",
+            Mars: "A rugged, terraformed world, primarily exporting raw ores.",
+            Beta: "A temperate planet in Nordic space, balancing agriculture and mining.",
+            Nile: "An arid world in the Egyptian system with surprisingly fertile river valleys.",
+            Giza: "Known for its ancient alien ruins and valuable ore deposits.",
+            Tara: "A verdant, spiritual center in the Celtic system, specializing in advanced medicines.",
+            Avalon: "A technologically advanced world, famous for its electronics manufacturing.",
+        };
+        const description =
+            planetDescriptions[planetName] ||
+            "No detailed information available for this planet.";
+
+        const html = `
+            <div id="docked-station-ui">
+                <div class="station-viewscreen">
+                    Docked at ${planetName} Station Control<br/>
+                    System: ${systemName}
+                </div>
+                <div class="station-dialogue-area">
+                    <p>Welcome to ${planetName}, Captain ${gameState.currentUser.username}. All systems nominal. Please select an option from the terminal.</p>
+                    <button id="station-dialogue-okay">Okay</button>
+                </div>
+                <div class="station-content-area">
+                    <div class="station-button-column">
+                        <button id="station-bar-btn" class="station-action-button">Bar</button>
+                        <button id="station-missions-btn" class="station-action-button">Mission BBS</button>
+                        <button id="station-trade-btn" class="station-action-button">Trade Center</button>
+                    </div>
+                    <div class="station-planet-info">
+                        <h3>${planetName} - ${systemName}</h3>
+                        <p>${description}</p>
+                        <p>Credits: $${gameState.myShip.credits.toLocaleString()}</p>
+                    </div>
+                    <div class="station-button-column">
+                        <button id="station-shipyard-btn" class="station-action-button">Shipyard</button>
+                        <button id="station-outfitter-btn" class="station-action-button">Outfitter</button>
+                        <button id="station-recharge-btn" class="station-action-button">Recharge</button>
+                        <button id="station-leave-btn" class="station-action-button">Leave</button>
+                    </div>
+                </div>
+                <div class="station-footer-text main-footer">HyperNova Secure Terminal v2.7.4</div>
+            </div>
+        `;
+        dockMenuElement.innerHTML = html;
+
+        document
+            .getElementById("station-dialogue-okay")
+            ?.addEventListener("click", () => {
+                const dialogueBox = dockMenuElement.querySelector(
+                    ".station-dialogue-area",
+                );
+                if (dialogueBox) dialogueBox.style.display = "none";
+            });
+        document
+            .getElementById("station-bar-btn")
+            ?.addEventListener("click", () => alert("Bar: Not implemented."));
+        document
+            .getElementById("station-recharge-btn")
+            ?.addEventListener("click", () =>
+                alert("Recharge: Not implemented."),
+            );
+        document
+            .getElementById("station-leave-btn")
+            ?.addEventListener("click", () => Network.undock());
+
+        document
+            .getElementById("station-trade-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "trade";
+                gameState.selectedTradeIndex = 0;
+                this.renderTradeMenu();
+            });
+        document
+            .getElementById("station-shipyard-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "shipyard";
+                gameState.selectedShipIndex = 0;
+                this.renderShipyardMenu();
+            });
+        document
+            .getElementById("station-outfitter-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "outfitter";
+                const weaponKeysList = Object.keys(
+                    gameState.clientGameData.weapons,
+                );
+                if (
+                    !gameState.selectedWeaponKey ||
+                    !weaponKeysList.includes(gameState.selectedWeaponKey)
+                ) {
+                    gameState.selectedWeaponKey = weaponKeysList[0] || null;
+                }
+                this.renderOutfitterMenu();
+            });
+        document
+            .getElementById("station-missions-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "missions";
+                gameState.selectedMissionIndex = 0;
+                gameState.availableMissionsForCurrentPlanet = [];
+                this.renderMissionsMenu();
+                if (gameState.dockedAtDetails) {
+                    Network.requestMissions(
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+            });
+    },
+
+    renderTradeMenu() {
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.dockedAtDetails || !gameState.myShip) return;
+
         const myShip = gameState.myShip;
         const currentShipDef =
             gameState.clientGameData.shipTypes[myShip.type || 0];
         if (!currentShipDef) return;
-
-        const cargoCount = myShip.cargo.reduce((s, v) => s + v, 0);
-        let html = `<div class="menu-item"><b>Trade at ${gameState.dockedAtDetails.planetName}</b></div>`;
-        html += `<div class="menu-item">Credits: $${myShip.credits} Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Good&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Qty&nbsp;&nbsp;&nbsp;Buy&nbsp;&nbsp;&nbsp;&nbsp;Sell&nbsp;&nbsp;&nbsp;Stock</u></div>`;
-
-        // Use dockedAtDetails for prices/stock, as it's updated on tradeSuccess directly
+        const cargoCount = myShip.cargo
+            ? myShip.cargo.reduce((s, v) => s + v, 0)
+            : 0;
         const planetEco = gameState.dockedAtDetails;
+
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Good</span>
+                            <span class="station-submenu-col col-qty">Qty</span>
+                            <span class="station-submenu-col col-price">Buy</span>
+                            <span class="station-submenu-col col-price">Sell</span>
+                            <span class="station-submenu-col col-stock">Stock</span>
+                         </div>`;
 
         if (
             !planetEco ||
@@ -2773,7 +3443,8 @@ export const UIManager = {
             !planetEco.sellPrices ||
             !planetEco.stock
         ) {
-            html += "<div>Loading prices...</div>";
+            itemsHtml +=
+                "<div class='station-submenu-item'>Loading prices...</div>";
         } else {
             gameState.clientGameData.tradeGoods.forEach((g, i) => {
                 const buyP =
@@ -2789,102 +3460,178 @@ export const UIManager = {
                         ? planetEco.stock[g.name]
                         : 0;
                 const selectedClass =
-                    i === gameState.selectedTradeIndex
-                        ? "trade-item-selected"
-                        : "";
-
-                html +=
-                    `<div class="menu-item ${selectedClass}">${g.name.padEnd(12, " ")} ${myShip.cargo[i].toString().padStart(3, " ")} ` +
-                    `$${buyP.toString().padStart(4, " ")} $${sellP.toString().padStart(4, " ")} ${stockVal.toString().padStart(5, " ")}</div>`;
+                    i === gameState.selectedTradeIndex ? "selected" : "";
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name">${g.name}</span>
+                        <span class="station-submenu-col col-qty">${myShip.cargo[i]}</span>
+                        <span class="station-submenu-col col-price">$${buyP}</span>
+                        <span class="station-submenu-col col-price">$${sellP}</span>
+                        <span class="station-submenu-col col-stock">${stockVal}</span>
+                    </div>`;
             });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy. S: Sell. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Trade Center - ${planetEco.planetName}</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()} | Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buy-btn" class="station-action-button">Buy (B)</button>
+                    <button id="submenu-sell-btn" class="station-action-button">Sell (S)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-buy-btn")
+            ?.addEventListener("click", () =>
+                Network.buyGood(gameState.selectedTradeIndex),
+            );
+        document
+            .getElementById("submenu-sell-btn")
+            ?.addEventListener("click", () =>
+                Network.sellGood(gameState.selectedTradeIndex),
+            );
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 
     renderOutfitterMenu() {
-        if (
-            !dockMenuElement ||
-            !gameState.myShip ||
-            !gameState.clientGameData.weapons
-        )
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.myShip || !gameState.clientGameData.weapons)
             return;
-        const myShip = gameState.myShip;
-        let html = `<div class="menu-item"><b>Outfitter</b></div>`;
-        html += `<div class="menu-item">Credits: $${myShip.credits}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Weapon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Price&nbsp;&nbsp;&nbsp;Dmg&nbsp;&nbsp;Owned</u></div>`;
 
-        if (Object.keys(gameState.clientGameData.weapons).length === 0) {
-            html +=
-                "<div class='menu-item'>(No weapons available for purchase)</div>";
+        const myShip = gameState.myShip;
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Weapon</span>
+                            <span class="station-submenu-col col-price">Price</span>
+                            <span class="station-submenu-col col-qty">Dmg</span>
+                            <span class="station-submenu-col col-owned">Owned</span>
+                         </div>`;
+
+        const weaponKeys = Object.keys(gameState.clientGameData.weapons);
+        if (weaponKeys.length === 0) {
+            itemsHtml +=
+                "<div class='station-submenu-item'>(No weapons available)</div>";
         } else {
-            // Ensure selectedWeaponKey is valid
-            const weaponKeys = Object.keys(gameState.clientGameData.weapons);
             if (
                 !gameState.selectedWeaponKey ||
                 !weaponKeys.includes(gameState.selectedWeaponKey)
             ) {
                 gameState.selectedWeaponKey = weaponKeys[0] || null;
             }
-
-            Object.entries(gameState.clientGameData.weapons).forEach(
-                ([wKey, wDef]) => {
-                    const owned =
-                        myShip.weapons && myShip.weapons.includes(wKey)
-                            ? "*"
-                            : " ";
-                    const selectedClass =
-                        wKey === gameState.selectedWeaponKey
-                            ? "trade-item-selected"
-                            : "";
-                    html += `<div class="menu-item ${selectedClass}">${wKey.padEnd(12, " ")} $${wDef.price.toString().padEnd(5, " ")} ${wDef.damage.toString().padEnd(3, " ")} ${owned}</div>`;
-                },
-            );
+            weaponKeys.forEach((wKey) => {
+                const wDef = gameState.clientGameData.weapons[wKey];
+                const owned =
+                    myShip.weapons && myShip.weapons.includes(wKey)
+                        ? "Yes"
+                        : "No";
+                const selectedClass =
+                    wKey === gameState.selectedWeaponKey ? "selected" : "";
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-key="${wKey}">
+                        <span class="station-submenu-col col-name">${wDef.name}</span>
+                        <span class="station-submenu-col col-price">$${wDef.price.toLocaleString()}</span>
+                        <span class="station-submenu-col col-qty">${wDef.damage}</span>
+                        <span class="station-submenu-col col-owned">${owned}</span>
+                    </div>`;
+            });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy/Equip. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Outfitter</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buyequip-btn" class="station-action-button">Buy/Equip (B)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-buyequip-btn")
+            ?.addEventListener("click", () => {
+                if (gameState.selectedWeaponKey)
+                    Network.equipWeapon(gameState.selectedWeaponKey);
+            });
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 
     renderShipyardMenu() {
-        if (!dockMenuElement || !gameState.myShip) return;
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.myShip) return;
+
         const myShip = gameState.myShip;
-        let html = `<div class="menu-item"><b>Shipyard</b></div>`;
-        html += `<div class="menu-item">Credits: $${myShip.credits}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Ship&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Price&nbsp;&nbsp;&nbsp;Cargo&nbsp;&nbsp;Current</u></div>`;
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Ship</span>
+                            <span class="station-submenu-col col-price">Price</span>
+                            <span class="station-submenu-col col-cargo">Cargo</span>
+                            <span class="station-submenu-col col-current">Current</span>
+                         </div>`;
 
         if (gameState.clientGameData.shipTypes.length === 0) {
-            html += "<div class='menu-item'>(No ships available)</div>";
+            itemsHtml +=
+                "<div class='station-submenu-item'>(No ships available)</div>";
         } else {
             gameState.clientGameData.shipTypes.forEach((s, i) => {
-                const cur = myShip.type === i ? "*" : " ";
+                const cur = myShip.type === i ? "Yes" : "No";
                 const selectedClass =
-                    i === gameState.selectedShipIndex
-                        ? "trade-item-selected"
-                        : "";
-                html +=
-                    `<div class="menu-item ${selectedClass}">${s.name.padEnd(12, " ")} $${s.price.toString().padEnd(5, " ")} ` +
-                    `${s.maxCargo.toString().padEnd(3, " ")} ${cur}</div>`;
+                    i === gameState.selectedShipIndex ? "selected" : "";
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name">${s.name}</span>
+                        <span class="station-submenu-col col-price">$${s.price.toLocaleString()}</span>
+                        <span class="station-submenu-col col-cargo">${s.maxCargo}</span>
+                        <span class="station-submenu-col col-current">${cur}</span>
+                    </div>`;
             });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. B: Buy. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Shipyard</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buy-btn" class="station-action-button">Buy Ship (B)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+        document
+            .getElementById("submenu-buy-btn")
+            ?.addEventListener("click", () =>
+                Network.buyShip(gameState.selectedShipIndex),
+            );
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 
     renderMissionsMenu() {
-        if (!dockMenuElement || !gameState.dockedAtDetails || !gameState.myShip)
-            return;
-        let html = `<div class="menu-item"><b>Missions at ${gameState.dockedAtDetails.planetName}</b></div>`;
-        html += `<div class="menu-item">Credits: $${gameState.myShip.credits}</div>`;
-        html += `<div class="menu-item" style="border-bottom:1px solid #0f0;"><u>Title&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Reward</u></div>`;
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.dockedAtDetails || !gameState.myShip) return;
+
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name" style="flex-basis: 70%;">Title</span>
+                            <span class="station-submenu-col col-reward">Reward</span>
+                         </div>`;
 
         if (gameState.availableMissionsForCurrentPlanet.length === 0) {
-            html +=
-                "<div class='menu-item'>(No missions currently available)</div>";
+            itemsHtml +=
+                "<div class='station-submenu-item'>(No missions currently available)</div>";
         } else {
-            // Ensure selectedMissionIndex is valid
             if (
                 gameState.selectedMissionIndex >=
                 gameState.availableMissionsForCurrentPlanet.length
@@ -2897,29 +3644,30 @@ export const UIManager = {
 
             gameState.availableMissionsForCurrentPlanet.forEach((m, i) => {
                 const selectedClass =
-                    i === gameState.selectedMissionIndex
-                        ? "trade-item-selected"
-                        : "";
+                    i === gameState.selectedMissionIndex ? "selected" : "";
                 let titleDisplay =
-                    m.title.length > 45
-                        ? m.title.substring(0, 42) + "..."
+                    m.title.length > 60
+                        ? m.title.substring(0, 57) + "..."
                         : m.title;
-                html += `<div class="menu-item ${selectedClass}">${titleDisplay.padEnd(45, " ")} $${m.rewardCredits.toString().padStart(6, " ")}</div>`;
-
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name" style="flex-basis: 70%;">${titleDisplay}</span>
+                        <span class="station-submenu-col col-reward">$${m.rewardCredits.toLocaleString()}</span>
+                    </div>`;
                 if (i === gameState.selectedMissionIndex) {
-                    // Display details for selected mission
-                    html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; ${m.description}</div>`;
                     const timeLeftMs = m.timeLimit - Date.now();
                     const timeLeftMin = Math.max(
                         0,
                         Math.round(timeLeftMs / 60000),
                     );
-                    html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Time Limit: ${timeLeftMin} min. Penalty: $${m.penaltyCredits}</div>`;
+                    itemsHtml += `<div class="mission-details-section">
+                                    <p><strong>Description:</strong> ${m.description}</p>
+                                    <p><strong>Time Limit:</strong> ${timeLeftMin} min | <strong>Penalty:</strong> $${m.penaltyCredits.toLocaleString()}</p>`;
                     if (
                         m.type ===
                         gameState.clientGameData.MISSION_TYPES.CARGO_DELIVERY
                     ) {
-                        html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Deliver: ${m.cargoQuantity} ${m.cargoGoodName}</div>`;
+                        itemsHtml += `<p><strong>Deliver:</strong> ${m.cargoQuantity} ${m.cargoGoodName}</p>`;
                     } else if (
                         m.type === gameState.clientGameData.MISSION_TYPES.BOUNTY
                     ) {
@@ -2927,14 +3675,49 @@ export const UIManager = {
                             gameState.clientGameData.systems[
                                 m.targetSystemIndex
                             ]?.name || "Unknown System";
-                        html += `<div class="menu-item" style="font-size:0.9em; color: #0c0; padding-left:10px;">&nbsp;&nbsp;&gt; Target: ${m.targetsRequired} ${m.targetShipName}(s) in ${targetSysName}</div>`;
+                        itemsHtml += `<p><strong>Target:</strong> ${m.targetsRequired} ${m.targetShipName}(s) in ${targetSysName}</p>`;
                     }
+                    itemsHtml += `</div>`;
                 }
             });
         }
-        html +=
-            "<div class='menu-item' style='border-top:1px solid #0f0; margin-top:5px;'>ArrowUp/Down: Select. A: Accept. Esc: Back</div>";
-        dockMenuElement.innerHTML = html;
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Mission BBS - ${gameState.dockedAtDetails.planetName}</h3>
+                <div>Credits: $${gameState.myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-accept-btn" class="station-action-button">Accept (A)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-accept-btn")
+            ?.addEventListener("click", () => {
+                if (
+                    gameState.availableMissionsForCurrentPlanet.length > 0 &&
+                    gameState.availableMissionsForCurrentPlanet[
+                        gameState.selectedMissionIndex
+                    ]
+                ) {
+                    const missionToAccept =
+                        gameState.availableMissionsForCurrentPlanet[
+                            gameState.selectedMissionIndex
+                        ];
+                    Network.acceptMission(
+                        missionToAccept.id,
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+            });
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 };
 

@@ -1,18 +1,18 @@
 {
   "username": "jaredg",
-  "lastSaved": "2025-06-02T04:29:59.442Z",
+  "lastSaved": "2025-06-02T05:04:03.659Z",
   "shipData": {
     "x": 380,
     "y": 480,
-    "angle": 1.3650000000000055,
+    "angle": 1.8731853071795683,
     "vx": 0,
     "vy": 0,
     "type": 0,
-    "credits": 467,
+    "credits": 1673,
     "cargo": [
+      0,
+      0,
       3,
-      0,
-      0,
       0
     ],
     "maxCargo": 10,
@@ -23,7 +23,24 @@
     ],
     "activeWeapon": "Laser",
     "system": 2,
-    "activeMissions": []
+    "activeMissions": [
+      {
+        "id": "mission_1748840353939_13por6j",
+        "type": "BOUNTY",
+        "title": "Bounty: 2 Pirates in Greek",
+        "description": "Hostile elements reported in Greek system. Originated near Mars (Roman). Eliminate 2 of them.",
+        "originSystemIndex": 1,
+        "originPlanetIndex": 1,
+        "targetSystemIndex": 0,
+        "targetShipName": "Pirate",
+        "targetsRequired": 2,
+        "targetsDestroyed": 0,
+        "rewardCredits": 1100,
+        "penaltyCredits": 220,
+        "timeLimit": 1748840713939,
+        "status": "ACCEPTED"
+      }
+    ]
   },
   "dockedAtDetails": {
     "systemIndex": 2,
