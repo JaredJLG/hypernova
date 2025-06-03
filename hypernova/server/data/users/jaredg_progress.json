@@ -1,18 +1,18 @@
 {
   "username": "jaredg",
-  "lastSaved": "2025-06-02T05:13:53.728Z",
+  "lastSaved": "2025-06-03T01:54:58.729Z",
   "shipData": {
-    "x": 130,
-    "y": 480,
-    "angle": 0,
+    "x": 300,
+    "y": 150,
+    "angle": 5.741370614359145,
     "vx": 0,
     "vy": 0,
     "type": 0,
-    "credits": 1453,
+    "credits": 467,
     "cargo": [
-      0,
-      0,
       3,
+      0,
+      0,
       0
     ],
     "maxCargo": 10,
@@ -22,8 +22,33 @@
       "Laser"
     ],
     "activeWeapon": "Laser",
-    "system": 2,
+    "system": 15,
     "activeMissions": []
   },
-  "dockedAtDetails": null
+  "dockedAtDetails": {
+    "systemIndex": 15,
+    "planetIndex": 0,
+    "planetName": "Yemuro Station",
+    "systemName": "Yemuro",
+    "buyPrices": {
+      "Food": 15,
+      "Ore": 74,
+      "Medicine": 105,
+      "Electronics": 147
+    },
+    "sellPrices": {
+      "Food": 13,
+      "Ore": 67,
+      "Medicine": 95,
+      "Electronics": 133
+    },
+    "stock": {
+      "Food": 500,
+      "Ore": 500,
+      "Medicine": 1000,
+      "Electronics": 2000
+    },
+    "playerX": 300,
+    "playerY": 150
+  }
 }

@@ -1,5 +1,4 @@
 // hypernova/client/js/main.js
-
 console.log("main.js script started");
 
 import { gameState } from "./game_state.js";
@@ -9,8 +8,10 @@ import { initNetwork } from "./network.js";
 import { Renderer } from "./renderer.js";
 import { initInputListeners, processInputs } from "./input_handler.js";
 import { UIManager } from "./ui_manager.js";
+import { UniverseMapManager } from "./universe_map_renderer.js";
 
 // --- DYNAMIC LOGIN BACKGROUND & MUSIC ---
+// ... (existing login screen visual and music functions - no changes here)
 let loginBgCanvas, loginBgCtx;
 let stars = [];
 let shootingStars = [];
@@ -124,7 +125,6 @@ function createStars() {
 }
 function animateLoginBackground() {
     if (!loginBgCtx || !loginBgCanvas) {
-        // Ensure canvas and context exist
         if (loginAnimationId) cancelAnimationFrame(loginAnimationId);
         return;
     }
@@ -197,13 +197,12 @@ function initLoginScreenVisuals() {
         return;
     }
     loginBgCtx = loginBgCanvas.getContext("2d");
-    handleLoginResize(); // Initial size and star creation
+    handleLoginResize();
     animateLoginBackground.lastTime = performance.now();
     animateLoginBackground();
     setupLoginMusic();
     window.addEventListener("resize", handleLoginResize);
 }
-// --- END DYNAMIC LOGIN BACKGROUND & MUSIC ---
 
 // --- FULLSCREEN GAMEPLAY SETUP ---
 function setupGameCanvasFullscreen() {
@@ -224,9 +223,9 @@ function setupGameCanvasFullscreen() {
     window.addEventListener("resize", resizeCanvas, false);
     resizeCanvas();
 }
-// --- END FULLSCREEN GAMEPLAY SETUP ---
 
 async function loadImages(imagePaths) {
+    // ... (existing code)
     console.log("main.js/loadImages called with paths:", imagePaths);
     const imagePromises = imagePaths.map((path) => {
         return new Promise((resolve, reject) => {
@@ -293,12 +292,12 @@ async function handleLoginSubmit(username, password) {
                         ...systemBackgroundPaths,
                     ]),
                 ];
+
                 if (allImagePaths.length > 0) await loadImages(allImagePaths);
                 else console.log("main.js/onReadyCallback: No images to load.");
 
-                await loadProgress(); // Load progress after images and gameData are ready
+                await loadProgress();
 
-                // Ensure myShip defaults are set if necessary after progress load
                 if (gameState.myId && !gameState.myShip) {
                     gameState.allShips[gameState.myId] =
                         gameState.allShips[gameState.myId] || {};
@@ -311,10 +310,13 @@ async function handleLoginSubmit(username, password) {
                 ) {
                     gameState.defaultShipProps(gameState.myShip);
                 }
-                // UIManager.init might need to be called here if it depends on elements only visible after login
-                // However, it's currently called on DOMContentLoaded. Ensure #ui is present.
+
                 const canvasEl = document.getElementById("gameCanvas");
                 if (canvasEl) canvasEl.focus();
+
+                // ===== SHOW RIGHT HUD PANEL =====
+                UIManager.showRightHudPanel();
+                // ================================
 
                 lastTime = performance.now();
                 requestAnimationFrame(gameLoop);
@@ -330,6 +332,7 @@ async function handleLoginSubmit(username, password) {
 }
 
 async function loadProgress() {
+    // ... (existing code)
     console.log("main.js/loadProgress: Called.");
     if (!gameState.currentUser || !gameState.currentUser.username) {
         console.log("main.js/loadProgress: No current user, returning.");
@@ -343,10 +346,9 @@ async function loadProgress() {
             const progress = await response.json();
             if (progress && progress.shipData) {
                 if (gameState.myId) {
-                    // If myId is already known (init from network happened)
                     if (!gameState.allShips[gameState.myId])
                         gameState.allShips[gameState.myId] = {};
-                    gameState.updateShipData(gameState.myId, progress.shipData); // This calls defaultShipProps
+                    gameState.updateShipData(gameState.myId, progress.shipData);
 
                     const syncData = {
                         credits: progress.shipData.credits,
@@ -378,16 +380,13 @@ async function loadProgress() {
                             syncData,
                         );
                 } else {
-                    // myId not known yet, store progress to apply once 'init' is received
                     gameState.pendingProgressToApply = progress;
                 }
             } else {
-                // No progress data or empty shipData
                 gameState.docked = false;
                 gameState.dockedAtDetails = null;
             }
         } else {
-            // Response not OK
             gameState.docked = false;
             gameState.dockedAtDetails = null;
         }
@@ -413,8 +412,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const canvas = document.getElementById("gameCanvas");
-    const uiContainer = document.getElementById("ui"); // UIManager uses this
-    const gameContainer = document.getElementById("game-container"); // Not directly used by modules but good to check
+    const uiContainer = document.getElementById("ui");
+    const gameContainer = document.getElementById("game-container");
 
     if (!canvas || !uiContainer || !gameContainer) {
         console.error(
@@ -426,8 +425,9 @@ document.addEventListener("DOMContentLoaded", () => {
         canvas.setAttribute("tabindex", "0");
     }
 
-    Renderer.init(canvas); // Renderer now also inits minimap canvas
-    UIManager.init(uiContainer); // UIManager inits its references, including to right-hud-panel elements
+    Renderer.init(canvas);
+    UIManager.init(uiContainer);
+    UniverseMapManager.init();
     initInputListeners(canvas);
 
     const loginForm = document.getElementById("login-form");
@@ -446,32 +446,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// let gameLoopFrameCount = 0; // Not currently used
 let lastTime = 0;
+// let hudUpdateCounter = 0; // For less frequent HUD text updates
+// const HUD_UPDATE_INTERVAL = 30; // Update HUD text every 30 frames approx
 
 function gameLoop(timestamp) {
-    // gameLoopFrameCount++; // Not currently used
-    const deltaTime = (timestamp - lastTime) / 1000; // Delta time in seconds
+    const deltaTime = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
     if (gameState.currentUser && gameState.myId && gameState.myShip) {
-        if (gameState.myShip) {
-            gameState.camera.x =
-                gameState.myShip.x - gameState.camera.width / 2;
-            gameState.camera.y =
-                gameState.myShip.y - gameState.camera.height / 2;
-        }
-
-        if (!gameState.docked) {
-            processInputs();
+        if (gameState.isMapOpen) {
+            if (!gameState.docked) processInputs(); // Minimal physics for map open
         } else {
-            // If docked, and right HUD panel is visible, potentially update its content periodically
-            // For now, it's updated on openDockMenu.
-            // If stats like credits can change while docked through other means, this would be a place to call:
-            // UIManager.updateShipStatsPanel();
-            // UIManager.updateActiveMissionsPanel();
+            // Normal game rendering and logic
+            if (gameState.myShip) {
+                gameState.camera.x =
+                    gameState.myShip.x - gameState.camera.width / 2;
+                gameState.camera.y =
+                    gameState.myShip.y - gameState.camera.height / 2;
+            }
+
+            if (!gameState.docked) {
+                processInputs();
+            }
+            Renderer.draw(); // This will also call drawMinimap
+
+            // DOM updates for HUD text are now primarily event-driven (see network.js)
+            // to avoid excessive DOM manipulation in the game loop.
+            // If a fallback polling mechanism is desired for stats/missions:
+            // hudUpdateCounter++;
+            // if (hudUpdateCounter >= HUD_UPDATE_INTERVAL) {
+            //     UIManager.updateShipStatsPanel();
+            //     UIManager.updateActiveMissionsPanel();
+            //     hudUpdateCounter = 0;
+            // }
         }
-        Renderer.draw(); // Main game renderer
     }
     requestAnimationFrame(gameLoop);
 }

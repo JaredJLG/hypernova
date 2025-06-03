@@ -1,89 +1,793 @@
 [
     {
-        "name": "Greek",
+        "name": "George's World (THX-1138)",
+        "universeX": 80,
+        "universeY": 150,
+        "connections": [1, 5],
+        "backgroundFile": "deep_space_blue.png",
         "planets": [
             {
-                "name": "Alpha",
-                "x": 200,
-                "y": 150,
+                "name": "Planet Alpha",
+                "x": 300,
+                "y": 300,
+                "imageFile": "planet_temperate.png",
+                "planetImageScale": 1.0,
                 "produces": ["Food"],
                 "consumes": ["Electronics"]
-            },
+            }
+        ]
+    },
+    {
+        "name": "Satori",
+        "universeX": 200,
+        "universeY": 150,
+        "connections": [0, 2, 4],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
             {
-                "name": "Delta",
-                "x": 500,
-                "y": 320,
+                "name": "Satoria Prime",
+                "x": 250,
+                "y": 400,
+                "imageFile": "planet_rocky.png",
+                "planetImageScale": 0.9,
                 "produces": ["Ore"],
                 "consumes": ["Medicine"]
             }
         ]
     },
     {
-        "name": "Roman",
+        "name": "Persephone",
+        "universeX": 300,
+        "universeY": 120,
+        "connections": [1, 3, 16, 17],
+        "backgroundFile": "deep_space_blue.png",
         "planets": [
             {
-                "name": "Sol",
-                "x": 140,
-                "y": 120,
-                "produces": ["Medicine", "Electronics"],
-                "consumes": ["Food", "Ore"]
-            },
+                "name": "Persephone II",
+                "x": 400,
+                "y": 200,
+                "imageFile": "planet_lush_green.png",
+                "planetImageScale": 1.1,
+                "produces": ["Medicine"],
+                "consumes": ["Food"]
+            }
+        ]
+    },
+    {
+        "name": "Zaphod",
+        "universeX": 350,
+        "universeY": 200,
+        "connections": [2, 4, 8, 15],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
             {
-                "name": "Mars",
-                "x": 620,
-                "y": 420,
+                "name": "Zaphod Beeblebrox",
+                "x": 500,
+                "y": 350,
+                "imageFile": "planet_cityscape_advanced.png",
+                "planetImageScale": 1.2,
+                "produces": ["Electronics"],
+                "consumes": ["Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Alkaid",
+        "universeX": 280,
+        "universeY": 250,
+        "connections": [1, 3, 5, 7],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Alkaid VII",
+                "x": 300,
+                "y": 500,
+                "imageFile": "planet_ice.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Clotho",
+        "universeX": 200,
+        "universeY": 280,
+        "connections": [0, 4, 6],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Clotho's Thread",
+                "x": 150,
+                "y": 300,
+                "imageFile": "planet_desert_oasis.png",
+                "planetImageScale": 0.9,
+                "produces": ["Food"],
+                "consumes": ["Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Orion",
+        "universeX": 250,
+        "universeY": 350,
+        "connections": [5, 7, 9],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Orion Nebula Port",
+                "x": 400,
+                "y": 400,
+                "imageFile": "planet_terran.png",
+                "planetImageScale": 1.1,
+                "produces": ["Medicine", "Food"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Curzon",
+        "universeX": 350,
+        "universeY": 320,
+        "connections": [4, 6, 8, 11],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Dax Station",
+                "x": 550,
+                "y": 250,
+                "imageFile": "planet_rocky.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Risa",
+        "universeX": 380,
+        "universeY": 280,
+        "connections": [3, 7, 14],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Pleasure Planet",
+                "x": 600,
+                "y": 450,
+                "imageFile": "planet_lush_green.png",
+                "planetImageScale": 1.3,
+                "produces": ["Food"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Atropos",
+        "universeX": 150,
+        "universeY": 400,
+        "connections": [6, 10],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Atropos Prime",
+                "x": 200,
+                "y": 200,
+                "imageFile": "planet_barren_ancient.png",
+                "planetImageScale": 0.8,
                 "produces": ["Ore"],
                 "consumes": ["Food"]
             }
         ]
     },
     {
-        "name": "Nordic",
+        "name": "Darven",
+        "universeX": 300,
+        "universeY": 420,
+        "connections": [9, 11, 29],
+        "backgroundFile": "purple_nebula_stars.png",
         "planets": [
             {
-                "name": "Beta",
-                "x": 380,
-                "y": 480,
-                "produces": ["Food", "Ore"],
+                "name": "Darven's Pass",
+                "x": 350,
+                "y": 350,
+                "imageFile": "planet_temperate.png",
+                "planetImageScale": 1.0,
+                "produces": ["Food", "Medicine"],
+                "consumes": ["Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Propus",
+        "universeX": 450,
+        "universeY": 380,
+        "connections": [7, 10, 12, 28],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Propus Major",
+                "x": 500,
+                "y": 500,
+                "imageFile": "planet_red_desert.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Polaris",
+        "universeX": 500,
+        "universeY": 350,
+        "connections": [11, 13, 14, 43],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "North Star Port",
+                "x": 600,
+                "y": 200,
+                "imageFile": "planet_ice.png",
+                "planetImageScale": 1.1,
+                "produces": ["Electronics"],
+                "consumes": ["Food"]
+            }
+        ]
+    },
+    {
+        "name": "Rigel",
+        "universeX": 600,
+        "universeY": 350,
+        "connections": [12, 22, 23, 43],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Rigel Kentaurus",
+                "x": 700,
+                "y": 300,
+                "imageFile": "planet_terran.png",
+                "planetImageScale": 1.2,
+                "produces": ["Food", "Medicine"],
+                "consumes": ["Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Matar",
+        "universeX": 550,
+        "universeY": 300,
+        "connections": [8, 12, 15, 19],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Matar IV",
+                "x": 400,
+                "y": 550,
+                "imageFile": "planet_rocky.png",
+                "planetImageScale": 0.9,
+                "produces": ["Ore"],
                 "consumes": ["Electronics", "Medicine"]
             }
         ]
     },
     {
-        "name": "Egyptian",
+        "name": "Yemuro",
+        "universeX": 500,
+        "universeY": 250,
+        "connections": [3, 14, 16, 18],
+        "backgroundFile": "purple_nebula_stars.png",
         "planets": [
             {
-                "name": "Nile",
-                "x": 100,
-                "y": 500,
-                "produces": ["Food"],
-                "consumes": ["Medicine", "Ore"]
-            },
-            {
-                "name": "Giza",
-                "x": 400,
-                "y": 550,
-                "produces": ["Ore"],
-                "consumes": ["Electronics", "Food"]
+                "name": "Yemuro Station",
+                "x": 300,
+                "y": 150,
+                "imageFile": "planet_cityscape_advanced.png",
+                "planetImageScale": 1.1,
+                "produces": ["Electronics"],
+                "consumes": ["Food", "Ore"]
             }
         ]
     },
     {
-        "name": "Celtic",
+        "name": "Turin",
+        "universeX": 500,
+        "universeY": 150,
+        "connections": [2, 15, 17, 18],
+        "backgroundFile": "ice_field_background.png",
         "planets": [
             {
-                "name": "Tara",
-                "x": 700,
+                "name": "Turin's Shroud",
+                "x": 450,
+                "y": 250,
+                "imageFile": "planet_ice.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Food", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Cygnus",
+        "universeX": 550,
+        "universeY": 100,
+        "connections": [2, 16, 41, 42],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Cygnus X-1",
+                "x": 600,
                 "y": 100,
+                "imageFile": "planet_barren_ancient.png",
+                "planetImageScale": 0.9,
+                "produces": ["Electronics"],
+                "consumes": ["Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Kathoon",
+        "universeX": 600,
+        "universeY": 180,
+        "connections": [15, 16, 19, 20],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Kathoon Prime",
+                "x": 700,
+                "y": 200,
+                "imageFile": "planet_desert_oasis.png",
+                "planetImageScale": 1.0,
+                "produces": ["Food"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Levo",
+        "universeX": 650,
+        "universeY": 300,
+        "connections": [14, 18, 21, 22],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Levo System",
+                "x": 800,
+                "y": 400,
+                "imageFile": "planet_temperate.png",
+                "planetImageScale": 1.1,
                 "produces": ["Medicine", "Food"],
                 "consumes": ["Ore"]
-            },
+            }
+        ]
+    },
+    {
+        "name": "Spica",
+        "universeX": 700,
+        "universeY": 200,
+        "connections": [18, 21, 41],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
             {
-                "name": "Avalon",
-                "x": 650,
-                "y": 300,
-                "produces": ["Electronics"],
+                "name": "Spica Colony",
+                "x": 900,
+                "y": 150,
+                "imageFile": "planet_lush_green.png",
+                "planetImageScale": 1.2,
+                "produces": ["Food"],
+                "consumes": ["Electronics", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Vulcan",
+        "universeX": 750,
+        "universeY": 300,
+        "connections": [19, 20, 22, 40],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Vulcanis",
+                "x": 850,
+                "y": 350,
+                "imageFile": "planet_red_desert.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Food", "Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Capella",
+        "universeX": 700,
+        "universeY": 400,
+        "connections": [13, 19, 21, 23, 24, 39],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Capella IV",
+                "x": 800,
+                "y": 500,
+                "imageFile": "planet_rocky.png",
+                "planetImageScale": 0.9,
+                "produces": ["Ore", "Electronics"],
                 "consumes": ["Food", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Centauri",
+        "universeX": 600,
+        "universeY": 450,
+        "connections": [13, 22, 24, 28, 29],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Alpha Centauri",
+                "x": 700,
+                "y": 600,
+                "imageFile": "planet_terran.png",
+                "planetImageScale": 1.1,
+                "produces": ["Food", "Medicine", "Electronics"],
+                "consumes": ["Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Barnard",
+        "universeX": 680,
+        "universeY": 480,
+        "connections": [22, 23, 25, 39],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Barnard's Star",
+                "x": 750,
+                "y": 700,
+                "imageFile": "planet_ice.png",
+                "planetImageScale": 0.8,
+                "produces": ["Ore"],
+                "consumes": ["Food"]
+            }
+        ]
+    },
+    {
+        "name": "Eridani",
+        "universeX": 700,
+        "universeY": 520,
+        "connections": [24, 26, 27, 39],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Epsilon Eridani",
+                "x": 850,
+                "y": 650,
+                "imageFile": "planet_temperate.png",
+                "planetImageScale": 1.0,
+                "produces": ["Food"],
+                "consumes": ["Electronics", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Procyon",
+        "universeX": 700,
+        "universeY": 600,
+        "connections": [25, 27, 31, 37],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Procyon B",
+                "x": 800,
+                "y": 800,
+                "imageFile": "planet_cityscape_advanced.png",
+                "planetImageScale": 1.2,
+                "produces": ["Electronics"],
+                "consumes": ["Ore", "Food"]
+            }
+        ]
+    },
+    {
+        "name": "Sol",
+        "universeX": 600,
+        "universeY": 550,
+        "connections": [25, 26, 28, 30, 31],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Terra",
+                "x": 700,
+                "y": 750,
+                "imageFile": "planet_terran.png",
+                "planetImageScale": 1.3,
+                "produces": ["Medicine", "Electronics", "Food"],
+                "consumes": ["Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Sirius",
+        "universeX": 550,
+        "universeY": 500,
+        "connections": [11, 23, 27, 29, 30],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Sirius A",
+                "x": 650,
+                "y": 650,
+                "imageFile": "planet_barren_ancient.png",
+                "planetImageScale": 0.9,
+                "produces": ["Ore"],
+                "consumes": ["Food", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Altair",
+        "universeX": 500,
+        "universeY": 450,
+        "connections": [10, 11, 23, 28, 43],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Altair IV Outpost",
+                "x": 550,
+                "y": 550,
+                "imageFile": "planet_desert_oasis.png",
+                "planetImageScale": 1.0,
+                "produces": ["Food"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Diphidia",
+        "universeX": 500,
+        "universeY": 600,
+        "connections": [27, 28, 31, 32, 34],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Diphidia Mining",
+                "x": 600,
+                "y": 700,
+                "imageFile": "planet_rocky.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Food", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Tau Ceti",
+        "universeX": 600,
+        "universeY": 620,
+        "connections": [26, 27, 30, 32, 35],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Tau Ceti e",
+                "x": 750,
+                "y": 850,
+                "imageFile": "planet_temperate.png",
+                "planetImageScale": 1.1,
+                "produces": ["Food", "Medicine"],
+                "consumes": ["Electronics", "Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Antares",
+        "universeX": 550,
+        "universeY": 650,
+        "connections": [30, 31, 33, 34, 35],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Antares Trade Hub",
+                "x": 650,
+                "y": 900,
+                "imageFile": "planet_cityscape_advanced.png",
+                "planetImageScale": 1.2,
+                "produces": ["Electronics"],
+                "consumes": ["Food", "Ore"]
+            }
+        ]
+    },
+    {
+        "name": "Mentos",
+        "universeX": 480,
+        "universeY": 680,
+        "connections": [32, 34, 44],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Mentos Prime",
+                "x": 500,
+                "y": 800,
+                "imageFile": "planet_ice.png",
+                "planetImageScale": 0.9,
+                "produces": ["Ore"],
+                "consumes": ["Food", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Canopus",
+        "universeX": 400,
+        "universeY": 700,
+        "connections": [30, 32, 33, 36, 38],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Canopus Station",
+                "x": 450,
+                "y": 950,
+                "imageFile": "planet_terran.png",
+                "planetImageScale": 1.0,
+                "produces": ["Food", "Medicine"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Pollux",
+        "universeX": 600,
+        "universeY": 720,
+        "connections": [31, 32, 36, 37, 45],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Pollux IV",
+                "x": 700,
+                "y": 900,
+                "imageFile": "planet_lush_green.png",
+                "planetImageScale": 1.1,
+                "produces": ["Food"],
+                "consumes": ["Ore", "Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Castor",
+        "universeX": 550,
+        "universeY": 750,
+        "connections": [34, 35, 45],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Gemini Port (Castor)",
+                "x": 600,
+                "y": 850,
+                "imageFile": "planet_rocky.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Food", "Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "Vega",
+        "universeX": 700,
+        "universeY": 700,
+        "connections": [26, 35, 39, 46],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Vega Colony",
+                "x": 800,
+                "y": 750,
+                "imageFile": "planet_temperate.png",
+                "planetImageScale": 1.1,
+                "produces": ["Food", "Medicine"],
+                "consumes": ["Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Olympus",
+        "universeX": 300,
+        "universeY": 750,
+        "connections": [34, 47],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Mount Olympus Base",
+                "x": 350,
+                "y": 900,
+                "imageFile": "planet_barren_ancient.png",
+                "planetImageScale": 0.9,
+                "produces": ["Ore"],
+                "consumes": ["Food", "Electronics"]
+            }
+        ]
+    },
+    {
+        "name": "Tiber",
+        "universeX": 450,
+        "universeY": 780,
+        "connections": [34, 38, 45],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Tiberium Mines",
+                "x": 500,
+                "y": 900,
+                "imageFile": "planet_red_desert.png",
+                "planetImageScale": 1.0,
+                "produces": ["Ore"],
+                "consumes": ["Medicine"]
+            }
+        ]
+    },
+    {
+        "name": "NGC-5465",
+        "universeX": 650,
+        "universeY": 150,
+        "connections": [17, 18, 20, 42],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "NGC-5465 Outpost",
+                "x": 750,
+                "y": 100,
+                "imageFile": "planet_ice.png",
+                "planetImageScale": 0.8,
+                "produces": ["Ore"],
+                "consumes": ["Food"]
+            }
+        ]
+    },
+    {
+        "name": "NGC-1023",
+        "universeX": 480,
+        "universeY": 80,
+        "connections": [2, 17, 42],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Listening Array 1023",
+                "x": 400,
+                "y": 50,
+                "imageFile": "planet_cityscape_advanced.png",
+                "planetImageScale": 0.7,
+                "produces": ["Electronics"],
+                "consumes": ["Ore"]
+            }
+        ]
+    },
+    {
+        "name": "NGC-6484",
+        "universeX": 50,
+        "universeY": 450,
+        "connections": [9],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Deep Space 6484",
+                "x": 100,
+                "y": 400,
+                "imageFile": "planet_rocky.png",
+                "planetImageScale": 0.7,
+                "produces": ["Ore"],
+                "consumes": ["Food"]
+            }
+        ]
+    },
+    {
+        "name": "Altair",
+        "universeX": 500,
+        "universeY": 450,
+        "connections": [11, 12, 23, 28, 29],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Altair IV",
+                "x": 550,
+                "y": 550,
+                "imageFile": "planet_desert_oasis.png",
+                "planetImageScale": 1,
+                "produces": ["Food"],
+                "consumes": ["Electronics"]
             }
         ]
     }

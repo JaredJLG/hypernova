@@ -1,6 +1,5 @@
-// hypernova/server/modules/player_manager.js
+// server/modules/player_manager.js
 const { MISSION_TYPES } = require("../config/game_config");
-// const gameConfig = require("../config/game_config"); // No, gameConfig is passed in constructor
 
 class PlayerManager {
     constructor(
@@ -47,7 +46,7 @@ class PlayerManager {
                 Math.floor(Math.random() * 0xffffff)
                     .toString(16)
                     .padStart(6, "0"),
-            hyperjumpState: "idle",
+            hyperjumpState: "idle", // idle, charging, jumping, cooldown
             hyperjumpChargeTimeoutId: null,
         };
 
@@ -57,9 +56,9 @@ class PlayerManager {
 
         socket.emit("init", {
             id: socket.id,
-            ships: this.players,
+            ships: this.players, // Send all current players
             gameData: {
-                ...initialWorldData,
+                ...initialWorldData, // Will include systems with universeX,Y,connections
                 tradeGoods: this.tradeGoods,
                 weapons: this.gameConfig.staticWeaponsData,
                 shipTypes: this.shipTypes,
@@ -76,8 +75,7 @@ class PlayerManager {
 
         socket.on("clientLoadedDockedState", (receivedSyncData) => {
             console.log(
-                `PlayerManager: Received 'clientLoadedDockedState' from ${socket.id} with data:`,
-                JSON.stringify(receivedSyncData),
+                `PlayerManager: Received 'clientLoadedDockedState' from ${socket.id}.`,
             );
             const player = this.players[socket.id];
 
@@ -101,17 +99,12 @@ class PlayerManager {
                     if (shipTypeDef) {
                         player.maxCargo = shipTypeDef.maxCargo;
                         player.maxHealth = shipTypeDef.maxHealth;
-                        if (player.health > player.maxHealth) {
+                        if (player.health > player.maxHealth)
                             player.health = player.maxHealth;
-                        }
-                    } else {
-                        console.warn(
-                            `PlayerManager: Unknown ship type ${receivedSyncData.type} for player ${socket.id}.`,
-                        );
                     }
                 }
 
-                player.hyperjumpState = "idle"; // Ensure idle on load
+                player.hyperjumpState = "idle";
                 if (player.hyperjumpChargeTimeoutId) {
                     clearTimeout(player.hyperjumpChargeTimeoutId);
                     player.hyperjumpChargeTimeoutId = null;
@@ -119,9 +112,7 @@ class PlayerManager {
 
                 if (
                     receivedSyncData.dockedAtDetails &&
-                    receivedSyncData.dockedAtDetails.systemIndex !==
-                        undefined &&
-                    receivedSyncData.dockedAtDetails.planetIndex !== undefined
+                    receivedSyncData.dockedAtDetails.systemIndex !== undefined
                 ) {
                     player.dockedAtPlanetIdentifier = {
                         systemIndex:
@@ -131,36 +122,23 @@ class PlayerManager {
                     };
                     player.system =
                         receivedSyncData.dockedAtDetails.systemIndex;
-
-                    if (
-                        this.worldManager &&
-                        typeof this.worldManager.getPlanet === "function"
-                    ) {
-                        const planet = this.worldManager.getPlanet(
-                            player.dockedAtPlanetIdentifier.systemIndex,
-                            player.dockedAtPlanetIdentifier.planetIndex,
-                        );
-                        if (planet) {
-                            player.x = planet.x;
-                            player.y = planet.y;
-                        }
+                    const planet = this.worldManager.getPlanet(
+                        player.system,
+                        player.dockedAtPlanetIdentifier.planetIndex,
+                    );
+                    if (planet) {
+                        player.x = planet.x;
+                        player.y = planet.y;
                     }
                     player.vx = 0;
                     player.vy = 0;
-
-                    if (
-                        this.worldManager &&
-                        typeof this.worldManager.playerDockedAtPlanet ===
-                            "function"
-                    ) {
-                        this.worldManager.playerDockedAtPlanet(
-                            player,
-                            player.dockedAtPlanetIdentifier.systemIndex,
-                            player.dockedAtPlanetIdentifier.planetIndex,
-                        );
-                    }
+                    this.worldManager.playerDockedAtPlanet(
+                        player,
+                        player.system,
+                        player.dockedAtPlanetIdentifier.planetIndex,
+                    );
                     console.log(
-                        `PlayerManager: Synced server state for ${socket.id} to be DOCKED at system ${player.system}, planet ${player.dockedAtPlanetIdentifier.planetIndex}.`,
+                        `PlayerManager: ${socket.id} DOCKED at system ${player.system}, planet ${player.dockedAtPlanetIdentifier.planetIndex}.`,
                     );
                 } else {
                     player.dockedAtPlanetIdentifier = null;
@@ -177,37 +155,10 @@ class PlayerManager {
                     if (receivedSyncData.system !== undefined)
                         player.system = receivedSyncData.system;
                     console.log(
-                        `PlayerManager: Synced server state for ${socket.id} to be UNDOCKED in system ${player.system}.`,
+                        `PlayerManager: ${socket.id} UNDOCKED in system ${player.system}.`,
                     );
                 }
-
-                const comprehensiveUpdate = {
-                    x: player.x,
-                    y: player.y,
-                    vx: player.vx,
-                    vy: player.vy,
-                    angle: player.angle,
-                    system: player.system,
-                    dockedAtPlanetIdentifier: player.dockedAtPlanetIdentifier,
-                    credits: player.credits,
-                    cargo: player.cargo,
-                    weapons: player.weapons,
-                    activeWeapon: player.activeWeapon,
-                    health: player.health,
-                    maxHealth: player.maxHealth,
-                    type: player.type,
-                    maxCargo: player.maxCargo,
-                    activeMissions: player.activeMissions,
-                    hyperjumpState: player.hyperjumpState, // ensure client knows it's idle
-                };
-                this.updatePlayerState(socket.id, comprehensiveUpdate);
-                console.log(
-                    `PlayerManager: Server state for ${socket.id} fully updated and broadcasted after client load.`,
-                );
-            } else {
-                console.warn(
-                    `PlayerManager: Invalid data for 'clientLoadedDockedState' from ${socket.id}.`,
-                );
+                this.broadcastPlayerState(socket.id, this.players[socket.id]);
             }
         });
     }
@@ -215,11 +166,7 @@ class PlayerManager {
     handleDisconnect(socket) {
         const player = this.getPlayer(socket.id);
         if (player) {
-            if (
-                player.dockedAtPlanetIdentifier &&
-                this.worldManager &&
-                typeof this.worldManager.playerUndockedFromPlanet === "function"
-            ) {
+            if (player.dockedAtPlanetIdentifier) {
                 this.worldManager.playerUndockedFromPlanet(
                     player,
                     player.dockedAtPlanetIdentifier.systemIndex,
@@ -229,10 +176,6 @@ class PlayerManager {
             if (player.hyperjumpChargeTimeoutId) {
                 clearTimeout(player.hyperjumpChargeTimeoutId);
                 player.hyperjumpChargeTimeoutId = null;
-                player.hyperjumpState = "idle";
-                console.log(
-                    `Player ${socket.id} disconnected, hyperjump charge cancelled.`,
-                );
             }
         }
         console.log(`Player ${socket.id} disconnected.`);
@@ -244,68 +187,38 @@ class PlayerManager {
         return this.players[playerId];
     }
 
+    getAllPlayers() {
+        return this.players;
+    }
+
     updatePlayerState(playerId, updates) {
         if (this.players[playerId]) {
             Object.assign(this.players[playerId], updates);
-            this.io.emit("state", { [playerId]: this.players[playerId] });
+            this.io.emit("state", { [playerId]: updates });
         }
     }
 
-    broadcastPlayerState(playerId, specificUpdates) {
+    broadcastPlayerState(playerId, fullPlayerData) {
         if (this.players[playerId]) {
-            const updateToSend = {};
-            // Only copy known properties from specificUpdates to prevent unintended large objects
-            const allowedKeys = [
-                "x",
-                "y",
-                "vx",
-                "vy",
-                "angle",
-                "system",
-                "dockedAtPlanetIdentifier",
-                "credits",
-                "cargo",
-                "health",
-                "maxHealth",
-                "type",
-                "maxCargo",
-                "weapons",
-                "activeWeapon",
-                "activeMissions",
-                "destroyed",
-                "hyperjumpState",
-            ];
-            for (const key of allowedKeys) {
-                if (specificUpdates.hasOwnProperty(key)) {
-                    updateToSend[key] = specificUpdates[key];
-                }
-            }
-            if (Object.keys(updateToSend).length > 0) {
-                this.io.emit("state", { [playerId]: updateToSend });
-            } else if (!specificUpdates) {
-                // if specificUpdates is null/undefined, send whole player object
-                this.io.emit("state", { [playerId]: this.players[playerId] });
-            }
+            this.io.emit("state", { [playerId]: fullPlayerData });
         }
     }
 
     registerSocketHandlers(socket) {
         socket.on("control", (data) => {
             const player = this.getPlayer(socket.id);
-            if (!player || player.dockedAtPlanetIdentifier) return;
+            if (
+                !player ||
+                player.dockedAtPlanetIdentifier ||
+                player.hyperjumpState === "charging"
+            )
+                return;
 
-            // Client-side logic prevents new thrust/rotation if charging.
-            // Server updates position based on client's drift.
             player.x = data.x;
             player.y = data.y;
             player.vx = data.vx;
             player.vy = data.vy;
-            if (player.hyperjumpState !== "charging") {
-                // Only update angle if not charging
-                player.angle = data.angle;
-            }
-            // System changes are handled by hyperjump logic only
-            // if (data.system !== undefined && player.system !== data.system) { player.system = data.system; }
+            player.angle = data.angle;
 
             const minimalUpdate = {
                 x: player.x,
@@ -313,14 +226,16 @@ class PlayerManager {
                 vx: player.vx,
                 vy: player.vy,
                 angle: player.angle,
-                // system: player.system, // System is not sent in minimal update unless changed by hyperjump
             };
             socket.broadcast.emit("state", { [socket.id]: minimalUpdate });
         });
 
-        socket.on("requestHyperjump", () => {
+        socket.on("requestHyperjump", (data) => {
+            // data = { targetSystemIndex: number | null }
             const player = this.getPlayer(socket.id);
             if (!player || player.destroyed) return;
+
+            const targetSystemIndex = data ? data.targetSystemIndex : null;
 
             if (player.dockedAtPlanetIdentifier) {
                 return socket.emit("hyperjumpDenied", {
@@ -333,18 +248,25 @@ class PlayerManager {
                 });
             }
 
-            const currentSystemData = this.worldManager.getSystem(
+            const currentSystemDataForProxCheck = this.worldManager.getSystem(
                 player.system,
             );
-            if (currentSystemData && currentSystemData.planets) {
-                for (const planet of currentSystemData.planets) {
+            if (
+                currentSystemDataForProxCheck &&
+                currentSystemDataForProxCheck.planets
+            ) {
+                for (const planet of currentSystemDataForProxCheck.planets) {
+                    if (!planet) continue;
                     const distSq =
                         (player.x - planet.x) ** 2 + (player.y - planet.y) ** 2;
-                    if (
-                        distSq <
-                        this.gameConfig
-                            .MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED
-                    ) {
+                    const planetScale = planet.planetImageScale || 1.0; // Use actual scale from planet data
+                    const minSafeDistSq =
+                        (this.gameConfig
+                            .MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED ||
+                            22500) *
+                        Math.pow(planetScale, 2) *
+                        1.5;
+                    if (distSq < minSafeDistSq) {
                         return socket.emit("hyperjumpDenied", {
                             message: "Too close to a celestial body.",
                         });
@@ -352,26 +274,58 @@ class PlayerManager {
                 }
             }
 
+            if (targetSystemIndex === null || targetSystemIndex === undefined) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Target system not specified.",
+                });
+            }
+            if (
+                targetSystemIndex < 0 ||
+                targetSystemIndex >= this.worldManager.systems.length
+            ) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Invalid target system index.",
+                });
+            }
+            const currentSystemData = this.worldManager.getSystem(
+                player.system,
+            ); // Renamed to avoid conflict
+            if (
+                !currentSystemData ||
+                !currentSystemData.connections ||
+                !currentSystemData.connections.includes(targetSystemIndex)
+            ) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "No direct hyperlane to the target system.",
+                });
+            }
+            if (targetSystemIndex === player.system) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Already in the target system.",
+                });
+            }
+
             player.hyperjumpState = "charging";
-            // Also update player state for other clients to know this player is charging
             this.updatePlayerState(socket.id, { hyperjumpState: "charging" });
             socket.emit("hyperjumpChargeStarted", {
                 chargeTime: this.gameConfig.HYPERJUMP_CHARGE_TIME_MS,
             });
-            console.log(`Player ${socket.id} starting hyperjump charge.`);
+            console.log(
+                `Player ${socket.id} starting hyperjump charge to system ${targetSystemIndex}.`,
+            );
 
             player.hyperjumpChargeTimeoutId = setTimeout(() => {
                 if (player.hyperjumpState !== "charging" || player.destroyed) {
-                    // Check destroyed status too
                     player.hyperjumpChargeTimeoutId = null;
                     if (
                         player.hyperjumpState === "charging" &&
                         !player.destroyed
-                    )
-                        player.hyperjumpState = "idle"; // Reset if not destroyed but cancelled
-                    this.updatePlayerState(socket.id, {
-                        hyperjumpState: player.hyperjumpState,
-                    });
+                    ) {
+                        player.hyperjumpState = "idle";
+                        this.updatePlayerState(socket.id, {
+                            hyperjumpState: "idle",
+                        });
+                    }
                     return;
                 }
 
@@ -379,24 +333,85 @@ class PlayerManager {
                 player.hyperjumpChargeTimeoutId = null;
 
                 const oldSystem = player.system;
-                player.system =
-                    (player.system + 1) % this.worldManager.systems.length;
+                player.system = targetSystemIndex;
 
                 let newX,
                     newY,
                     newAngle = 0;
-                const targetSystemData = this.worldManager.getSystem(
+                const arrivalSystemData = this.worldManager.getSystem(
                     player.system,
                 );
-                if (targetSystemData && targetSystemData.planets.length > 0) {
-                    const arrivalPlanet = targetSystemData.planets[0];
-                    newX = arrivalPlanet.x - 250;
-                    newY = arrivalPlanet.y;
-                    newAngle = 0;
-                } else {
-                    newX = 100;
-                    newY = this.gameConfig.PLAYER_SPAWN_Y || 300;
-                    newAngle = 0;
+                const originSystemData = this.worldManager.getSystem(oldSystem);
+
+                newX =
+                    (this.gameConfig.PLAYER_SPAWN_X || 400) +
+                    (Math.random() * 200 - 100);
+                newY =
+                    (this.gameConfig.PLAYER_SPAWN_Y || 300) +
+                    (Math.random() * 200 - 100);
+
+                if (arrivalSystemData) {
+                    if (
+                        originSystemData &&
+                        originSystemData.universeX !== undefined &&
+                        arrivalSystemData.universeX !== undefined &&
+                        originSystemData.universeY !== undefined &&
+                        arrivalSystemData.universeY !== undefined
+                    ) {
+                        const dx =
+                            arrivalSystemData.universeX -
+                            originSystemData.universeX;
+                        const dy =
+                            arrivalSystemData.universeY -
+                            originSystemData.universeY;
+                        const dist = Math.hypot(dx, dy);
+                        const arrivalOffsetFromCenter =
+                            350 + Math.random() * 100;
+
+                        if (dist > 0) {
+                            const firstPlanetInArrival =
+                                arrivalSystemData.planets[0];
+                            const systemCenterX = firstPlanetInArrival
+                                ? firstPlanetInArrival.x -
+                                  (Math.random() * 100 - 50)
+                                : this.gameConfig.PLAYER_SPAWN_X || 400; // A rough center
+                            const systemCenterY = firstPlanetInArrival
+                                ? firstPlanetInArrival.y -
+                                  (Math.random() * 100 - 50)
+                                : this.gameConfig.PLAYER_SPAWN_Y || 300;
+
+                            newX =
+                                systemCenterX -
+                                (dx / dist) * arrivalOffsetFromCenter;
+                            newY =
+                                systemCenterY -
+                                (dy / dist) * arrivalOffsetFromCenter;
+                            newAngle = Math.atan2(dy, dx) + Math.PI;
+                        } else {
+                            const firstPlanet = arrivalSystemData.planets[0];
+                            newX =
+                                (firstPlanet
+                                    ? firstPlanet.x
+                                    : this.gameConfig.PLAYER_SPAWN_X || 400) -
+                                (200 + Math.random() * 100);
+                            newY =
+                                (firstPlanet
+                                    ? firstPlanet.y
+                                    : this.gameConfig.PLAYER_SPAWN_Y || 300) +
+                                (Math.random() * 100 - 50);
+                            newAngle = 0;
+                        }
+                    } else {
+                        const firstPlanet = arrivalSystemData.planets[0];
+                        newX =
+                            (firstPlanet
+                                ? firstPlanet.x
+                                : this.gameConfig.PLAYER_SPAWN_X || 400) - 250;
+                        newY = firstPlanet
+                            ? firstPlanet.y
+                            : this.gameConfig.PLAYER_SPAWN_Y || 300;
+                        newAngle = 0;
+                    }
                 }
 
                 player.x = newX;
@@ -407,7 +422,7 @@ class PlayerManager {
                 player.dockedAtPlanetIdentifier = null;
 
                 console.log(
-                    `Player ${socket.id} hyperjump complete. Old system: ${oldSystem}, New system: ${player.system}.`,
+                    `Player ${socket.id} hyperjump complete. Old system: ${oldSystem}, New system: ${player.system}. Arrived at ${player.x.toFixed(0)},${player.y.toFixed(0)}.`,
                 );
 
                 socket.emit("hyperjumpComplete", {
@@ -417,16 +432,7 @@ class PlayerManager {
                     newAngle: player.angle,
                 });
 
-                this.updatePlayerState(socket.id, {
-                    system: player.system,
-                    x: player.x,
-                    y: player.y,
-                    vx: player.vx,
-                    vy: player.vy,
-                    angle: player.angle,
-                    dockedAtPlanetIdentifier: null,
-                    hyperjumpState: "idle",
-                });
+                this.broadcastPlayerState(socket.id, player);
             }, this.gameConfig.HYPERJUMP_CHARGE_TIME_MS);
         });
 
@@ -515,6 +521,9 @@ class PlayerManager {
             player.cargo = new Array(this.tradeGoods.length).fill(0);
             player.maxHealth = newShipType.maxHealth || 100;
             player.health = player.maxHealth;
+            player.weapons = [];
+            player.activeWeapon = null;
+
             this.updatePlayerState(socket.id, {
                 credits: player.credits,
                 type: player.type,
@@ -522,6 +531,8 @@ class PlayerManager {
                 cargo: player.cargo,
                 maxHealth: player.maxHealth,
                 health: player.health,
+                weapons: player.weapons,
+                activeWeapon: player.activeWeapon,
             });
             socket.emit("actionSuccess", {
                 message: `Successfully purchased ${newShipType.name}.`,
@@ -551,10 +562,6 @@ class PlayerManager {
         });
     }
 
-    getAllPlayers() {
-        return this.players;
-    }
-
     handlePlayerHitDuringHyperjumpCharge(playerId) {
         const player = this.getPlayer(playerId);
         if (
@@ -565,7 +572,7 @@ class PlayerManager {
             clearTimeout(player.hyperjumpChargeTimeoutId);
             player.hyperjumpChargeTimeoutId = null;
             player.hyperjumpState = "idle";
-            this.updatePlayerState(playerId, { hyperjumpState: "idle" }); // Inform all clients
+            this.updatePlayerState(playerId, { hyperjumpState: "idle" });
             this.io
                 .to(playerId)
                 .emit("hyperjumpCancelled", {
@@ -579,4 +586,3 @@ class PlayerManager {
 }
 
 module.exports = PlayerManager;
-

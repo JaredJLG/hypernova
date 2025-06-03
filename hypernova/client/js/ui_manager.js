@@ -15,10 +15,10 @@ export const UIManager = {
         rightHudPanel = document.getElementById("right-hud-panel");
         shipStatsContentDiv = document.getElementById("ship-stats-content");
         activeMissionsListUl = document.getElementById("active-missions-list");
-        // Minimap canvas will be initialized and drawn by Renderer
     },
 
     isMenuOpen() {
+        // This now refers to the docked station menu, not the HUD panel
         return gameState.isMenuOpen;
     },
 
@@ -28,7 +28,7 @@ export const UIManager = {
             uiContainer.removeChild(dockMenuElement);
         }
 
-        gameState.isMenuOpen = true;
+        gameState.isMenuOpen = true; // Docked station menu is open
         gameState.activeSubMenu = null;
         document.body.classList.add("no-scroll");
 
@@ -36,7 +36,10 @@ export const UIManager = {
         uiContainer.appendChild(dockMenuElement);
 
         this.renderDockedStationInterface();
-        this.showRightHudPanel(); // Show and update the side panel
+        // Right HUD panel is already visible, but we might want to refresh its content
+        this.updateShipStatsPanel();
+        this.updateActiveMissionsPanel();
+        Renderer.drawMinimap();
     },
 
     closeDockMenu() {
@@ -46,21 +49,24 @@ export const UIManager = {
             uiContainer.removeChild(dockMenuElement);
         }
         dockMenuElement = null;
-        gameState.isMenuOpen = false;
+        gameState.isMenuOpen = false; // Docked station menu is closed
         gameState.activeSubMenu = null;
         gameState.selectedTradeIndex = 0;
         gameState.selectedWeaponKey = null;
         gameState.selectedShipIndex = 0;
         gameState.selectedMissionIndex = 0;
         document.body.classList.remove("no-scroll");
-        // Hiding the right HUD panel is handled by undockCleanup
+        // Right HUD panel remains visible
     },
 
     undockCleanup() {
         gameState.docked = false;
         gameState.dockedAtDetails = null;
         this.closeDockMenu();
-        this.hideRightHudPanel(); // Hide the side panel when undocking
+        // Right HUD panel remains visible. Ensure its content reflects undocked state.
+        this.updateShipStatsPanel();
+        this.updateActiveMissionsPanel();
+        // Minimap will be updated by Renderer.draw()
     },
 
     showRightHudPanel() {
@@ -68,15 +74,16 @@ export const UIManager = {
             rightHudPanel.classList.remove("hidden");
             this.updateShipStatsPanel();
             this.updateActiveMissionsPanel();
-            Renderer.drawMinimap(); // Tell the renderer to draw the minimap
+            // Renderer.drawMinimap() will be called by the main render loop
         }
     },
 
-    hideRightHudPanel() {
-        if (rightHudPanel) {
-            rightHudPanel.classList.add("hidden");
-        }
-    },
+    // hideRightHudPanel() is no longer needed if the panel is always visible
+    // hideRightHudPanel() {
+    //     if (rightHudPanel) {
+    //         rightHudPanel.classList.add("hidden");
+    //     }
+    // },
 
     updateShipStatsPanel() {
         if (!shipStatsContentDiv || !gameState.myShip || !gameState.currentUser)
@@ -109,6 +116,7 @@ export const UIManager = {
             gameState.myShip.activeMissions.length > 0
         ) {
             gameState.myShip.activeMissions.slice(0, 5).forEach((mission) => {
+                // Show top 5 or so
                 const li = document.createElement("li");
                 let missionText = `<strong>${mission.title}</strong>`;
                 if (
@@ -117,11 +125,18 @@ export const UIManager = {
                 ) {
                     missionText += ` (${mission.targetsDestroyed || 0}/${mission.targetsRequired})`;
                 }
-                const timeRemainingMin = Math.max(
-                    0,
-                    Math.round((mission.timeLimit - Date.now()) / 60000),
-                );
-                missionText += ` (${timeRemainingMin}m left)`;
+                const timeRemainingMs = mission.timeLimit - Date.now();
+                let timeRemainingText = "";
+                if (timeRemainingMs <= 0) {
+                    timeRemainingText = "(Expired)";
+                } else {
+                    const timeRemainingMin = Math.max(
+                        0,
+                        Math.round(timeRemainingMs / 60000),
+                    );
+                    timeRemainingText = `(${timeRemainingMin}m left)`;
+                }
+                missionText += ` ${timeRemainingText}`;
                 li.innerHTML = missionText;
                 activeMissionsListUl.appendChild(li);
             });
@@ -135,14 +150,15 @@ export const UIManager = {
             console.error(
                 "Dock menu element does not exist. Cannot prepare sub-menu host.",
             );
-            this.openDockMenu();
+            this.openDockMenu(); // Attempt to create it if called erroneously
             if (!dockMenuElement) return null;
         }
         let stationUI = dockMenuElement.querySelector("#docked-station-ui");
         if (!stationUI) {
-            this.renderDockedStationInterface();
+            this.renderDockedStationInterface(); // Re-render main dock UI if needed
             stationUI = dockMenuElement.querySelector("#docked-station-ui");
             if (!stationUI) {
+                // Should not happen if renderDockedStationInterface works
                 console.error(
                     "Failed to create #docked-station-ui for sub-menu.",
                 );
@@ -158,7 +174,7 @@ export const UIManager = {
             );
             return null;
         }
-        contentHost.innerHTML = "";
+        contentHost.innerHTML = ""; // Clear previous sub-menu content
         return contentHost;
     },
 
@@ -175,15 +191,20 @@ export const UIManager = {
             }
         }
         if (!gameState.dockedAtDetails || !gameState.myShip) {
+            // This can happen if undockCleanup runs before this render is complete
+            // or if somehow this is called when not docked.
+            this.closeDockMenu(); // Ensure dock menu is closed if state is inconsistent
             return;
         }
 
-        gameState.activeSubMenu = null;
-        dockMenuElement.innerHTML = "";
+        gameState.activeSubMenu = null; // Reset sub-menu selection
+        dockMenuElement.innerHTML = ""; // Clear previous content
 
         const planetName = gameState.dockedAtDetails.planetName;
         const systemName = gameState.dockedAtDetails.systemName;
+        // Dummy descriptions, replace with actual data source if available
         const planetDescriptions = {
+            /* ... same as before ... */
             Alpha: "A bustling trade hub in the Greek system, known for its agricultural surplus.",
             Delta: "Rich in mineral wealth, Delta is a key mining outpost.",
             Sol: "The cradle of humanity in the Roman system, a political and cultural center.",
@@ -231,6 +252,7 @@ export const UIManager = {
         `;
         dockMenuElement.innerHTML = html;
 
+        // Add event listeners for the main docked station buttons
         document
             .getElementById("station-dialogue-okay")
             ?.addEventListener("click", () => {
@@ -285,9 +307,10 @@ export const UIManager = {
             ?.addEventListener("click", () => {
                 gameState.activeSubMenu = "missions";
                 gameState.selectedMissionIndex = 0;
-                gameState.availableMissionsForCurrentPlanet = [];
-                this.renderMissionsMenu();
+                gameState.availableMissionsForCurrentPlanet = []; // Clear before requesting
+                this.renderMissionsMenu(); // Render skeleton
                 if (gameState.dockedAtDetails) {
+                    // Request new missions
                     Network.requestMissions(
                         gameState.dockedAtDetails.systemIndex,
                         gameState.dockedAtDetails.planetIndex,
@@ -303,11 +326,11 @@ export const UIManager = {
         const myShip = gameState.myShip;
         const currentShipDef =
             gameState.clientGameData.shipTypes[myShip.type || 0];
-        if (!currentShipDef) return;
+        if (!currentShipDef) return; // Should have ship definition
         const cargoCount = myShip.cargo
             ? myShip.cargo.reduce((s, v) => s + v, 0)
             : 0;
-        const planetEco = gameState.dockedAtDetails;
+        const planetEco = gameState.dockedAtDetails; // This should have current prices/stock
 
         let itemsHtml = `<div class="station-submenu-header">
                             <span class="station-submenu-col col-name">Good</span>
@@ -535,6 +558,7 @@ export const UIManager = {
                         <span class="station-submenu-col col-reward">$${m.rewardCredits.toLocaleString()}</span>
                     </div>`;
                 if (i === gameState.selectedMissionIndex) {
+                    // Show details for selected mission
                     const timeLeftMs = m.timeLimit - Date.now();
                     const timeLeftMin = Math.max(
                         0,

@@ -16,6 +16,13 @@ class WorldManager {
         this.systems = JSON.parse(JSON.stringify(this.systemsBase));
 
         this.systems.forEach((system) => {
+            // Ensure new fields exist if not in base JSON (though we added them)
+            if (system.universeX === undefined)
+                system.universeX = Math.random() * 1000;
+            if (system.universeY === undefined)
+                system.universeY = Math.random() * 1000;
+            if (!system.connections) system.connections = [];
+
             system.planets.forEach((planet) => {
                 planet.stock = {};
                 planet.buyPrices = {};
@@ -112,12 +119,19 @@ class WorldManager {
     getSystemsForClient() {
         return this.systems.map((s) => ({
             name: s.name,
+            // Pass new universe map data
+            universeX: s.universeX,
+            universeY: s.universeY,
+            connections: s.connections,
+            // Existing planet data for in-system view
             planets: s.planets.map((p) => ({
                 name: p.name,
                 x: p.x,
                 y: p.y,
-                imageFile: p.imageFile, // Make sure imageFile is passed for client
+                imageFile: p.imageFile,
+                planetImageScale: p.planetImageScale,
             })),
+            backgroundFile: s.backgroundFile, // Make sure backgroundFile is also passed
         }));
     }
 

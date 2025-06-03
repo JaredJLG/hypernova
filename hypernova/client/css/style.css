@@ -1,3 +1,4 @@
+/* ===== START: hypernova/client/css/style.css ===== */
 /* Existing styles from your file */
 body {
   margin: 0;
@@ -406,7 +407,7 @@ body.no-scroll {
 }
 
 /* Universe Map Specific (if ever HTML based, good to have a placeholder) */
-.universe-map-container { }
+.universe-map-container { } /* Keep for potential future HTML map elements */
 .system-entry { }
 
 /* ===== NEW DOCKED STATION UI STYLES ===== */
@@ -757,3 +758,30 @@ body.no-scroll {
     padding-top: 10px;
     border-top: 1px solid rgba(0, 150, 200, 0.2);
 }
+
+/* ===== UNIVERSE MAP STYLES ===== */
+#universe-map-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 5, 10, 0.95); /* Dark semi-transparent background */
+    z-index: 50; /* Above game, potentially below critical popups if any */
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto; /* Allow clicks on the map */
+}
+
+#universe-map-container.hidden {
+    display: none !important;
+}
+
+#universeMapCanvas {
+    display: block;
+    /* Width and height will be set by JavaScript to match window */
+    /* background-color: #000810; /* Optional: if container bg is not enough */
+    cursor: pointer; /* Indicate it's clickable */
+}
+/* ===== END: hypernova/client/css/style.css ===== */

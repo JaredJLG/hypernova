@@ -1,0 +1,52 @@
+{
+  "username": "55",
+  "lastSaved": "2025-06-03T01:57:12.281Z",
+  "shipData": {
+    "x": 300,
+    "y": 500,
+    "angle": 0.5011211283763046,
+    "vx": 0,
+    "vy": 0,
+    "type": 0,
+    "credits": 1000,
+    "cargo": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "maxCargo": 10,
+    "health": 100,
+    "maxHealth": 100,
+    "weapons": [],
+    "activeWeapon": null,
+    "system": 4,
+    "activeMissions": []
+  },
+  "dockedAtDetails": {
+    "systemIndex": 4,
+    "planetIndex": 0,
+    "planetName": "Alkaid VII",
+    "systemName": "Alkaid",
+    "buyPrices": {
+      "Food": 11,
+      "Ore": 37,
+      "Medicine": 105,
+      "Electronics": 294
+    },
+    "sellPrices": {
+      "Food": 10,
+      "Ore": 33,
+      "Medicine": 95,
+      "Electronics": 266
+    },
+    "stock": {
+      "Food": 1000,
+      "Ore": 2000,
+      "Medicine": 1000,
+      "Electronics": 500
+    },
+    "playerX": 300,
+    "playerY": 500
+  }
+}

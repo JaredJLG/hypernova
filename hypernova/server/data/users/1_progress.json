@@ -1,10 +1,10 @@
 {
   "username": "1",
-  "lastSaved": "2025-06-02T18:01:04.934Z",
+  "lastSaved": "2025-06-03T01:54:26.700Z",
   "shipData": {
-    "x": 200,
-    "y": 150,
-    "angle": 0.8400000000000034,
+    "x": 400,
+    "y": 300,
+    "angle": 0,
     "vx": 0,
     "vy": 0,
     "type": 0,
@@ -25,28 +25,28 @@
   },
   "dockedAtDetails": {
     "systemIndex": 0,
-    "planetIndex": 0,
-    "planetName": "Alpha",
+    "planetIndex": 1,
+    "planetName": "Delta",
     "systemName": "Greek",
     "buyPrices": {
-      "Food": 8,
-      "Ore": 53,
-      "Medicine": 105,
-      "Electronics": 294
+      "Food": 11,
+      "Ore": 37,
+      "Medicine": 147,
+      "Electronics": 210
     },
     "sellPrices": {
-      "Food": 7,
-      "Ore": 48,
-      "Medicine": 95,
-      "Electronics": 266
+      "Food": 10,
+      "Ore": 33,
+      "Medicine": 133,
+      "Electronics": 190
     },
     "stock": {
-      "Food": 2000,
-      "Ore": 1000,
-      "Medicine": 1000,
-      "Electronics": 500
+      "Food": 1000,
+      "Ore": 2000,
+      "Medicine": 500,
+      "Electronics": 1000
     },
-    "playerX": 200,
-    "playerY": 150
+    "playerX": 500,
+    "playerY": 320
   }
 }
