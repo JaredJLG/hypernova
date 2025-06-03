@@ -19,7 +19,7 @@ const filesToInclude = [
   "hypernova/server/config/game_config.js",
 
   "hypernova/server/data/ship_types.json",
-  "hypernova/server/data/systems_init.json",
+  //"hypernova/server/data/systems_init.json",
   "hypernova/server/data/trade_goods.json",
   "hypernova/server/data/weapons.json",
 

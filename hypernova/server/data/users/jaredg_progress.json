@@ -1,54 +1,67 @@
 {
   "username": "jaredg",
-  "lastSaved": "2025-06-03T01:54:58.729Z",
+  "lastSaved": "2025-06-03T15:04:31.762Z",
   "shipData": {
-    "x": 300,
-    "y": 150,
-    "angle": 5.741370614359145,
+    "x": 800,
+    "y": 500,
+    "angle": 4.463185307179579,
     "vx": 0,
     "vy": 0,
-    "type": 0,
-    "credits": 467,
+    "type": 4,
+    "credits": 972167,
     "cargo": [
-      3,
+      0,
       0,
       0,
       0
     ],
-    "maxCargo": 10,
-    "health": 100,
-    "maxHealth": 100,
+    "maxCargo": 100,
+    "health": 150,
+    "maxHealth": 150,
     "weapons": [
-      "Laser"
+      "FusionGun",
+      "Railgun",
+      "LightPulseLaser",
+      "StandardPlasmaBolt",
+      "KineticSlugThrower"
     ],
-    "activeWeapon": "Laser",
-    "system": 15,
+    "activeWeapon": "KineticSlugThrower",
+    "secondaryWeapons": [
+      "LightMissileLauncher",
+      "HeavyTorpedoTube"
+    ],
+    "secondaryAmmo": {
+      "LightMissileLauncher": 16,
+      "HeavyTorpedoTube": 4
+    },
+    "activeSecondaryWeaponSlot": -1,
+    "system": 22,
     "activeMissions": []
   },
   "dockedAtDetails": {
-    "systemIndex": 15,
+    "systemIndex": 22,
     "planetIndex": 0,
-    "planetName": "Yemuro Station",
-    "systemName": "Yemuro",
+    "planetName": "Capella IV",
+    "systemName": "Capella",
     "buyPrices": {
       "Food": 15,
-      "Ore": 74,
-      "Medicine": 105,
+      "Ore": 37,
+      "Medicine": 147,
       "Electronics": 147
     },
     "sellPrices": {
       "Food": 13,
-      "Ore": 67,
-      "Medicine": 95,
+      "Ore": 33,
+      "Medicine": 133,
       "Electronics": 133
     },
     "stock": {
       "Food": 500,
-      "Ore": 500,
-      "Medicine": 1000,
+      "Ore": 2000,
+      "Medicine": 500,
       "Electronics": 2000
     },
-    "playerX": 300,
-    "playerY": 150
+    "playerX": 800,
+    "playerY": 500
   }
 }

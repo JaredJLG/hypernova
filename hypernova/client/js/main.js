@@ -11,7 +11,6 @@ import { UIManager } from "./ui_manager.js";
 import { UniverseMapManager } from "./universe_map_renderer.js";
 
 // --- DYNAMIC LOGIN BACKGROUND & MUSIC ---
-// ... (existing login screen visual and music functions - no changes here)
 let loginBgCanvas, loginBgCtx;
 let stars = [];
 let shootingStars = [];
@@ -225,7 +224,6 @@ function setupGameCanvasFullscreen() {
 }
 
 async function loadImages(imagePaths) {
-    // ... (existing code)
     console.log("main.js/loadImages called with paths:", imagePaths);
     const imagePromises = imagePaths.map((path) => {
         return new Promise((resolve, reject) => {
@@ -268,7 +266,7 @@ async function handleLoginSubmit(username, password) {
 
         if (response.ok && result.success) {
             loginMessageEl.textContent = result.message || "Success!";
-            gameState.currentUser = { username: result.username };
+            gameState.currentUser = { username: result.username }; // Store username from server response
             stopLoginScreenVisualsAndMusic();
             document.getElementById("login-screen").classList.add("hidden");
             document
@@ -296,7 +294,7 @@ async function handleLoginSubmit(username, password) {
                 if (allImagePaths.length > 0) await loadImages(allImagePaths);
                 else console.log("main.js/onReadyCallback: No images to load.");
 
-                await loadProgress();
+                await loadProgress(); // This will now attempt to send username to server
 
                 if (gameState.myId && !gameState.myShip) {
                     gameState.allShips[gameState.myId] =
@@ -314,9 +312,7 @@ async function handleLoginSubmit(username, password) {
                 const canvasEl = document.getElementById("gameCanvas");
                 if (canvasEl) canvasEl.focus();
 
-                // ===== SHOW RIGHT HUD PANEL =====
                 UIManager.showRightHudPanel();
-                // ================================
 
                 lastTime = performance.now();
                 requestAnimationFrame(gameLoop);
@@ -332,7 +328,6 @@ async function handleLoginSubmit(username, password) {
 }
 
 async function loadProgress() {
-    // ... (existing code)
     console.log("main.js/loadProgress: Called.");
     if (!gameState.currentUser || !gameState.currentUser.username) {
         console.log("main.js/loadProgress: No current user, returning.");
@@ -348,25 +343,32 @@ async function loadProgress() {
                 if (gameState.myId) {
                     if (!gameState.allShips[gameState.myId])
                         gameState.allShips[gameState.myId] = {};
+                    // Apply loaded ship data to the local gameState representation
                     gameState.updateShipData(gameState.myId, progress.shipData);
 
+                    // Prepare data to sync with the server's understanding of this player
                     const syncData = {
+                        username: gameState.currentUser.username, // Include username
                         credits: progress.shipData.credits,
                         cargo: progress.shipData.cargo,
                         weapons: progress.shipData.weapons,
                         activeWeapon: progress.shipData.activeWeapon,
+                        secondaryWeapons: progress.shipData.secondaryWeapons || [],
+                        secondaryAmmo: progress.shipData.secondaryAmmo || {},
+                        activeSecondaryWeaponSlot: progress.shipData.activeSecondaryWeaponSlot !== undefined ? progress.shipData.activeSecondaryWeaponSlot : -1,
                         health: progress.shipData.health,
                         type: progress.shipData.type,
                         activeMissions: progress.shipData.activeMissions || [],
                     };
+
                     if (progress.dockedAtDetails) {
                         gameState.docked = true;
                         gameState.dockedAtDetails = progress.dockedAtDetails;
-                        syncData.dockedAtDetails = gameState.dockedAtDetails;
+                        syncData.dockedAtDetails = gameState.dockedAtDetails; // Server needs to know where we are docked
                     } else {
                         gameState.docked = false;
                         gameState.dockedAtDetails = null;
-                        syncData.dockedAtDetails = null;
+                        syncData.dockedAtDetails = null; // Explicitly null if not docked
                         syncData.x = progress.shipData.x;
                         syncData.y = progress.shipData.y;
                         syncData.angle = progress.shipData.angle;
@@ -374,21 +376,50 @@ async function loadProgress() {
                         syncData.vy = progress.shipData.vy;
                         syncData.system = progress.shipData.system;
                     }
-                    if (gameState.socket)
+
+                    if (gameState.socket) {
+                        console.log("main.js/loadProgress: Emitting clientLoadedDockedState with data:", JSON.stringify(syncData).substring(0,200));
                         gameState.socket.emit(
                             "clientLoadedDockedState",
                             syncData,
                         );
+                    }
                 } else {
+                    // If myId isn't set yet (socket 'init' not received), queue progress
                     gameState.pendingProgressToApply = progress;
                 }
-            } else {
+            } else { // No progress.shipData, treat as new player or reset
                 gameState.docked = false;
                 gameState.dockedAtDetails = null;
+                 // If it's a new player (no save file), ensure default ship state is sent to server
+                if (gameState.myId && gameState.myShip && gameState.socket) {
+                    const defaultSyncData = {
+                        username: gameState.currentUser.username,
+                        credits: gameState.myShip.credits,
+                        cargo: gameState.myShip.cargo,
+                        weapons: gameState.myShip.weapons,
+                        activeWeapon: gameState.myShip.activeWeapon,
+                        secondaryWeapons: gameState.myShip.secondaryWeapons,
+                        secondaryAmmo: gameState.myShip.secondaryAmmo,
+                        activeSecondaryWeaponSlot: gameState.activeSecondaryWeaponSlot,
+                        health: gameState.myShip.health,
+                        type: gameState.myShip.type,
+                        activeMissions: gameState.myShip.activeMissions,
+                        dockedAtDetails: null,
+                        x: gameState.myShip.x,
+                        y: gameState.myShip.y,
+                        angle: gameState.myShip.angle,
+                        vx: gameState.myShip.vx,
+                        vy: gameState.myShip.vy,
+                        system: gameState.myShip.system,
+                    };
+                    gameState.socket.emit("clientLoadedDockedState", defaultSyncData);
+                }
             }
-        } else {
+        } else { // Response not ok
             gameState.docked = false;
             gameState.dockedAtDetails = null;
+            console.error("main.js/loadProgress: Failed to fetch progress from server.");
         }
     } catch (error) {
         console.error(
@@ -399,6 +430,7 @@ async function loadProgress() {
         gameState.dockedAtDetails = null;
     }
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("main.js/DOMContentLoaded event fired");
@@ -447,8 +479,31 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 let lastTime = 0;
-// let hudUpdateCounter = 0; // For less frequent HUD text updates
-// const HUD_UPDATE_INTERVAL = 30; // Update HUD text every 30 frames approx
+
+// Modified function to update projectile positions and remove expired ones
+function updateProjectiles(deltaTime) {
+    for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+        const p = gameState.projectiles[i];
+        const age = Date.now() - (p.time || 0);
+
+        // Remove if lifetime exceeded
+        if (p.projectileLifetime !== undefined && age >= p.projectileLifetime) {
+            gameState.projectiles.splice(i, 1);
+            continue;
+        }
+
+        // Update position if velocity components are valid
+        if (p.vx !== undefined && p.vy !== undefined &&
+            !isNaN(p.vx) && !isNaN(p.vy) &&
+            isFinite(p.vx) && isFinite(p.vy)) {
+             p.x += p.vx * deltaTime;
+             p.y += p.vy * deltaTime;
+        } else if (p.projectileType !== 'beam' && p.projectileType !== 'heavy_beam' && p.projectileType !== 'arc' && p.projectileType !== 'drain_field' && p.projectileType !== 'mine') {
+            // Log if a non-stationary projectile has invalid/missing velocity
+            // console.warn("Projectile with invalid/missing velocity:", p.weaponKey, p.vx, p.vy);
+        }
+    }
+}
 
 function gameLoop(timestamp) {
     const deltaTime = (timestamp - lastTime) / 1000;
@@ -456,9 +511,9 @@ function gameLoop(timestamp) {
 
     if (gameState.currentUser && gameState.myId && gameState.myShip) {
         if (gameState.isMapOpen) {
-            if (!gameState.docked) processInputs(); // Minimal physics for map open
+            if (!gameState.docked) processInputs();
+            // Not updating projectiles or drawing main game if map is open
         } else {
-            // Normal game rendering and logic
             if (gameState.myShip) {
                 gameState.camera.x =
                     gameState.myShip.x - gameState.camera.width / 2;
@@ -469,17 +524,10 @@ function gameLoop(timestamp) {
             if (!gameState.docked) {
                 processInputs();
             }
-            Renderer.draw(); // This will also call drawMinimap
-
-            // DOM updates for HUD text are now primarily event-driven (see network.js)
-            // to avoid excessive DOM manipulation in the game loop.
-            // If a fallback polling mechanism is desired for stats/missions:
-            // hudUpdateCounter++;
-            // if (hudUpdateCounter >= HUD_UPDATE_INTERVAL) {
-            //     UIManager.updateShipStatsPanel();
-            //     UIManager.updateActiveMissionsPanel();
-            //     hudUpdateCounter = 0;
-            // }
+            if(deltaTime > 0) { // Only update if deltaTime is positive
+                updateProjectiles(deltaTime);
+            }
+            Renderer.draw();
         }
     }
     requestAnimationFrame(gameLoop);

@@ -7,7 +7,7 @@ export const gameState = {
     get myShip() {
         return this.allShips[this.myId];
     },
-    projectiles: [],
+    projectiles: [], // Each projectile will have x, y, vx, vy, angle, time, weaponKey, etc.
     loadedImages: {},
     imagePathsToLoad: [],
 
@@ -35,12 +35,15 @@ export const gameState = {
     activeSubMenu: null, // For docked station sub-menus
 
     selectedTradeIndex: 0,
-    selectedWeaponKey: null,
+    selectedOutfitterWeaponKey: null, // Renamed from selectedWeaponKey for clarity
     selectedShipIndex: 0,
     selectedMissionIndex: 0,
     availableMissionsForCurrentPlanet: [],
 
-    weaponCycleIdx: 0,
+    // Weapon State
+    primaryWeaponCycleIdx: 0,      // For 'Q' and 'E' cycling primary weapons
+    activeSecondaryWeaponSlot: -1, // Index in myShip.secondaryWeapons array, -1 if none selected
+
     controls: {
         rotatingLeft: false,
         rotatingRight: false,
@@ -117,9 +120,17 @@ export const gameState = {
             ship.cargo = [];
         }
 
-        if (!ship.weapons) ship.weapons = [];
-        if (!ship.activeWeapon && ship.weapons.length > 0)
+        // Primary weapons
+        if (!ship.weapons) ship.weapons = []; // Stores keys of owned primary weapons
+        if (!ship.activeWeapon && ship.weapons.length > 0) // The active primary weapon key
             ship.activeWeapon = ship.weapons[0];
+
+        // Secondary weapons
+        if (!ship.secondaryWeapons) ship.secondaryWeapons = []; // Stores keys of owned secondary weapons
+        if (!ship.secondaryAmmo) ship.secondaryAmmo = {}; // e.g., { "LightMissileLauncher": 10 }
+
         if (!ship.activeMissions) ship.activeMissions = [];
     },
 };
+
+

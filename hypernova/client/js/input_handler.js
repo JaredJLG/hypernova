@@ -3,14 +3,7 @@ import { gameState } from "./game_state.js";
 import * as Network from "./network.js";
 import { UIManager } from "./ui_manager.js";
 import { UniverseMapManager } from "./universe_map_renderer.js"; // Corrected import name
-import {
-    // BASE_THRUST, // Not used here
-    // BASE_ROTATION_SPEED, // Not used here
-    DAMPING,
-    DOCKING_DISTANCE_SQUARED,
-    // MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED, // Used in Network.js
-    // HYPERJUMP_DENIED_MESSAGE_DURATION_MS, // Used in Network.js
-} from "./client_config.js";
+import { DAMPING, DOCKING_DISTANCE_SQUARED } from "./client_config.js";
 
 function wrap(value, max) {
     return ((value % max) + max) % max;
@@ -31,25 +24,11 @@ export function initInputListeners(canvas) {
 
         const keyLower = e.key.toLowerCase();
         const gameSpecificKeys = [
-            "arrowup",
-            "arrowdown",
-            "arrowleft",
-            "arrowright",
-            " ",
-            "d",
-            "h",
-            "q",
-            "e",
-            "t",
-            "y",
-            "o",
-            "m",
-            "u",
-            "b",
-            "s",
-            "a",
-            "escape",
-            "j", // Added 'j'
+            "arrowup", "arrowdown", "arrowleft", "arrowright",
+            " ", // Space for primary fire
+            "shift", // Shift for secondary fire
+            "w", // For secondary weapon cycle
+            "d", "h", "q", "e", "t", "y", "o", "m", "u", "b", "s", "a", "escape", "j",
         ];
 
         if (gameState.isMapOpen) {
@@ -57,6 +36,7 @@ export function initInputListeners(canvas) {
                 UniverseMapManager.closeMap();
                 e.preventDefault();
             }
+            // Potentially handle Alt+W for map functions if any, or general map nav keys
             return;
         }
 
@@ -69,7 +49,6 @@ export function initInputListeners(canvas) {
             keyLower !== "h" &&
             keyLower !== "j"
         ) {
-            // Check against h and j
             clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
             gameState.hyperjumpDeniedMessage = null;
             gameState.hyperjumpDeniedMessageTimeoutId = null;
@@ -81,9 +60,13 @@ export function initInputListeners(canvas) {
 
         if (!gameState.docked) {
             // In-space controls
-            if (e.code === "Space" && !gameState.isChargingHyperjump) {
-                if (!gameState.isMapOpen) Network.fireWeapon();
+            if (e.code === "Space" && !gameState.isChargingHyperjump && !gameState.isMapOpen) {
+                Network.firePrimaryWeapon();
+            } else if (e.key === "Shift" && !gameState.isChargingHyperjump && !gameState.isMapOpen) {
+                Network.fireSecondaryWeapon();
             }
+
+
             switch (keyLower) {
                 case "arrowup":
                     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
@@ -108,9 +91,9 @@ export function initInputListeners(canvas) {
                 case "h":
                     // 'H' currently does nothing specific here.
                     break;
-                case "j": // New: Initiate hyperjump for planned route
+                case "j":
                     if (
-                        !gameState.isMapOpen && // Not in map
+                        !gameState.isMapOpen &&
                         !gameState.docked &&
                         !gameState.isChargingHyperjump &&
                         gameState.plannedRoute.length > 0 &&
@@ -123,12 +106,8 @@ export function initInputListeners(canvas) {
                                 gameState.currentRouteLegIndex
                             ];
                         if (targetSystemIndex !== gameState.myShip.system) {
-                            // Ensure not trying to jump to current system
                             Network.requestHyperjump(targetSystemIndex);
                         } else {
-                            // This case should ideally be prevented by route planning logic
-                            // or handled in hyperjumpComplete by advancing leg.
-                            // For now, just inform if trying to jump to current system via 'J'.
                             console.warn(
                                 "Attempted to 'J' jump to current system. Advancing route leg.",
                             );
@@ -139,28 +118,30 @@ export function initInputListeners(canvas) {
                             ) {
                                 gameState.plannedRoute = [];
                                 gameState.currentRouteLegIndex = -1;
-                                // UIManager.showToast("Route completed."); // Optional feedback
                             }
                         }
                     } else if (
                         !gameState.docked &&
                         !gameState.isChargingHyperjump
                     ) {
-                        // Clear route if 'j' is pressed with no valid route leg or route finished
                         if (gameState.plannedRoute.length > 0) {
                             gameState.plannedRoute = [];
                             gameState.currentRouteLegIndex = -1;
-                            // UIManager.showToast("Route cleared or finished."); // Optional
                         }
                     }
                     break;
-                case "q":
+                case "q": // Cycle primary weapon backward
                     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        cycleWeaponAction(-1);
+                        cyclePrimaryWeaponAction(-1);
                     break;
-                case "e":
+                case "e": // Cycle primary weapon forward
                     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        cycleWeaponAction(1);
+                        cyclePrimaryWeaponAction(1);
+                    break;
+                case "w": // Cycle secondary weapon
+                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen) {
+                        cycleSecondaryWeaponAction(e.altKey ? -1 : 1);
+                    }
                     break;
                 case "m":
                     if (!gameState.docked) {
@@ -219,19 +200,39 @@ export function initInputListeners(canvas) {
 }
 
 function tryDockAction() {
-    // ... (existing code, no changes needed here for routing)
-    if (
-        !gameState.myShip ||
-        !gameState.clientGameData.systems[gameState.myShip.system]
-    )
+    console.log("[Client Dock Attempt] tryDockAction called."); // New log
+
+    if (!gameState.myShip) {
+        console.log("[Client Dock Attempt] Failed: No myShip."); // New log
         return;
+    }
+    console.log(`[Client Dock Attempt] My ship system: ${gameState.myShip.system}`); // New log
+
+    if (!gameState.clientGameData.systems[gameState.myShip.system]) {
+        console.log(`[Client Dock Attempt] Failed: No system data for index ${gameState.myShip.system}. clientGameData.systems length: ${gameState.clientGameData.systems.length}`); // New log
+        // console.log(JSON.stringify(gameState.clientGameData.systems)); // Optional: Log the whole array if small
+        return;
+    }
+    console.log("[Client Dock Attempt] System data found. Proceeding..."); // New log
+
+
     const planetsInCurrentSystem =
         gameState.clientGameData.systems[gameState.myShip.system].planets;
     let nearestDistSq = Infinity,
         nearestPlanetIndex = -1;
 
+    if (!planetsInCurrentSystem || planetsInCurrentSystem.length === 0) {
+        console.log("[Client Dock Attempt] Failed: No planets in current system array."); // New log
+        return;
+    }
+
     planetsInCurrentSystem.forEach((p, index) => {
+        if (!p) { // Check if planet object itself is valid
+            console.warn(`[Client Dock Attempt] Planet at index ${index} is undefined or null.`);
+            return; // Skip this iteration
+        }
         const planetScale = p.planetImageScale || 1.0;
+        // DOCKING_DISTANCE_SQUARED is from client_config
         const effectiveDockingDistanceSq =
             DOCKING_DISTANCE_SQUARED * Math.pow(planetScale, 2) * 2.5;
 
@@ -242,38 +243,73 @@ function tryDockAction() {
             nearestPlanetIndex = index;
         }
     });
+
     if (nearestPlanetIndex !== -1) {
         const planetForDocking = planetsInCurrentSystem[nearestPlanetIndex];
+         if (!planetForDocking) {
+            console.error(`[Client Dock Attempt] planetForDocking at index ${nearestPlanetIndex} is undefined!`);
+            return;
+        }
         const effectiveDockingDistanceSq =
             DOCKING_DISTANCE_SQUARED *
             Math.pow(planetForDocking?.planetImageScale || 1.0, 2) *
             2.5;
 
+        console.log(`[Client Dock Attempt] Nearest planet: ${planetForDocking.name}, distSq: ${nearestDistSq.toFixed(2)}, requiredDistSq: ${effectiveDockingDistanceSq.toFixed(2)}`); // New log
+
         if (nearestDistSq < effectiveDockingDistanceSq) {
+            console.log(`[Client Dock Attempt] Conditions met. Sending Network.requestDock for system ${gameState.myShip.system}, planet ${nearestPlanetIndex}`); // New log
             Network.requestDock(gameState.myShip.system, nearestPlanetIndex);
+        } else {
+            console.log("[Client Dock Attempt] Not close enough to nearest planet."); // New log
         }
+    } else {
+        console.log("[Client Dock Attempt] No nearest planet found (or no planets in system)."); // New log
     }
 }
 
-function cycleWeaponAction(direction) {
-    // ... (existing code, no changes needed here for routing)
+
+function cyclePrimaryWeaponAction(direction) {
     if (
         !gameState.myShip ||
-        !gameState.myShip.weapons ||
+        !gameState.myShip.weapons || // Primary weapons stored in .weapons
         gameState.myShip.weapons.length === 0
     )
         return;
-    gameState.weaponCycleIdx =
-        (gameState.weaponCycleIdx +
+
+    gameState.primaryWeaponCycleIdx =
+        (gameState.primaryWeaponCycleIdx +
             direction +
             gameState.myShip.weapons.length) %
         gameState.myShip.weapons.length;
-    const weaponName = gameState.myShip.weapons[gameState.weaponCycleIdx];
-    Network.equipWeapon(weaponName);
+
+    const weaponName = gameState.myShip.weapons[gameState.primaryWeaponCycleIdx];
+    Network.equipPrimaryWeapon(weaponName); // Changed from equipWeapon
 }
 
+function cycleSecondaryWeaponAction(direction) {
+    const myShip = gameState.myShip;
+    if (!myShip || !myShip.secondaryWeapons || myShip.secondaryWeapons.length === 0) {
+        gameState.activeSecondaryWeaponSlot = -1; // No secondaries, ensure none selected
+        UIManager.updateShipStatsPanel(); // Update HUD to show no secondary selected
+        return;
+    }
+
+    if (gameState.activeSecondaryWeaponSlot === -1 && myShip.secondaryWeapons.length > 0) {
+        // If no secondary was selected, select the first one
+        gameState.activeSecondaryWeaponSlot = 0;
+    } else {
+        gameState.activeSecondaryWeaponSlot =
+            (gameState.activeSecondaryWeaponSlot + direction + myShip.secondaryWeapons.length) % myShip.secondaryWeapons.length;
+    }
+    // No network call needed, selection is client-side state.
+    // HUD should update to show the newly selected secondary weapon and its ammo.
+    console.log("Selected secondary weapon:", myShip.secondaryWeapons[gameState.activeSecondaryWeaponSlot]);
+    UIManager.updateShipStatsPanel(); // Update HUD
+}
+
+
 function handleMenuKeyDown(keyLower) {
-    // ... (existing code, no changes needed here for routing)
     if (!gameState.docked || !gameState.myShip) {
         return;
     }
@@ -289,20 +325,21 @@ function handleMenuKeyDown(keyLower) {
                 gameState.selectedShipIndex = 0;
                 UIManager.renderShipyardMenu();
                 break;
-            case "o":
+            case "o": // Outfitter
                 gameState.activeSubMenu = "outfitter";
                 const weaponKeysList = Object.keys(
                     gameState.clientGameData.weapons,
                 );
+                 // Initialize selectedOutfitterWeaponKey if it's null or not in the list
                 if (
-                    !gameState.selectedWeaponKey ||
-                    !weaponKeysList.includes(gameState.selectedWeaponKey)
+                    !gameState.selectedOutfitterWeaponKey ||
+                    !weaponKeysList.includes(gameState.selectedOutfitterWeaponKey)
                 ) {
-                    gameState.selectedWeaponKey = weaponKeysList[0] || null;
+                    gameState.selectedOutfitterWeaponKey = weaponKeysList.length > 0 ? weaponKeysList[0] : null;
                 }
                 UIManager.renderOutfitterMenu();
                 break;
-            case "m": // This 'm' is for DOCKED missions
+            case "m":
                 gameState.activeSubMenu = "missions";
                 gameState.selectedMissionIndex = 0;
                 gameState.availableMissionsForCurrentPlanet = [];
@@ -351,10 +388,13 @@ function handleMenuKeyDown(keyLower) {
                 );
                 if (weaponKeys.length > 0) {
                     let currentWKeyIndex = weaponKeys.indexOf(
-                        gameState.selectedWeaponKey,
+                        gameState.selectedOutfitterWeaponKey,
                     );
-                    if (currentWKeyIndex === -1 && weaponKeys.length > 0)
+                    if (currentWKeyIndex === -1 && weaponKeys.length > 0) { // Ensure valid index
                         currentWKeyIndex = 0;
+                        gameState.selectedOutfitterWeaponKey = weaponKeys[0];
+                    }
+
                     if (keyLower === "arrowup")
                         currentWKeyIndex = Math.max(0, currentWKeyIndex - 1);
                     else if (keyLower === "arrowdown")
@@ -362,10 +402,19 @@ function handleMenuKeyDown(keyLower) {
                             weaponKeys.length - 1,
                             currentWKeyIndex + 1,
                         );
-                    gameState.selectedWeaponKey = weaponKeys[currentWKeyIndex];
+                    gameState.selectedOutfitterWeaponKey = weaponKeys[currentWKeyIndex];
                 }
-                if (keyLower === "b" && gameState.selectedWeaponKey)
-                    Network.equipWeapon(gameState.selectedWeaponKey);
+                if (keyLower === "b" && gameState.selectedOutfitterWeaponKey) {
+                    // Buy/Equip logic now needs to differentiate based on weapon type
+                    const weaponToBuy = gameState.clientGameData.weapons[gameState.selectedOutfitterWeaponKey];
+                    if (weaponToBuy) {
+                        if (weaponToBuy.type === "primary") {
+                            Network.equipPrimaryWeapon(gameState.selectedOutfitterWeaponKey);
+                        } else if (weaponToBuy.type === "secondary") {
+                            Network.addSecondaryWeapon(gameState.selectedOutfitterWeaponKey);
+                        }
+                    }
+                }
                 UIManager.renderOutfitterMenu();
                 break;
             case "shipyard":
@@ -421,22 +470,19 @@ function handleMenuKeyDown(keyLower) {
 }
 
 export function processInputs() {
-    // ... (existing code, some minor adjustments for damping if map is open)
     if (gameState.isMapOpen) {
-        // If map is open, apply damping and send controls, but no player input processing
         if (
             gameState.myShip &&
             !gameState.myShip.destroyed &&
-            !gameState.docked // Only apply physics if not docked
+            !gameState.docked
         ) {
             const myShip = gameState.myShip;
             myShip.vx *= DAMPING;
             myShip.vy *= DAMPING;
             myShip.x += myShip.vx;
             myShip.y += myShip.vy;
-            Network.sendControls(); // Still send position updates
+            Network.sendControls();
         }
-        // Reset controls flags if map is open
         gameState.controls.accelerating = false;
         gameState.controls.decelerating = false;
         gameState.controls.rotatingLeft = false;
@@ -448,7 +494,7 @@ export function processInputs() {
         if (
             gameState.myShip &&
             !gameState.myShip.destroyed &&
-            gameState.isChargingHyperjump && // Only apply physics if charging hyperjump
+            gameState.isChargingHyperjump &&
             !gameState.docked
         ) {
             const myShip = gameState.myShip;
@@ -458,14 +504,12 @@ export function processInputs() {
             myShip.y += myShip.vy;
             Network.sendControls();
         }
-        // Reset controls flags if destroyed or docked (and not charging hyperjump)
         gameState.controls.accelerating = false;
         gameState.controls.decelerating = false;
         gameState.controls.rotatingLeft = false;
         gameState.controls.rotatingRight = false;
         return;
     }
-    // ... (rest of existing processInputs code for ship movement)
     const myShip = gameState.myShip;
     if (
         !myShip ||
@@ -479,8 +523,8 @@ export function processInputs() {
     }
     const shipDef = gameState.clientGameData.shipTypes[myShip.type];
 
-    const thrust = (shipDef.speedMult || 1.0) * 0.1; // Assuming BASE_THRUST was 0.1
-    const rotSpd = (shipDef.rotMult || 1.0) * 0.07; // Assuming BASE_ROTATION_SPEED was 0.07
+    const thrust = (shipDef.speedMult || 1.0) * 0.1;
+    const rotSpd = (shipDef.rotMult || 1.0) * 0.07;
     const revThrust = thrust * (shipDef.revMult || 1.0);
 
     if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;

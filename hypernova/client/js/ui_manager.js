@@ -4,7 +4,7 @@ import * as Network from "./network.js";
 import { Renderer } from "./renderer.js"; // Import Renderer
 
 let uiContainer = null;
-let dockMenuElement = null; // This is the container for the main station UI and sub-menus
+let dockMenuElement = null; 
 let rightHudPanel = null;
 let shipStatsContentDiv = null;
 let activeMissionsListUl = null;
@@ -18,17 +18,15 @@ export const UIManager = {
     },
 
     isMenuOpen() {
-        // This now refers to the docked station menu, not the HUD panel
         return gameState.isMenuOpen;
     },
 
     openDockMenu() {
-        // This is for the main station interaction UI
         if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
             uiContainer.removeChild(dockMenuElement);
         }
 
-        gameState.isMenuOpen = true; // Docked station menu is open
+        gameState.isMenuOpen = true; 
         gameState.activeSubMenu = null;
         document.body.classList.add("no-scroll");
 
@@ -36,37 +34,32 @@ export const UIManager = {
         uiContainer.appendChild(dockMenuElement);
 
         this.renderDockedStationInterface();
-        // Right HUD panel is already visible, but we might want to refresh its content
         this.updateShipStatsPanel();
         this.updateActiveMissionsPanel();
         Renderer.drawMinimap();
     },
 
     closeDockMenu() {
-        // Closes the main station interaction UI
         if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
             dockMenuElement.innerHTML = "";
             uiContainer.removeChild(dockMenuElement);
         }
         dockMenuElement = null;
-        gameState.isMenuOpen = false; // Docked station menu is closed
+        gameState.isMenuOpen = false; 
         gameState.activeSubMenu = null;
         gameState.selectedTradeIndex = 0;
-        gameState.selectedWeaponKey = null;
+        gameState.selectedOutfitterWeaponKey = null; // Reset outfitter selection
         gameState.selectedShipIndex = 0;
         gameState.selectedMissionIndex = 0;
         document.body.classList.remove("no-scroll");
-        // Right HUD panel remains visible
     },
 
     undockCleanup() {
         gameState.docked = false;
         gameState.dockedAtDetails = null;
         this.closeDockMenu();
-        // Right HUD panel remains visible. Ensure its content reflects undocked state.
         this.updateShipStatsPanel();
         this.updateActiveMissionsPanel();
-        // Minimap will be updated by Renderer.draw()
     },
 
     showRightHudPanel() {
@@ -74,16 +67,8 @@ export const UIManager = {
             rightHudPanel.classList.remove("hidden");
             this.updateShipStatsPanel();
             this.updateActiveMissionsPanel();
-            // Renderer.drawMinimap() will be called by the main render loop
         }
     },
-
-    // hideRightHudPanel() is no longer needed if the panel is always visible
-    // hideRightHudPanel() {
-    //     if (rightHudPanel) {
-    //         rightHudPanel.classList.add("hidden");
-    //     }
-    // },
 
     updateShipStatsPanel() {
         if (!shipStatsContentDiv || !gameState.myShip || !gameState.currentUser)
@@ -97,12 +82,32 @@ export const UIManager = {
             : 0;
         const maxCargo = shipType ? shipType.maxCargo : myShip.maxCargo || 0;
 
+        let primaryWeaponText = "Primary: None";
+        if (myShip.activeWeapon) {
+            const weaponDef = gameState.clientGameData.weapons[myShip.activeWeapon];
+            primaryWeaponText = `Primary: ${weaponDef ? weaponDef.name : myShip.activeWeapon}`;
+        }
+
+        let secondaryWeaponText = "Secondary: None Selected";
+        if (gameState.activeSecondaryWeaponSlot !== -1 && myShip.secondaryWeapons && myShip.secondaryWeapons.length > 0) {
+            const secondaryKey = myShip.secondaryWeapons[gameState.activeSecondaryWeaponSlot];
+            if (secondaryKey) {
+                const weaponDef = gameState.clientGameData.weapons[secondaryKey];
+                const ammoCount = myShip.secondaryAmmo[secondaryKey] || 0;
+                secondaryWeaponText = `Secondary: ${weaponDef ? weaponDef.name : secondaryKey} [${ammoCount}]`;
+            }
+        }
+
+
         shipStatsContentDiv.innerHTML = `
             <div><span>Pilot:</span> ${gameState.currentUser.username}</div>
             <div><span>Ship:</span> ${shipTypeName}</div>
             <div><span>Credits:</span> $${myShip.credits.toLocaleString()}</div>
             <div><span>Health:</span> ${myShip.health || 0} / ${myShip.maxHealth || 0}</div>
             <div><span>Cargo:</span> ${cargoCount} / ${maxCargo}</div>
+            <div><span>Weaponry:</span></div>
+            <div style="padding-left: 10px;">${primaryWeaponText}</div>
+            <div style="padding-left: 10px;">${secondaryWeaponText}</div>
         `;
     },
 
@@ -116,7 +121,6 @@ export const UIManager = {
             gameState.myShip.activeMissions.length > 0
         ) {
             gameState.myShip.activeMissions.slice(0, 5).forEach((mission) => {
-                // Show top 5 or so
                 const li = document.createElement("li");
                 let missionText = `<strong>${mission.title}</strong>`;
                 if (
@@ -150,15 +154,14 @@ export const UIManager = {
             console.error(
                 "Dock menu element does not exist. Cannot prepare sub-menu host.",
             );
-            this.openDockMenu(); // Attempt to create it if called erroneously
+            this.openDockMenu(); 
             if (!dockMenuElement) return null;
         }
         let stationUI = dockMenuElement.querySelector("#docked-station-ui");
         if (!stationUI) {
-            this.renderDockedStationInterface(); // Re-render main dock UI if needed
+            this.renderDockedStationInterface(); 
             stationUI = dockMenuElement.querySelector("#docked-station-ui");
             if (!stationUI) {
-                // Should not happen if renderDockedStationInterface works
                 console.error(
                     "Failed to create #docked-station-ui for sub-menu.",
                 );
@@ -174,7 +177,7 @@ export const UIManager = {
             );
             return null;
         }
-        contentHost.innerHTML = ""; // Clear previous sub-menu content
+        contentHost.innerHTML = ""; 
         return contentHost;
     },
 
@@ -191,20 +194,16 @@ export const UIManager = {
             }
         }
         if (!gameState.dockedAtDetails || !gameState.myShip) {
-            // This can happen if undockCleanup runs before this render is complete
-            // or if somehow this is called when not docked.
-            this.closeDockMenu(); // Ensure dock menu is closed if state is inconsistent
+            this.closeDockMenu(); 
             return;
         }
 
-        gameState.activeSubMenu = null; // Reset sub-menu selection
-        dockMenuElement.innerHTML = ""; // Clear previous content
+        gameState.activeSubMenu = null; 
+        dockMenuElement.innerHTML = ""; 
 
         const planetName = gameState.dockedAtDetails.planetName;
         const systemName = gameState.dockedAtDetails.systemName;
-        // Dummy descriptions, replace with actual data source if available
         const planetDescriptions = {
-            /* ... same as before ... */
             Alpha: "A bustling trade hub in the Greek system, known for its agricultural surplus.",
             Delta: "Rich in mineral wealth, Delta is a key mining outpost.",
             Sol: "The cradle of humanity in the Roman system, a political and cultural center.",
@@ -252,7 +251,6 @@ export const UIManager = {
         `;
         dockMenuElement.innerHTML = html;
 
-        // Add event listeners for the main docked station buttons
         document
             .getElementById("station-dialogue-okay")
             ?.addEventListener("click", () => {
@@ -295,10 +293,10 @@ export const UIManager = {
                     gameState.clientGameData.weapons,
                 );
                 if (
-                    !gameState.selectedWeaponKey ||
-                    !weaponKeysList.includes(gameState.selectedWeaponKey)
+                    !gameState.selectedOutfitterWeaponKey ||
+                    !weaponKeysList.includes(gameState.selectedOutfitterWeaponKey)
                 ) {
-                    gameState.selectedWeaponKey = weaponKeysList[0] || null;
+                    gameState.selectedOutfitterWeaponKey = weaponKeysList.length > 0 ? weaponKeysList[0] : null;
                 }
                 this.renderOutfitterMenu();
             });
@@ -307,10 +305,9 @@ export const UIManager = {
             ?.addEventListener("click", () => {
                 gameState.activeSubMenu = "missions";
                 gameState.selectedMissionIndex = 0;
-                gameState.availableMissionsForCurrentPlanet = []; // Clear before requesting
-                this.renderMissionsMenu(); // Render skeleton
+                gameState.availableMissionsForCurrentPlanet = []; 
+                this.renderMissionsMenu(); 
                 if (gameState.dockedAtDetails) {
-                    // Request new missions
                     Network.requestMissions(
                         gameState.dockedAtDetails.systemIndex,
                         gameState.dockedAtDetails.planetIndex,
@@ -326,11 +323,11 @@ export const UIManager = {
         const myShip = gameState.myShip;
         const currentShipDef =
             gameState.clientGameData.shipTypes[myShip.type || 0];
-        if (!currentShipDef) return; // Should have ship definition
+        if (!currentShipDef) return; 
         const cargoCount = myShip.cargo
             ? myShip.cargo.reduce((s, v) => s + v, 0)
             : 0;
-        const planetEco = gameState.dockedAtDetails; // This should have current prices/stock
+        const planetEco = gameState.dockedAtDetails; 
 
         let itemsHtml = `<div class="station-submenu-header">
                             <span class="station-submenu-col col-name">Good</span>
@@ -413,8 +410,8 @@ export const UIManager = {
         let itemsHtml = `<div class="station-submenu-header">
                             <span class="station-submenu-col col-name">Weapon</span>
                             <span class="station-submenu-col col-price">Price</span>
-                            <span class="station-submenu-col col-qty">Dmg</span>
-                            <span class="station-submenu-col col-owned">Owned</span>
+                            <span class="station-submenu-col col-qty">Type</span>
+                            <span class="station-submenu-col col-owned">Owned/Ammo</span>
                          </div>`;
 
         const weaponKeys = Object.keys(gameState.clientGameData.weapons);
@@ -422,26 +419,36 @@ export const UIManager = {
             itemsHtml +=
                 "<div class='station-submenu-item'>(No weapons available)</div>";
         } else {
+             // Ensure selectedOutfitterWeaponKey is valid
             if (
-                !gameState.selectedWeaponKey ||
-                !weaponKeys.includes(gameState.selectedWeaponKey)
+                !gameState.selectedOutfitterWeaponKey ||
+                !weaponKeys.includes(gameState.selectedOutfitterWeaponKey)
             ) {
-                gameState.selectedWeaponKey = weaponKeys[0] || null;
+                gameState.selectedOutfitterWeaponKey = weaponKeys[0] || null;
             }
+
             weaponKeys.forEach((wKey) => {
                 const wDef = gameState.clientGameData.weapons[wKey];
-                const owned =
-                    myShip.weapons && myShip.weapons.includes(wKey)
-                        ? "Yes"
-                        : "No";
+                let ownedText = "No";
+                if (wDef.type === "primary") {
+                    if (myShip.weapons && myShip.weapons.includes(wKey)) {
+                        ownedText = "Yes";
+                        if (myShip.activeWeapon === wKey) ownedText = "Equipped";
+                    }
+                } else if (wDef.type === "secondary") {
+                     if (myShip.secondaryWeapons && myShip.secondaryWeapons.includes(wKey)) {
+                        ownedText = `Ammo: ${myShip.secondaryAmmo[wKey] || 0}`;
+                    }
+                }
+
                 const selectedClass =
-                    wKey === gameState.selectedWeaponKey ? "selected" : "";
+                    wKey === gameState.selectedOutfitterWeaponKey ? "selected" : "";
                 itemsHtml += `
                     <div class="station-submenu-item ${selectedClass}" data-key="${wKey}">
                         <span class="station-submenu-col col-name">${wDef.name}</span>
                         <span class="station-submenu-col col-price">$${wDef.price.toLocaleString()}</span>
-                        <span class="station-submenu-col col-qty">${wDef.damage}</span>
-                        <span class="station-submenu-col col-owned">${owned}</span>
+                        <span class="station-submenu-col col-qty">${wDef.type === 'primary' ? 'Primary' : 'Secondary'}</span>
+                        <span class="station-submenu-col col-owned">${ownedText}</span>
                     </div>`;
             });
         }
@@ -460,8 +467,16 @@ export const UIManager = {
         document
             .getElementById("submenu-buyequip-btn")
             ?.addEventListener("click", () => {
-                if (gameState.selectedWeaponKey)
-                    Network.equipWeapon(gameState.selectedWeaponKey);
+                if (gameState.selectedOutfitterWeaponKey) {
+                    const weaponToBuy = gameState.clientGameData.weapons[gameState.selectedOutfitterWeaponKey];
+                    if (weaponToBuy) {
+                        if (weaponToBuy.type === "primary") {
+                            Network.equipPrimaryWeapon(gameState.selectedOutfitterWeaponKey);
+                        } else if (weaponToBuy.type === "secondary") {
+                            Network.addSecondaryWeapon(gameState.selectedOutfitterWeaponKey);
+                        }
+                    }
+                }
             });
         document
             .getElementById("submenu-back-btn")
@@ -558,7 +573,6 @@ export const UIManager = {
                         <span class="station-submenu-col col-reward">$${m.rewardCredits.toLocaleString()}</span>
                     </div>`;
                 if (i === gameState.selectedMissionIndex) {
-                    // Show details for selected mission
                     const timeLeftMs = m.timeLimit - Date.now();
                     const timeLeftMin = Math.max(
                         0,
@@ -624,4 +638,3 @@ export const UIManager = {
             );
     },
 };
-

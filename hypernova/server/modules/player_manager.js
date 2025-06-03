@@ -34,10 +34,19 @@ class PlayerManager {
             maxCargo: defaultShipType.maxCargo,
             health: defaultShipType.maxHealth || 100,
             maxHealth: defaultShipType.maxHealth || 100,
-            weapons: [],
+
+            // Primary Weapons
+            weapons: [], // Holds keys of owned primary weapons
+            activeWeapon: null, // Key of the equipped primary weapon
+            lastPrimaryShotTimestamp: 0,
+
+            // Secondary Weapons
+            secondaryWeapons: [], // Holds keys of owned secondary weapons
+            activeSecondaryWeaponSlot: -1, // Client controls actual selection index, server just stores it if needed
+            secondaryAmmo: {}, // e.g., { "LightMissile": 10 }
+            lastSecondaryShotTimestamp: 0,
+
             activeMissions: [],
-            activeWeapon: null,
-            lastShot: 0,
             system: 0,
             dockedAtPlanetIdentifier: null,
             destroyed: false,
@@ -46,8 +55,9 @@ class PlayerManager {
                 Math.floor(Math.random() * 0xffffff)
                     .toString(16)
                     .padStart(6, "0"),
-            hyperjumpState: "idle", // idle, charging, jumping, cooldown
+            hyperjumpState: "idle", 
             hyperjumpChargeTimeoutId: null,
+            username: "Pilot" // Will be set properly on login/load
         };
 
         console.log(
@@ -56,9 +66,9 @@ class PlayerManager {
 
         socket.emit("init", {
             id: socket.id,
-            ships: this.players, // Send all current players
+            ships: this.players, 
             gameData: {
-                ...initialWorldData, // Will include systems with universeX,Y,connections
+                ...initialWorldData, 
                 tradeGoods: this.tradeGoods,
                 weapons: this.gameConfig.staticWeaponsData,
                 shipTypes: this.shipTypes,
@@ -80,18 +90,22 @@ class PlayerManager {
             const player = this.players[socket.id];
 
             if (player && receivedSyncData) {
-                if (receivedSyncData.credits !== undefined)
-                    player.credits = receivedSyncData.credits;
-                if (receivedSyncData.cargo !== undefined)
-                    player.cargo = receivedSyncData.cargo;
-                if (receivedSyncData.weapons !== undefined)
-                    player.weapons = receivedSyncData.weapons;
-                if (receivedSyncData.activeWeapon !== undefined)
-                    player.activeWeapon = receivedSyncData.activeWeapon;
-                if (receivedSyncData.health !== undefined)
-                    player.health = receivedSyncData.health;
-                if (receivedSyncData.activeMissions !== undefined)
-                    player.activeMissions = receivedSyncData.activeMissions;
+                if (receivedSyncData.username) player.username = receivedSyncData.username; // Make sure username is synced
+                if (receivedSyncData.credits !== undefined) player.credits = receivedSyncData.credits;
+                if (receivedSyncData.cargo !== undefined) player.cargo = receivedSyncData.cargo;
+
+                // Primary Weapons
+                if (receivedSyncData.weapons !== undefined) player.weapons = receivedSyncData.weapons;
+                if (receivedSyncData.activeWeapon !== undefined) player.activeWeapon = receivedSyncData.activeWeapon;
+
+                // Secondary Weapons
+                if (receivedSyncData.secondaryWeapons !== undefined) player.secondaryWeapons = receivedSyncData.secondaryWeapons;
+                if (receivedSyncData.secondaryAmmo !== undefined) player.secondaryAmmo = receivedSyncData.secondaryAmmo;
+                if (receivedSyncData.activeSecondaryWeaponSlot !== undefined) player.activeSecondaryWeaponSlot = receivedSyncData.activeSecondaryWeaponSlot;
+
+
+                if (receivedSyncData.health !== undefined) player.health = receivedSyncData.health;
+                if (receivedSyncData.activeMissions !== undefined) player.activeMissions = receivedSyncData.activeMissions;
 
                 if (receivedSyncData.type !== undefined) {
                     player.type = receivedSyncData.type;
@@ -142,23 +156,20 @@ class PlayerManager {
                     );
                 } else {
                     player.dockedAtPlanetIdentifier = null;
-                    if (receivedSyncData.x !== undefined)
-                        player.x = receivedSyncData.x;
-                    if (receivedSyncData.y !== undefined)
-                        player.y = receivedSyncData.y;
-                    if (receivedSyncData.angle !== undefined)
-                        player.angle = receivedSyncData.angle;
-                    if (receivedSyncData.vx !== undefined)
-                        player.vx = receivedSyncData.vx;
-                    if (receivedSyncData.vy !== undefined)
-                        player.vy = receivedSyncData.vy;
-                    if (receivedSyncData.system !== undefined)
-                        player.system = receivedSyncData.system;
+                    if (receivedSyncData.x !== undefined) player.x = receivedSyncData.x;
+                    if (receivedSyncData.y !== undefined) player.y = receivedSyncData.y;
+                    if (receivedSyncData.angle !== undefined) player.angle = receivedSyncData.angle;
+                    if (receivedSyncData.vx !== undefined) player.vx = receivedSyncData.vx;
+                    if (receivedSyncData.vy !== undefined) player.vy = receivedSyncData.vy;
+                    if (receivedSyncData.system !== undefined) player.system = receivedSyncData.system;
                     console.log(
                         `PlayerManager: ${socket.id} UNDOCKED in system ${player.system}.`,
                     );
                 }
-                this.broadcastPlayerState(socket.id, this.players[socket.id]);
+                // Ensure username is part of the broadcasted state if it changed.
+                const fullPlayerState = {...player}; 
+                delete fullPlayerState.hyperjumpChargeTimeoutId; // Don't send timeout IDs
+                this.broadcastPlayerState(socket.id, fullPlayerState);
             }
         });
     }
@@ -194,13 +205,23 @@ class PlayerManager {
     updatePlayerState(playerId, updates) {
         if (this.players[playerId]) {
             Object.assign(this.players[playerId], updates);
-            this.io.emit("state", { [playerId]: updates });
+             // Sanitize updates before emitting (e.g., remove timeout IDs)
+            const safeUpdates = { ...updates };
+            if ('hyperjumpChargeTimeoutId' in safeUpdates) {
+                delete safeUpdates.hyperjumpChargeTimeoutId;
+            }
+            this.io.emit("state", { [playerId]: safeUpdates });
         }
     }
 
+
     broadcastPlayerState(playerId, fullPlayerData) {
         if (this.players[playerId]) {
-            this.io.emit("state", { [playerId]: fullPlayerData });
+            const safePlayerData = { ...fullPlayerData };
+            if ('hyperjumpChargeTimeoutId' in safePlayerData) {
+                delete safePlayerData.hyperjumpChargeTimeoutId;
+            }
+            this.io.emit("state", { [playerId]: safePlayerData });
         }
     }
 
@@ -231,7 +252,6 @@ class PlayerManager {
         });
 
         socket.on("requestHyperjump", (data) => {
-            // data = { targetSystemIndex: number | null }
             const player = this.getPlayer(socket.id);
             if (!player || player.destroyed) return;
 
@@ -259,7 +279,7 @@ class PlayerManager {
                     if (!planet) continue;
                     const distSq =
                         (player.x - planet.x) ** 2 + (player.y - planet.y) ** 2;
-                    const planetScale = planet.planetImageScale || 1.0; // Use actual scale from planet data
+                    const planetScale = planet.planetImageScale || 1.0; 
                     const minSafeDistSq =
                         (this.gameConfig
                             .MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED ||
@@ -289,7 +309,7 @@ class PlayerManager {
             }
             const currentSystemData = this.worldManager.getSystem(
                 player.system,
-            ); // Renamed to avoid conflict
+            ); 
             if (
                 !currentSystemData ||
                 !currentSystemData.connections ||
@@ -374,7 +394,7 @@ class PlayerManager {
                             const systemCenterX = firstPlanetInArrival
                                 ? firstPlanetInArrival.x -
                                   (Math.random() * 100 - 50)
-                                : this.gameConfig.PLAYER_SPAWN_X || 400; // A rough center
+                                : this.gameConfig.PLAYER_SPAWN_X || 400; 
                             const systemCenterY = firstPlanetInArrival
                                 ? firstPlanetInArrival.y -
                                   (Math.random() * 100 - 50)
@@ -454,7 +474,8 @@ class PlayerManager {
             }
         });
 
-        socket.on("equipWeapon", ({ weapon: weaponName }) => {
+        // Renamed from equipWeapon
+        socket.on("equipPrimaryWeapon", ({ weapon: weaponName }) => {
             const player = this.getPlayer(socket.id);
             if (!player || player.hyperjumpState === "charging") {
                 return socket.emit("actionFailed", {
@@ -463,39 +484,94 @@ class PlayerManager {
                 });
             }
             const weaponData = this.gameConfig.staticWeaponsData[weaponName];
-            if (!weaponData)
+            if (!weaponData || weaponData.type !== "primary") {
                 return socket.emit("actionFailed", {
-                    message: "Invalid weapon.",
+                    message: "Invalid primary weapon.",
                 });
+            }
 
-            if (!player.weapons.includes(weaponName)) {
+            if (!player.weapons.includes(weaponName)) { // player.weapons stores primary weapon keys
                 if (player.credits >= weaponData.price) {
                     player.credits -= weaponData.price;
                     player.weapons.push(weaponName);
-                    player.activeWeapon = weaponName;
+                    player.activeWeapon = weaponName; // Equip it
                     this.updatePlayerState(socket.id, {
                         credits: player.credits,
                         weapons: player.weapons,
                         activeWeapon: player.activeWeapon,
                     });
                     socket.emit("actionSuccess", {
-                        message: `Purchased and equipped ${weaponName}.`,
+                        message: `Purchased and equipped ${weaponData.name}.`,
                     });
                 } else {
                     return socket.emit("actionFailed", {
                         message: "Not enough credits.",
                     });
                 }
-            } else {
+            } else { // Already owns it, just equip
                 player.activeWeapon = weaponName;
                 this.updatePlayerState(socket.id, {
                     activeWeapon: player.activeWeapon,
                 });
                 socket.emit("actionSuccess", {
-                    message: `Equipped ${weaponName}.`,
+                    message: `Equipped ${weaponData.name}.`,
                 });
             }
         });
+
+        socket.on("addSecondaryWeapon", ({ weapon: weaponName }) => {
+            const player = this.getPlayer(socket.id);
+            if (!player || player.hyperjumpState === "charging") {
+                return socket.emit("actionFailed", {
+                    message: "Cannot modify equipment while hyperdrive is active.",
+                });
+            }
+            const weaponData = this.gameConfig.staticWeaponsData[weaponName];
+            if (!weaponData || weaponData.type !== "secondary") {
+                return socket.emit("actionFailed", {
+                    message: "Invalid secondary weapon.",
+                });
+            }
+
+            const ammoPerPurchase = weaponData.ammoPerPurchase || 1; // Default to 1 if not specified
+
+            if (!player.secondaryWeapons.includes(weaponName)) { // If player doesn't own this secondary type yet
+                if (player.credits >= weaponData.price) {
+                    player.credits -= weaponData.price;
+                    player.secondaryWeapons.push(weaponName);
+                    player.secondaryAmmo[weaponName] = (player.secondaryAmmo[weaponName] || 0) + ammoPerPurchase;
+                    // Client will handle selecting it, server just adds it
+                    this.updatePlayerState(socket.id, {
+                        credits: player.credits,
+                        secondaryWeapons: player.secondaryWeapons,
+                        secondaryAmmo: player.secondaryAmmo,
+                    });
+                    socket.emit("actionSuccess", {
+                        message: `Purchased ${weaponData.name} (+${ammoPerPurchase} ammo).`,
+                        updatedAmmo: player.secondaryAmmo,
+                        updatedSecondaryWeapons: player.secondaryWeapons
+                    });
+                } else {
+                     return socket.emit("actionFailed", { message: "Not enough credits." });
+                }
+            } else { // Player already owns it, just buy more ammo
+                 if (player.credits >= weaponData.price) { // Assuming price is for an ammo pack
+                    player.credits -= weaponData.price;
+                    player.secondaryAmmo[weaponName] = (player.secondaryAmmo[weaponName] || 0) + ammoPerPurchase;
+                     this.updatePlayerState(socket.id, {
+                        credits: player.credits,
+                        secondaryAmmo: player.secondaryAmmo,
+                    });
+                    socket.emit("actionSuccess", {
+                        message: `Purchased ${ammoPerPurchase} ammo for ${weaponData.name}.`,
+                        updatedAmmo: player.secondaryAmmo
+                    });
+                } else {
+                    return socket.emit("actionFailed", { message: "Not enough credits for ammo." });
+                }
+            }
+        });
+
 
         socket.on("buyShip", ({ shipTypeIndex }) => {
             const player = this.getPlayer(socket.id);
@@ -521,8 +597,14 @@ class PlayerManager {
             player.cargo = new Array(this.tradeGoods.length).fill(0);
             player.maxHealth = newShipType.maxHealth || 100;
             player.health = player.maxHealth;
+
+            // Reset all weapons on ship purchase
             player.weapons = [];
             player.activeWeapon = null;
+            player.secondaryWeapons = [];
+            player.secondaryAmmo = {};
+            player.activeSecondaryWeaponSlot = -1;
+
 
             this.updatePlayerState(socket.id, {
                 credits: player.credits,
@@ -533,9 +615,13 @@ class PlayerManager {
                 health: player.health,
                 weapons: player.weapons,
                 activeWeapon: player.activeWeapon,
+                secondaryWeapons: player.secondaryWeapons,
+                secondaryAmmo: player.secondaryAmmo,
             });
             socket.emit("actionSuccess", {
-                message: `Successfully purchased ${newShipType.name}.`,
+                message: `Successfully purchased ${newShipType.name}. All weapons unmounted.`,
+                 updatedAmmo: player.secondaryAmmo, // Send updated ammo state
+                 updatedSecondaryWeapons: player.secondaryWeapons // Send updated secondary weapons list
             });
         });
     }
@@ -586,3 +672,4 @@ class PlayerManager {
 }
 
 module.exports = PlayerManager;
+
