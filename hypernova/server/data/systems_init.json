@@ -13,7 +13,7 @@
                 "name": "Planet Alpha",
                 "x": 300,
                 "y": 300,
-                "imageFile": "planets/georges_world_thx1138_planet_alpha.jpg",
+                "imageFile": "planets/georges_world_thx1138_planet_alpha.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Food"
@@ -39,7 +39,7 @@
                 "name": "Satoria Prime",
                 "x": 250,
                 "y": 400,
-                "imageFile": "planets/satori_satoria_prime.jpg",
+                "imageFile": "planets/satori_satoria_prime.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Ore"
@@ -66,7 +66,7 @@
                 "name": "Persephone II",
                 "x": 400,
                 "y": 200,
-                "imageFile": "planets/persephone_persephone_ii.jpg",
+                "imageFile": "planets/persephone_persephone_ii.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Medicine"
@@ -93,7 +93,7 @@
                 "name": "Zaphod Beeblebrox",
                 "x": 500,
                 "y": 350,
-                "imageFile": "planets/zaphod_zaphod_beeblebrox.jpg",
+                "imageFile": "planets/zaphod_zaphod_beeblebrox.png",
                 "planetImageScale": 1.2,
                 "produces": [
                     "Electronics"
@@ -120,7 +120,7 @@
                 "name": "Alkaid VII",
                 "x": 300,
                 "y": 500,
-                "imageFile": "planets/alkaid_alkaid_vii.jpg",
+                "imageFile": "planets/alkaid_alkaid_vii.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -146,7 +146,7 @@
                 "name": "Clotho's Thread",
                 "x": 150,
                 "y": 300,
-                "imageFile": "planets/clotho_clothos_thread.jpg",
+                "imageFile": "planets/clotho_clothos_thread.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Food"
@@ -172,7 +172,7 @@
                 "name": "Orion Nebula Port",
                 "x": 400,
                 "y": 400,
-                "imageFile": "planets/orion_orion_nebula_port.jpg",
+                "imageFile": "planets/orion_orion_nebula_port.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Medicine",
@@ -200,7 +200,7 @@
                 "name": "Dax Station",
                 "x": 550,
                 "y": 250,
-                "imageFile": "planets/curzon_dax_station.jpg",
+                "imageFile": "planets/curzon_dax_station.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -226,7 +226,7 @@
                 "name": "Pleasure Planet",
                 "x": 600,
                 "y": 450,
-                "imageFile": "planets/risa_pleasure_planet.jpg",
+                "imageFile": "planets/risa_pleasure_planet.png",
                 "planetImageScale": 1.3,
                 "produces": [
                     "Food"
@@ -251,7 +251,7 @@
                 "name": "Atropos Prime",
                 "x": 200,
                 "y": 200,
-                "imageFile": "planets/atropos_atropos_prime.jpg",
+                "imageFile": "planets/atropos_atropos_prime.png",
                 "planetImageScale": 0.8,
                 "produces": [
                     "Ore"
@@ -277,7 +277,7 @@
                 "name": "Darven's Pass",
                 "x": 350,
                 "y": 350,
-                "imageFile": "planets/darven_darvens_pass.jpg",
+                "imageFile": "planets/darven_darvens_pass.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Food",
@@ -305,7 +305,7 @@
                 "name": "Propus Major",
                 "x": 500,
                 "y": 500,
-                "imageFile": "planets/propus_propus_major.jpg",
+                "imageFile": "planets/propus_propus_major.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -332,7 +332,7 @@
                 "name": "North Star Port",
                 "x": 600,
                 "y": 200,
-                "imageFile": "planets/polaris_north_star_port.jpg",
+                "imageFile": "planets/polaris_north_star_port.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Electronics"
@@ -359,7 +359,7 @@
                 "name": "Rigel Kentaurus",
                 "x": 700,
                 "y": 300,
-                "imageFile": "planets/rigel_rigel_kentaurus.jpg",
+                "imageFile": "planets/rigel_rigel_kentaurus.png",
                 "planetImageScale": 1.2,
                 "produces": [
                     "Food",
@@ -387,7 +387,7 @@
                 "name": "Matar IV",
                 "x": 400,
                 "y": 550,
-                "imageFile": "planets/matar_matar_iv.jpg",
+                "imageFile": "planets/matar_matar_iv.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Ore"
@@ -415,7 +415,7 @@
                 "name": "Yemuro Station",
                 "x": 300,
                 "y": 150,
-                "imageFile": "planets/yemuro_yemuro_station.jpg",
+                "imageFile": "planets/yemuro_yemuro_station.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Electronics"
@@ -443,7 +443,7 @@
                 "name": "Turin's Shroud",
                 "x": 450,
                 "y": 250,
-                "imageFile": "planets/turin_turins_shroud.jpg",
+                "imageFile": "planets/turin_turins_shroud.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -471,7 +471,7 @@
                 "name": "Cygnus X-1",
                 "x": 600,
                 "y": 100,
-                "imageFile": "planets/cygnus_cygnus_x1.jpg",
+                "imageFile": "planets/cygnus_cygnus_x1.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Electronics"
@@ -498,7 +498,7 @@
                 "name": "Kathoon Prime",
                 "x": 700,
                 "y": 200,
-                "imageFile": "planets/kathoon_kathoon_prime.jpg",
+                "imageFile": "planets/kathoon_kathoon_prime.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Food"
@@ -525,7 +525,7 @@
                 "name": "Levo System",
                 "x": 800,
                 "y": 400,
-                "imageFile": "planets/levo_levo_system.jpg",
+                "imageFile": "planets/levo_levo_system.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Medicine",
@@ -552,7 +552,7 @@
                 "name": "Spica Colony",
                 "x": 900,
                 "y": 150,
-                "imageFile": "planets/spica_spica_colony.jpg",
+                "imageFile": "planets/spica_spica_colony.png",
                 "planetImageScale": 1.2,
                 "produces": [
                     "Food"
@@ -580,7 +580,7 @@
                 "name": "Vulcanis",
                 "x": 850,
                 "y": 350,
-                "imageFile": "planets/vulcan_vulcanis.jpg",
+                "imageFile": "planets/vulcan_vulcanis.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -610,7 +610,7 @@
                 "name": "Capella IV",
                 "x": 800,
                 "y": 500,
-                "imageFile": "planets/capella_capella_iv.jpg",
+                "imageFile": "planets/capella_capella_iv.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Ore",
@@ -640,7 +640,7 @@
                 "name": "Alpha Centauri",
                 "x": 700,
                 "y": 600,
-                "imageFile": "planets/centauri_alpha_centauri.jpg",
+                "imageFile": "planets/centauri_alpha_centauri.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Food",
@@ -669,7 +669,7 @@
                 "name": "Barnard's Star",
                 "x": 750,
                 "y": 700,
-                "imageFile": "planets/barnard_barnards_star.jpg",
+                "imageFile": "planets/barnard_barnards_star.png",
                 "planetImageScale": 0.8,
                 "produces": [
                     "Ore"
@@ -696,7 +696,7 @@
                 "name": "Epsilon Eridani",
                 "x": 850,
                 "y": 650,
-                "imageFile": "planets/eridani_epsilon_eridani.jpg",
+                "imageFile": "planets/eridani_epsilon_eridani.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Food"
@@ -724,7 +724,7 @@
                 "name": "Procyon B",
                 "x": 800,
                 "y": 800,
-                "imageFile": "planets/procyon_procyon_b.jpg",
+                "imageFile": "planets/procyon_procyon_b.png",
                 "planetImageScale": 1.2,
                 "produces": [
                     "Electronics"
@@ -753,7 +753,7 @@
                 "name": "Terra",
                 "x": 700,
                 "y": 750,
-                "imageFile": "planets/sol_terra.jpg",
+                "imageFile": "planets/sol_terra.png",
                 "planetImageScale": 1.3,
                 "produces": [
                     "Medicine",
@@ -783,7 +783,7 @@
                 "name": "Sirius A",
                 "x": 650,
                 "y": 650,
-                "imageFile": "planets/sirius_sirius_a.jpg",
+                "imageFile": "planets/sirius_sirius_a.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Ore"
@@ -812,7 +812,7 @@
                 "name": "Altair IV Outpost",
                 "x": 550,
                 "y": 550,
-                "imageFile": "planets/altair_altair_iv_outpost.jpg",
+                "imageFile": "planets/altair_altair_iv_outpost.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Food"
@@ -840,7 +840,7 @@
                 "name": "Diphidia Mining",
                 "x": 600,
                 "y": 700,
-                "imageFile": "planets/diphidia_diphidia_mining.jpg",
+                "imageFile": "planets/diphidia_diphidia_mining.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -869,7 +869,7 @@
                 "name": "Tau Ceti e",
                 "x": 750,
                 "y": 850,
-                "imageFile": "planets/tau_ceti_tau_ceti_e.jpg",
+                "imageFile": "planets/tau_ceti_tau_ceti_e.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Food",
@@ -899,7 +899,7 @@
                 "name": "Antares Trade Hub",
                 "x": 650,
                 "y": 900,
-                "imageFile": "planets/antares_antares_trade_hub.jpg",
+                "imageFile": "planets/antares_antares_trade_hub.png",
                 "planetImageScale": 1.2,
                 "produces": [
                     "Electronics"
@@ -926,7 +926,7 @@
                 "name": "Mentos Prime",
                 "x": 500,
                 "y": 800,
-                "imageFile": "planets/mentos_mentos_prime.jpg",
+                "imageFile": "planets/mentos_mentos_prime.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Ore"
@@ -955,7 +955,7 @@
                 "name": "Canopus Station",
                 "x": 450,
                 "y": 950,
-                "imageFile": "planets/canopus_canopus_station.jpg",
+                "imageFile": "planets/canopus_canopus_station.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Food",
@@ -984,7 +984,7 @@
                 "name": "Pollux IV",
                 "x": 700,
                 "y": 900,
-                "imageFile": "planets/pollux_pollux_iv.jpg",
+                "imageFile": "planets/pollux_pollux_iv.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Food"
@@ -1011,7 +1011,7 @@
                 "name": "Gemini Port (Castor)",
                 "x": 600,
                 "y": 850,
-                "imageFile": "planets/castor_gemini_port_castor.jpg",
+                "imageFile": "planets/castor_gemini_port_castor.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -1039,7 +1039,7 @@
                 "name": "Vega Colony",
                 "x": 800,
                 "y": 750,
-                "imageFile": "planets/vega_vega_colony.jpg",
+                "imageFile": "planets/vega_vega_colony.png",
                 "planetImageScale": 1.1,
                 "produces": [
                     "Food",
@@ -1065,7 +1065,7 @@
                 "name": "Mount Olympus Base",
                 "x": 350,
                 "y": 900,
-                "imageFile": "planets/olympus_mount_olympus_base.jpg",
+                "imageFile": "planets/olympus_mount_olympus_base.png",
                 "planetImageScale": 0.9,
                 "produces": [
                     "Ore"
@@ -1092,7 +1092,7 @@
                 "name": "Tiberium Mines",
                 "x": 500,
                 "y": 900,
-                "imageFile": "planets/tiber_tiberium_mines.jpg",
+                "imageFile": "planets/tiber_tiberium_mines.png",
                 "planetImageScale": 1.0,
                 "produces": [
                     "Ore"
@@ -1119,7 +1119,7 @@
                 "name": "NGC-5465 Outpost",
                 "x": 750,
                 "y": 100,
-                "imageFile": "planets/ngc5465_ngc5465_outpost.jpg",
+                "imageFile": "planets/ngc5465_ngc5465_outpost.png",
                 "planetImageScale": 0.8,
                 "produces": [
                     "Ore"
@@ -1145,7 +1145,7 @@
                 "name": "Listening Array 1023",
                 "x": 400,
                 "y": 50,
-                "imageFile": "planets/ngc1023_listening_array_1023.jpg",
+                "imageFile": "planets/ngc1023_listening_array_1023.png",
                 "planetImageScale": 0.7,
                 "produces": [
                     "Electronics"
@@ -1169,7 +1169,7 @@
                 "name": "Deep Space 6484",
                 "x": 100,
                 "y": 400,
-                "imageFile": "planets/ngc6484_deep_space_6484.jpg",
+                "imageFile": "planets/ngc6484_deep_space_6484.png",
                 "planetImageScale": 0.7,
                 "produces": [
                     "Ore"
@@ -1197,7 +1197,7 @@
                 "name": "Altair IV",
                 "x": 550,
                 "y": 550,
-                "imageFile": "planets/altair_altair_iv.jpg",
+                "imageFile": "planets/altair_altair_iv.png",
                 "planetImageScale": 1,
                 "produces": [
                     "Food"
