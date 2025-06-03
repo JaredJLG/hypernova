@@ -30,6 +30,10 @@ module.exports = {
     MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED: 22500, // (150px)^2
     HYPERJUMP_CHARGE_TIME_MS: 3000, // 3 seconds
     
-    // Shield configuration
-    SHIELD_REGEN_INTERVAL_MS: 100, // How often the server attempts to regenerate shields
+    // Shield configuration (passive regen interval removed)
+    // SHIELD_REGEN_INTERVAL_MS: 100, // No longer used for passive
+
+    // Recharge costs at station
+    RECHARGE_COST_PER_SHIELD_POINT: 1,
+    RECHARGE_COST_PER_HULL_POINT: 3,
 };

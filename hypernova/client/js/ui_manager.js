@@ -241,7 +241,7 @@ export const UIManager = {
                     <div class="station-button-column">
                         <button id="station-shipyard-btn" class="station-action-button">Shipyard</button>
                         <button id="station-outfitter-btn" class="station-action-button">Outfitter</button>
-                        <button id="station-recharge-btn" class="station-action-button">Recharge</button>
+                        <button id="station-recharge-btn" class="station-action-button">Recharge S/H</button>
                         <button id="station-leave-btn" class="station-action-button">Leave</button>
                     </div>
                 </div>
@@ -263,9 +263,9 @@ export const UIManager = {
             ?.addEventListener("click", () => alert("Bar: Not implemented."));
         document 
             .getElementById("station-recharge-btn")
-            ?.addEventListener("click", () =>
-                alert("Recharge Shields/Hull: Not implemented."),
-            );
+            ?.addEventListener("click", () => {
+                Network.socket.emit("requestRecharge"); // Send request to server
+            });
         document
             .getElementById("station-leave-btn")
             ?.addEventListener("click", () => Network.undock());
@@ -436,7 +436,7 @@ export const UIManager = {
                         statusText = "Equipped";
                         statusClass = "item-equipped";
                     } else {
-                        statusText = "Equip"; // Owned but not equipped
+                        statusText = "Equip"; 
                     }
                 }
     
@@ -447,7 +447,6 @@ export const UIManager = {
                     damageDisplay += `x${wDef.barrels}`;
                 }
 
-                // Comparison logic
                 let dmgClass = "", rpmClass = "", rangeClass = "";
                 let dmgSymbol = "", rpmSymbol = "", rangeSymbol = "";
 
@@ -514,12 +513,11 @@ export const UIManager = {
                 let statusClass = "";
                 if (myShip.type === i) {
                     statusText = "Current";
-                    statusClass = "item-equipped"; // Use same class for visual consistency
+                    statusClass = "item-equipped"; 
                 }
     
                 const selectedClass = i === gameState.selectedShipIndex ? "selected" : "";
 
-                // Comparison logic
                 let cargoClass = "", healthClass = "", shieldClass = "";
                 let cargoSymbol = "", healthSymbol = "", shieldSymbol = "";
 

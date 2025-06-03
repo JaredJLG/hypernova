@@ -150,7 +150,7 @@ app.post("/save-progress", async (req, res) => {
     const progress = {
         username,
         lastSaved: new Date().toISOString(),
-        shipData, // This now includes shield, maxShield from client's network.js
+        shipData, 
         dockedAtDetails, 
     };
 
@@ -246,10 +246,11 @@ async function startServer() {
         () => playerManager.checkAllPlayerMissionTimeouts(missionManager),
         gameConfig.PLAYER_MISSION_CHECK_INTERVAL_MS,
     );
-    setInterval( // New interval for shield regeneration
-        () => playerManager.regenerateShields(),
-        gameConfig.SHIELD_REGEN_INTERVAL_MS
-    );
+    // Removed shield regeneration interval
+    // setInterval( 
+    //     () => playerManager.regenerateShields(),
+    //     gameConfig.SHIELD_REGEN_INTERVAL_MS
+    // );
 
 
     io.on("connection", (socket) => {

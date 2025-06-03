@@ -93,8 +93,6 @@ class CombatManager {
 
                     if (dotProduct < cosHalfBeam) continue;
 
-                    // --- Shield and Health Damage Logic ---
-                    target.lastDamageTime = Date.now(); // Update last damage time for shield regen delay
                     let damageDealt = weaponStats.damage;
                     let targetDestroyedThisShot = false;
 
@@ -110,12 +108,11 @@ class CombatManager {
                         damageToHealth = Math.min(target.health, damageDealt);
                         target.health -= damageToHealth;
                     }
-                    // --- End Shield and Health Damage Logic ---
 
 
                     if (target.health > 0 && target.hyperjumpState === "charging") {
                         this.playerManager.handlePlayerHitDuringHyperjumpCharge(
-                            target.id, // Pass target.id, not target object directly
+                            target.id, 
                         );
                     }
 
@@ -137,13 +134,15 @@ class CombatManager {
                         }
                     }
                     
-                    this.playerManager.updatePlayerState(target.id, {
+                    const updatePayload = {
                         health: target.health,
                         shield: target.shield,
                         destroyed: target.destroyed,
-                        hyperjumpState: target.hyperjumpState, 
-                        lastDamageTime: target.lastDamageTime
-                    });
+                        hyperjumpState: target.hyperjumpState,
+                        // lastDamageTime is not needed here since regen is manual
+                    };
+                    this.playerManager.updatePlayerState(target.id, updatePayload);
+
 
                     if (targetDestroyedThisShot) {
                         this.missionManager.handleTargetDestroyed(attacker, target);

@@ -1,791 +1,1871 @@
-/* ===== START: hypernova/server/data/weapons.json ===== */
-{
-    "Laser": {
-        "name": "Laser",
-        "price": 500,
-        "damage": 10,
-        "range": 700,
-        "rpm": 300,
-        "color": "#f00",
-        "beam": 0.3
+/* ===== START: hypernova/server/data/ship_types.json ===== */
+[
+    {
+        "name": "Scout",
+        "price": 0,
+        "speedMult": 1.1,
+        "rotMult": 1.5,
+        "revMult": 2.5,
+        "maxCargo": 10,
+        "maxHealth": 100,
+        "maxShield": 50,
+        "shieldRechargeRate": 5,
+        "shieldRechargeDelayMs": 5000,
+        "imageFile": "scout_ship.png",
+        "imgWidth": 32,
+        "imgHeight": 32
     },
-    "Plasma": {
-        "name": "Plasma",
+    {
+        "name": "Trader",
+        "price": 2000,
+        "speedMult": 1.0,
+        "rotMult": 1.0,
+        "revMult": 2.0,
+        "maxCargo": 30,
+        "maxHealth": 100,
+        "maxShield": 75,
+        "shieldRechargeRate": 4,
+        "shieldRechargeDelayMs": 6000
+    },
+    {
+        "name": "Freighter",
+        "price": 5000,
+        "speedMult": 0.7,
+        "rotMult": 0.7,
+        "revMult": 1.5,
+        "maxCargo": 60,
+        "maxHealth": 100,
+        "maxShield": 100,
+        "shieldRechargeRate": 3,
+        "shieldRechargeDelayMs": 7000
+    },
+    {
+        "name": "Interceptor",
         "price": 1500,
-        "damage": 25,
-        "range": 1000,
-        "rpm": 180,
-        "color": "#0ff",
-        "beam": 0.3
+        "speedMult": 1.8,
+        "rotMult": 1.8,
+        "revMult": 2.2,
+        "maxCargo": 5,
+        "maxHealth": 120,
+        "maxShield": 60,
+        "shieldRechargeRate": 7,
+        "shieldRechargeDelayMs": 4000
     },
-    "Railgun": {
-        "name": "Railgun",
-        "price": 3000,
-        "damage": 40,
-        "range": 1400,
-        "rpm": 120,
-        "color": "#ff0",
-        "beam": 0.2
-    },
-    "FusionGun": {
-        "name": "FusionGun",
-        "price": 8000,
-        "damage": 70,
-        "range": 1750,
-        "rpm": 60,
-        "color": "#f0f",
-        "beam": 0.15
-    },
-    "DualLaser": {
-        "name": "Dual Laser",
-        "price": 1200,
-        "damage": 7,
-        "range": 700,
-        "rpm": 280,
-        "color": "#FF8C00",
-        "beam": 0.25,
-        "barrels": 2,
-        "barrelOffset": 4
+    {
+        "name": "Heavy Freighter",
+        "price": 10000,
+        "speedMult": 0.5,
+        "rotMult": 0.5,
+        "revMult": 1.0,
+        "maxCargo": 100,
+        "maxHealth": 150,
+        "maxShield": 150,
+        "shieldRechargeRate": 2.5,
+        "shieldRechargeDelayMs": 8000
     }
-}
-/* ===== END: hypernova/server/data/weapons.json ===== */
+]
+/* ===== END: hypernova/server/data/ship_types.json ===== */
 
-/* ===== START: hypernova/client/js/client_config.js ===== */
-// client/js/client_config.js
-export const BASE_THRUST = 0.1;
-export const BASE_ROTATION_SPEED = 0.07;
-export const DAMPING = 0.99;
-export const PROJECTILE_LIFESPAN_MS = 2000; // Increased from 400ms
-export const DOCKING_DISTANCE_SQUARED = 400; // (20px)^2
-export const MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED = 22500; // (150px)^2 - adjust as needed
-export const HYPERJUMP_CHARGE_TIME_MS = 3000; // 3 seconds
-export const HYPERJUMP_DENIED_MESSAGE_DURATION_MS = 3000; // 3 seconds
-export const EXPLOSION_LIFESPAN_MS = 500; // For future AoE
-/* ===== END: hypernova/client/js/client_config.js ===== */
-
-/* ===== START: hypernova/client/js/renderer.js ===== */
-// hypernova/client/js/renderer.js
-import { gameState } from "./game_state.js";
-import {
-    PROJECTILE_LIFESPAN_MS,
-    DOCKING_DISTANCE_SQUARED,
-    HYPERJUMP_CHARGE_TIME_MS,
-    // EXPLOSION_LIFESPAN_MS, // Will be used for AoE
-} from "./client_config.js";
-
-let ctx = null;
-let canvas = null;
-let minimapCanvas = null; 
-let minimapCtx = null;
-let initialized = false;
-
-const PARALLAX_LAYERS = [
-    {
-        speed: 0.05,
-        stars: [],
-        starDensity: 0.000015,
-        minStarSize: 0.2,
-        maxStarSize: 0.7,
-        opacity: 0.4,
-    }, 
-    {
-        speed: 0.15,
-        stars: [],
-        starDensity: 0.00003,
-        minStarSize: 0.4,
-        maxStarSize: 1.0,
-        opacity: 0.6,
+/* ===== START: hypernova/server/config/game_config.js ===== */
+module.exports = {
+    PORT: 3000,
+    MISSION_TYPES: {
+        CARGO_DELIVERY: "CARGO_DELIVERY",
+        BOUNTY: "BOUNTY",
     },
-    {
-        speed: 0.35,
-        stars: [],
-        starDensity: 0.00005,
-        minStarSize: 0.6,
-        maxStarSize: 1.5,
-        opacity: 0.8,
-    },
-];
+    MAX_MISSIONS_PER_PLANET: 3,
+    MISSION_GENERATION_INTERVAL_MS: 2 * 60 * 1000, // 2 minutes
+    MISSION_TIME_LIMIT_BASE_MS: 5 * 60 * 1000, // 5 minutes
+    MISSION_TIME_LIMIT_PER_SYSTEM_JUMP_MS: 1 * 60 * 1000, // 1 minute
 
-function getRandom(min, max) {
-    return Math.random() * (max - min) + min;
-}
+    ECONOMY_UPDATE_INTERVAL_MS: 1 * 60 * 1000, // 1 minute
+    PLAYER_MISSION_CHECK_INTERVAL_MS: 30 * 1000, // 30 seconds
 
-function generateParallaxStars() {
-    if (!canvas) return;
-    PARALLAX_LAYERS.forEach((layer) => {
-        layer.stars = [];
-        const numStars = Math.floor(
-            canvas.width * canvas.height * layer.starDensity,
-        );
-        for (let i = 0; i < numStars; i++) {
-            layer.stars.push({
-                x: Math.random() * canvas.width * 3 - canvas.width, 
-                y: Math.random() * canvas.height * 3 - canvas.height,
-                radius: getRandom(layer.minStarSize, layer.maxStarSize),
-                opacity: getRandom(layer.opacity * 0.5, layer.opacity),
-            });
-        }
-    });
-}
+    INITIAL_STOCK_BASE: 1000,
+    STOCK_PRODUCED_MULTIPLIER: 2.0,
+    STOCK_CONSUMED_MULTIPLIER: 0.5,
+    PRICE_SUPPLY_FACTOR_LOW: 0.7,
+    PRICE_DEMAND_FACTOR_HIGH: 1.4,
+    PRICE_STOCK_MIN_EFFECT_MULTIPLIER: 0.5,
+    PRICE_STOCK_MAX_EFFECT_MULTIPLIER: 2.5,
+    PLANET_PROFIT_MARGIN: 0.05,
 
-export const Renderer = {
-    init(mainCanvasElement) {
-        canvas = mainCanvasElement;
-        ctx = canvas.getContext("2d");
+    DEFAULT_PLAYER_CREDITS: 1000,
+    DEFAULT_PLAYER_SHIP_TYPE_INDEX: 0, // Scout
+    PLAYER_SPAWN_X: 400,
+    PLAYER_SPAWN_Y: 300,
 
-        minimapCanvas = document.getElementById("minimapCanvas");
-        if (minimapCanvas) {
-            minimapCtx = minimapCanvas.getContext("2d");
-            minimapCanvas.width = minimapCanvas.clientWidth;
-            minimapCanvas.height = minimapCanvas.clientHeight;
-        } else {
-            console.warn("Minimap canvas not found!");
-        }
+    // Hyperjump configuration
+    MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED: 22500, // (150px)^2
+    HYPERJUMP_CHARGE_TIME_MS: 3000, // 3 seconds
+    
+    // Shield configuration (passive regen interval removed)
+    // SHIELD_REGEN_INTERVAL_MS: 100, // No longer used for passive
 
-        gameState.camera.width = canvas.width;
-        gameState.camera.height = canvas.height;
-        generateParallaxStars();
-        initialized = true;
+    // Recharge costs at station
+    RECHARGE_COST_PER_SHIELD_POINT: 1,
+    RECHARGE_COST_PER_HULL_POINT: 3,
+};
+/* ===== END: hypernova/server/config/game_config.js ===== */
+
+/* ===== START: hypernova/server/modules/player_manager.js ===== */
+// server/modules/player_manager.js
+const { MISSION_TYPES, RECHARGE_COST_PER_SHIELD_POINT, RECHARGE_COST_PER_HULL_POINT } = require("../config/game_config");
+
+class PlayerManager {
+    constructor(
+        io,
+        shipTypes,
+        tradeGoods,
+        gameConfigInstance,
+        worldManagerInstance,
+    ) {
+        this.io = io;
+        this.shipTypes = shipTypes;
+        this.tradeGoods = tradeGoods;
+        this.gameConfig = gameConfigInstance;
+        this.players = {};
+        this.worldManager = worldManagerInstance;
+    }
+
+    initializePlayerData(player, shipTypeIndex) {
+        const shipType = this.shipTypes[shipTypeIndex] || this.shipTypes[0];
+        player.type = shipTypeIndex;
+        player.maxCargo = shipType.maxCargo;
+        player.maxHealth = shipType.maxHealth || 100;
+        // player.health = player.maxHealth; // Health is loaded or set to maxHealth if new
+        
+        player.maxShield = shipType.maxShield || 0;
+        // player.shield = player.maxShield; // Shield is loaded or set to maxShield if new
+        
+        // These are no longer used for passive regen
+        // player.shieldRechargeRate = shipType.shieldRechargeRate || 0;
+        // player.shieldRechargeDelayMs = shipType.shieldRechargeDelayMs || 5000;
+        // player.lastDamageTime = 0;
+    }
+
+
+    handleConnection(socket, initialWorldData = {}) {
+        const defaultShipTypeIndex = this.gameConfig.DEFAULT_PLAYER_SHIP_TYPE_INDEX;
+        const defaultShipType = this.shipTypes[defaultShipTypeIndex];
+        
+        this.players[socket.id] = {
+            id: socket.id,
+            x: this.gameConfig.PLAYER_SPAWN_X || 400,
+            y: this.gameConfig.PLAYER_SPAWN_Y || 300,
+            angle: 0,
+            vx: 0,
+            vy: 0,
+            credits: this.gameConfig.DEFAULT_PLAYER_CREDITS,
+            cargo: new Array(this.tradeGoods.length).fill(0),
+            weapons: [],
+            activeMissions: [],
+            activeWeapon: null,
+            lastShot: 0,
+            system: 0,
+            dockedAtPlanetIdentifier: null,
+            destroyed: false,
+            color:
+                "#" +
+                Math.floor(Math.random() * 0xffffff)
+                    .toString(16)
+                    .padStart(6, "0"),
+            hyperjumpState: "idle", 
+            hyperjumpChargeTimeoutId: null,
+            // Initialize shield and health based on default ship type
+            maxHealth: defaultShipType.maxHealth || 100,
+            health: defaultShipType.maxHealth || 100,
+            maxShield: defaultShipType.maxShield || 0,
+            shield: defaultShipType.maxShield || 0,
+        };
+        this.initializePlayerData(this.players[socket.id], defaultShipTypeIndex); // Applies type-specific max values
+
         console.log(
-            "Renderer initialized with canvas:",
-            canvas.width,
-            "x",
-            canvas.height,
+            `Player ${socket.id} connected. Initial ship: ${this.shipTypes[defaultShipTypeIndex].name}. Initial credits: ${this.players[socket.id].credits}`,
         );
-    },
 
-    isInitialized() {
-        return initialized;
-    },
-
-    updateViewPort(width, height) {
-        generateParallaxStars();
-
-        if (minimapCanvas) {
-            minimapCanvas.width = minimapCanvas.clientWidth;
-            minimapCanvas.height = minimapCanvas.clientHeight;
-        }
-        console.log("Renderer viewport updated:", width, "x", height);
-    },
-
-    drawSystemBackground() {
-        if (!gameState.myShip || gameState.myShip.system === undefined) {
-            ctx.fillStyle = "#000003";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            return;
-        }
-        const systemData =
-            gameState.clientGameData.systems[gameState.myShip.system];
-        if (systemData && systemData.backgroundFile) {
-            const bgImg = gameState.loadedImages[systemData.backgroundFile];
-            if (bgImg) {
-                const camX = gameState.camera.x;
-                const camY = gameState.camera.y;
-                const parallaxFactor = 0.1; 
-
-                const imgWidth = bgImg.width;
-                const imgHeight = bgImg.height;
-
-                const startX =
-                    Math.floor((camX * parallaxFactor) / imgWidth) * imgWidth;
-                const startY =
-                    Math.floor((camY * parallaxFactor) / imgHeight) * imgHeight;
-
-                ctx.save();
-                ctx.translate(
-                    -(camX * parallaxFactor),
-                    -(camY * parallaxFactor),
-                );
-                for (
-                    let x = startX - imgWidth;
-                    x <
-                    startX + canvas.width / (1 - parallaxFactor) + imgWidth * 2;
-                    x += imgWidth
-                ) {
-                    for (
-                        let y = startY - imgHeight;
-                        y <
-                        startY +
-                            canvas.height / (1 - parallaxFactor) +
-                            imgHeight * 2;
-                        y += imgHeight
-                    ) {
-                        ctx.drawImage(bgImg, x, y, imgWidth, imgHeight);
-                    }
-                }
-                ctx.restore();
-            } else {
-                ctx.fillStyle = systemData.fallbackColor || "#010205"; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-        } else {
-            ctx.fillStyle = "#000003";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        this.drawParallaxStars(); 
-    },
-
-    drawParallaxStars() {
-        const camX = gameState.camera.x;
-        const camY = gameState.camera.y;
-
-        PARALLAX_LAYERS.forEach((layer) => {
-            ctx.beginPath();
-            layer.stars.forEach((star) => {
-                const parallaxX = star.x - camX * layer.speed;
-                const parallaxY = star.y - camY * layer.speed;
-                const wrapWidth = canvas.width + canvas.width / layer.speed; 
-                const wrapHeight = canvas.height + canvas.height / layer.speed;
-
-                let screenX = parallaxX % wrapWidth;
-                if (screenX < 0) screenX += wrapWidth;
-                screenX %= canvas.width; 
-
-                let screenY = parallaxY % wrapHeight;
-                if (screenY < 0) screenY += wrapHeight;
-                screenY %= canvas.height;
-
-                ctx.moveTo(screenX + star.radius, screenY); 
-                ctx.arc(screenX, screenY, star.radius, 0, Math.PI * 2);
-            });
-            ctx.fillStyle = `rgba(255, 255, 240, ${layer.opacity})`;
-            ctx.fill();
+        socket.emit("init", {
+            id: socket.id,
+            ships: this.players, 
+            gameData: {
+                ...initialWorldData, 
+                tradeGoods: this.tradeGoods,
+                weapons: this.gameConfig.staticWeaponsData,
+                shipTypes: this.shipTypes,
+                MISSION_TYPES: this.gameConfig.MISSION_TYPES,
+            },
         });
-    },
 
-    draw() {
-        if (!ctx || !initialized) return;
-        if (!gameState.myShip) {
-            ctx.fillStyle = "#000";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            return;
-        }
+        socket.broadcast.emit("playerJoined", {
+            id: socket.id,
+            ship: this.players[socket.id],
+        });
 
-        this.drawSystemBackground();
+        this.registerSocketHandlers(socket);
 
-        ctx.save();
-        ctx.translate(-gameState.camera.x, -gameState.camera.y);
-
-        if (gameState.myShip.system !== undefined) {
-            const currentSystemData =
-                gameState.clientGameData.systems[gameState.myShip.system];
-            if (currentSystemData && currentSystemData.planets) {
-                currentSystemData.planets.forEach((p) => this.drawPlanet(p));
-            }
-
-            const now = Date.now();
-            gameState.projectiles = gameState.projectiles.filter(
-                (p) => now - (p.time || 0) < PROJECTILE_LIFESPAN_MS,
+        socket.on("clientLoadedDockedState", (receivedSyncData) => {
+            console.log(
+                `PlayerManager: Received 'clientLoadedDockedState' from ${socket.id}.`,
             );
-            gameState.projectiles.forEach((p) => this.drawProjectile(p));
+            const player = this.players[socket.id];
 
-            // Draw explosions (for future AoE)
-            // gameState.explosions = gameState.explosions.filter(
-            //     (exp) => now - (exp.startTime || 0) < EXPLOSION_LIFESPAN_MS,
-            // );
-            // gameState.explosions.forEach((exp) => this.drawExplosion(exp));
+            if (player && receivedSyncData) {
+                // Apply general stats first
+                if (receivedSyncData.credits !== undefined) player.credits = receivedSyncData.credits;
+                if (receivedSyncData.cargo !== undefined) player.cargo = receivedSyncData.cargo;
+                if (receivedSyncData.weapons !== undefined) player.weapons = receivedSyncData.weapons;
+                if (receivedSyncData.activeWeapon !== undefined) player.activeWeapon = receivedSyncData.activeWeapon;
+                if (receivedSyncData.activeMissions !== undefined) player.activeMissions = receivedSyncData.activeMissions;
 
+                // Apply ship type and its associated max values, then override with saved health/shield
+                if (receivedSyncData.type !== undefined) {
+                    this.initializePlayerData(player, receivedSyncData.type); // Sets maxHealth, maxShield
+                }
+                // Now apply saved health and shield, ensuring they don't exceed new max values
+                if (receivedSyncData.health !== undefined) {
+                    player.health = Math.min(receivedSyncData.health, player.maxHealth);
+                }
+                if (receivedSyncData.shield !== undefined) {
+                     player.shield = Math.min(receivedSyncData.shield, player.maxShield);
+                }
 
-            for (const id in gameState.allShips) {
-                const ship = gameState.allShips[id];
-                if (!ship || ship.system !== gameState.myShip.system) continue;
-                this.drawShip(ship);
+                player.hyperjumpState = "idle";
+                if (player.hyperjumpChargeTimeoutId) {
+                    clearTimeout(player.hyperjumpChargeTimeoutId);
+                    player.hyperjumpChargeTimeoutId = null;
+                }
 
                 if (
-                    id !== gameState.myId &&
-                    !ship.destroyed &&
-                    ship.type !== undefined
+                    receivedSyncData.dockedAtDetails &&
+                    receivedSyncData.dockedAtDetails.systemIndex !== undefined
                 ) {
-                    const shipDef =
-                        gameState.clientGameData.shipTypes[ship.type];
-                    const shipRenderScale = shipDef.scale || 1.0;
-                    const labelOffset =
-                        shipDef && shipDef.imgHeight
-                            ? (shipDef.imgHeight / 2) * shipRenderScale + 10
-                            : 25;
-                    ctx.fillStyle = ship.color || "#0f0";
-                    ctx.font = "12px monospace";
-                    ctx.textAlign = "center";
-                    const displayName = ship.username || id.substring(0, 6);
-                    ctx.fillText(displayName, ship.x, ship.y - labelOffset);
-                    ctx.textAlign = "left";
+                    player.dockedAtPlanetIdentifier = {
+                        systemIndex:
+                            receivedSyncData.dockedAtDetails.systemIndex,
+                        planetIndex:
+                            receivedSyncData.dockedAtDetails.planetIndex,
+                    };
+                    player.system =
+                        receivedSyncData.dockedAtDetails.systemIndex;
+                    const planet = this.worldManager.getPlanet(
+                        player.system,
+                        player.dockedAtPlanetIdentifier.planetIndex,
+                    );
+                    if (planet) {
+                        player.x = planet.x;
+                        player.y = planet.y;
+                    }
+                    player.vx = 0;
+                    player.vy = 0;
+                    this.worldManager.playerDockedAtPlanet(
+                        player,
+                        player.system,
+                        player.dockedAtPlanetIdentifier.planetIndex,
+                    );
+                } else {
+                    player.dockedAtPlanetIdentifier = null;
+                    if (receivedSyncData.x !== undefined) player.x = receivedSyncData.x;
+                    if (receivedSyncData.y !== undefined) player.y = receivedSyncData.y;
+                    if (receivedSyncData.angle !== undefined) player.angle = receivedSyncData.angle;
+                    if (receivedSyncData.vx !== undefined) player.vx = receivedSyncData.vx;
+                    if (receivedSyncData.vy !== undefined) player.vy = receivedSyncData.vy;
+                    if (receivedSyncData.system !== undefined) player.system = receivedSyncData.system;
                 }
+                this.broadcastPlayerState(socket.id, this.players[socket.id]);
+            }
+        });
+    }
+
+    handleDisconnect(socket) {
+        const player = this.getPlayer(socket.id);
+        if (player) {
+            if (player.dockedAtPlanetIdentifier) {
+                this.worldManager.playerUndockedFromPlanet(
+                    player,
+                    player.dockedAtPlanetIdentifier.systemIndex,
+                    player.dockedAtPlanetIdentifier.planetIndex,
+                );
+            }
+            if (player.hyperjumpChargeTimeoutId) {
+                clearTimeout(player.hyperjumpChargeTimeoutId);
+                player.hyperjumpChargeTimeoutId = null;
             }
         }
-        ctx.restore();
-        this.drawHUD();
-    },
+        console.log(`Player ${socket.id} disconnected.`);
+        delete this.players[socket.id];
+        this.io.emit("playerLeft", socket.id);
+    }
 
-    drawPlanet(planet) {
-        const img = gameState.loadedImages[planet.imageFile];
-        const BASE_PLANET_RENDER_SIZE = 128;
-        const scale = planet.planetImageScale || 1.0;
-        const renderSize = BASE_PLANET_RENDER_SIZE * scale;
+    getPlayer(playerId) {
+        return this.players[playerId];
+    }
 
-        if (img) {
-            ctx.save();
-            ctx.drawImage(
-                img,
-                planet.x - renderSize / 2,
-                planet.y - renderSize / 2,
-                renderSize,
-                renderSize,
-            );
-            ctx.globalCompositeOperation = "lighter"; 
-            const glowRadius = renderSize * 0.65; 
-            const gradient = ctx.createRadialGradient(
-                planet.x,
-                planet.y,
-                renderSize * 0.48, 
-                planet.x,
-                planet.y,
-                glowRadius, 
-            );
-            gradient.addColorStop(0, `rgba(120, 170, 255, 0.25)`); 
-            gradient.addColorStop(0.7, `rgba(120, 170, 255, 0.1)`);
-            gradient.addColorStop(1, `rgba(120, 170, 255, 0)`); 
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(planet.x, planet.y, glowRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.globalCompositeOperation = "source-over"; 
-            ctx.restore();
-        } else {
-            ctx.fillStyle = planet.fallbackColor || "#335577";
-            ctx.beginPath();
-            ctx.arc(planet.x, planet.y, renderSize / 2, 0, Math.PI * 2);
-            ctx.fill();
+    getAllPlayers() {
+        return this.players;
+    }
+
+    updatePlayerState(playerId, updates) {
+        if (this.players[playerId]) {
+            Object.assign(this.players[playerId], updates);
+            if (updates.shield !== undefined && this.players[playerId].maxShield !== undefined) {
+                this.players[playerId].shield = Math.max(0, Math.min(this.players[playerId].shield, this.players[playerId].maxShield));
+            }
+            if (updates.health !== undefined && this.players[playerId].maxHealth !== undefined) {
+                this.players[playerId].health = Math.max(0, Math.min(this.players[playerId].health, this.players[playerId].maxHealth));
+            }
+            this.io.emit("state", { [playerId]: updates });
         }
+    }
 
-        ctx.fillStyle = "#E0E8FF";
-        ctx.font = `${Math.max(10, 12 * scale)}px monospace`; 
-        ctx.textAlign = "center";
-        ctx.shadowColor = "black";
-        ctx.shadowBlur = 2;
-        ctx.fillText(
-            planet.name,
-            planet.x,
-            planet.y + renderSize / 2 + Math.max(12, 15 * scale), 
-        );
-        ctx.shadowBlur = 0;
-        ctx.textAlign = "left";
-    },
-
-    drawShip(ship) {
-        if (ship.destroyed || ship.type === undefined) return;
-        const shipTypeDefinition =
-            gameState.clientGameData.shipTypes[ship.type];
-        if (!shipTypeDefinition) return;
-
-        const img = gameState.loadedImages[shipTypeDefinition.imageFile];
-        const shipScale = shipTypeDefinition.scale || 1.0;
-
-        ctx.save();
-        ctx.translate(ship.x, ship.y);
-        ctx.rotate(ship.angle);
-        if (img) {
-            const w = (shipTypeDefinition.imgWidth || img.width) * shipScale;
-            const h = (shipTypeDefinition.imgHeight || img.height) * shipScale;
-            ctx.drawImage(img, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillStyle = ship.color || "#0f0";
-            ctx.beginPath();
-            ctx.moveTo(15 * shipScale, 0);
-            ctx.lineTo(-10 * shipScale, 8 * shipScale);
-            ctx.lineTo(-10 * shipScale, -8 * shipScale);
-            ctx.closePath();
-            ctx.fill();
+    broadcastPlayerState(playerId, fullPlayerData) {
+        if (this.players[playerId]) {
+            this.io.emit("state", { [playerId]: fullPlayerData });
         }
+    }
 
-        if (ship.shield > 0 && ship.maxShield > 0) {
-            const shieldRadius = Math.max(
-                (shipTypeDefinition.imgWidth || 30) * shipScale * 0.6,
-                (shipTypeDefinition.imgHeight || 30) * shipScale * 0.6
+    // Removed regenerateShields() method
+
+    registerSocketHandlers(socket) {
+        socket.on("control", (data) => {
+            const player = this.getPlayer(socket.id);
+            if (
+                !player ||
+                player.dockedAtPlanetIdentifier ||
+                player.hyperjumpState === "charging"
+            )
+                return;
+
+            player.x = data.x;
+            player.y = data.y;
+            player.vx = data.vx;
+            player.vy = data.vy;
+            player.angle = data.angle;
+
+            const minimalUpdate = {
+                x: player.x,
+                y: player.y,
+                vx: player.vx,
+                vy: player.vy,
+                angle: player.angle,
+            };
+            socket.broadcast.emit("state", { [socket.id]: minimalUpdate });
+        });
+
+        socket.on("requestRecharge", () => {
+            const player = this.getPlayer(socket.id);
+            if (!player || !player.dockedAtPlanetIdentifier) {
+                return socket.emit("actionFailed", { message: "Must be docked to recharge." });
+            }
+
+            const neededShield = Math.max(0, player.maxShield - player.shield);
+            const neededHull = Math.max(0, player.maxHealth - player.health);
+
+            if (neededShield === 0 && neededHull === 0) {
+                return socket.emit("actionSuccess", { message: "Shields and hull already at maximum." });
+            }
+
+            const shieldCost = neededShield * this.gameConfig.RECHARGE_COST_PER_SHIELD_POINT;
+            const hullCost = neededHull * this.gameConfig.RECHARGE_COST_PER_HULL_POINT;
+            const totalCost = shieldCost + hullCost;
+
+            if (player.credits < totalCost) {
+                return socket.emit("actionFailed", { message: `Not enough credits. Need ${totalCost}, have ${player.credits}.` });
+            }
+
+            player.credits -= totalCost;
+            player.shield = player.maxShield;
+            player.health = player.maxHealth;
+
+            this.updatePlayerState(socket.id, {
+                credits: player.credits,
+                shield: player.shield,
+                health: player.health
+            });
+            socket.emit("actionSuccess", { message: `Recharged! Cost: ${totalCost} credits.` });
+        });
+
+
+        socket.on("requestHyperjump", (data) => {
+            const player = this.getPlayer(socket.id);
+            if (!player || player.destroyed) return;
+
+            const targetSystemIndex = data ? data.targetSystemIndex : null;
+
+            if (player.dockedAtPlanetIdentifier) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Cannot engage hyperdrive while docked.",
+                });
+            }
+            if (player.hyperjumpState !== "idle") {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Hyperdrive already engaged or cooling down.",
+                });
+            }
+
+            const currentSystemDataForProxCheck = this.worldManager.getSystem(
+                player.system,
             );
-            const shieldOpacity = Math.min(0.6, (ship.shield / ship.maxShield) * 0.5 + 0.1);
-            ctx.beginPath();
-            ctx.arc(0, 0, shieldRadius, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(100, 180, 255, ${shieldOpacity})`; 
-            ctx.fill();
-        }
-        ctx.restore();
-    },
+            if (
+                currentSystemDataForProxCheck &&
+                currentSystemDataForProxCheck.planets
+            ) {
+                for (const planet of currentSystemDataForProxCheck.planets) {
+                    if (!planet) continue;
+                    const distSq =
+                        (player.x - planet.x) ** 2 + (player.y - planet.y) ** 2;
+                    const planetScale = planet.planetImageScale || 1.0; 
+                    const minSafeDistSq =
+                        (this.gameConfig
+                            .MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED ||
+                            22500) *
+                        Math.pow(planetScale, 2) *
+                        1.5;
+                    if (distSq < minSafeDistSq) {
+                        return socket.emit("hyperjumpDenied", {
+                            message: "Too close to a celestial body.",
+                        });
+                    }
+                }
+            }
 
-    drawProjectile(p) {
-        const elapsedTime = (Date.now() - p.time) / 1000.0; 
-        const projectileDisplaySpeed = p.range / (PROJECTILE_LIFESPAN_MS / 1000.0);
-        const distanceTravelled = projectileDisplaySpeed * elapsedTime;
+            if (targetSystemIndex === null || targetSystemIndex === undefined) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Target system not specified.",
+                });
+            }
+            if (
+                targetSystemIndex < 0 ||
+                targetSystemIndex >= this.worldManager.systems.length
+            ) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Invalid target system index.",
+                });
+            }
+            const currentSystemData = this.worldManager.getSystem(
+                player.system,
+            ); 
+            if (
+                !currentSystemData ||
+                !currentSystemData.connections ||
+                !currentSystemData.connections.includes(targetSystemIndex)
+            ) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "No direct hyperlane to the target system.",
+                });
+            }
+            if (targetSystemIndex === player.system) {
+                return socket.emit("hyperjumpDenied", {
+                    message: "Already in the target system.",
+                });
+            }
 
-        const currentX = p.startX + Math.cos(p.startAngle) * distanceTravelled;
-        const currentY = p.startY + Math.sin(p.startAngle) * distanceTravelled;
+            player.hyperjumpState = "charging";
+            this.updatePlayerState(socket.id, { hyperjumpState: "charging" });
+            socket.emit("hyperjumpChargeStarted", {
+                chargeTime: this.gameConfig.HYPERJUMP_CHARGE_TIME_MS,
+            });
+            console.log(
+                `Player ${socket.id} starting hyperjump charge to system ${targetSystemIndex}.`,
+            );
 
-        const visualLength = 15; // Fixed visual length for the bolt
-        const projectileWidth = 3; 
+            player.hyperjumpChargeTimeoutId = setTimeout(() => {
+                if (player.hyperjumpState !== "charging" || player.destroyed) {
+                    player.hyperjumpChargeTimeoutId = null;
+                    if (
+                        player.hyperjumpState === "charging" &&
+                        !player.destroyed
+                    ) {
+                        player.hyperjumpState = "idle";
+                        this.updatePlayerState(socket.id, {
+                            hyperjumpState: "idle",
+                        });
+                    }
+                    return;
+                }
 
-        ctx.save();
-        ctx.translate(currentX, currentY);
-        ctx.rotate(p.startAngle); 
+                player.hyperjumpState = "idle";
+                player.hyperjumpChargeTimeoutId = null;
 
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 7;
-        ctx.fillRect(-visualLength, -projectileWidth / 2, visualLength, projectileWidth);
+                const oldSystem = player.system;
+                player.system = targetSystemIndex;
 
-        ctx.restore();
-    },
+                let newX,
+                    newY,
+                    newAngle = 0;
+                const arrivalSystemData = this.worldManager.getSystem(
+                    player.system,
+                );
+                const originSystemData = this.worldManager.getSystem(oldSystem);
 
-    // drawExplosion(exp) { // For future AoE
-    //     const now = Date.now();
-    //     const timeSinceStart = now - exp.startTime;
-    //     const progress = timeSinceStart / exp.duration;
+                newX =
+                    (this.gameConfig.PLAYER_SPAWN_X || 400) +
+                    (Math.random() * 200 - 100);
+                newY =
+                    (this.gameConfig.PLAYER_SPAWN_Y || 300) +
+                    (Math.random() * 200 - 100);
 
-    //     if (progress > 1) return;
+                if (arrivalSystemData) {
+                    if (
+                        originSystemData &&
+                        originSystemData.universeX !== undefined &&
+                        arrivalSystemData.universeX !== undefined &&
+                        originSystemData.universeY !== undefined &&
+                        arrivalSystemData.universeY !== undefined
+                    ) {
+                        const dx =
+                            arrivalSystemData.universeX -
+                            originSystemData.universeX;
+                        const dy =
+                            arrivalSystemData.universeY -
+                            originSystemData.universeY;
+                        const dist = Math.hypot(dx, dy);
+                        const arrivalOffsetFromCenter =
+                            350 + Math.random() * 100;
 
-    //     const currentRadius = exp.radius * progress; // Simple expansion
-    //     const opacity = 1 - progress;
+                        if (dist > 0) {
+                            const firstPlanetInArrival =
+                                arrivalSystemData.planets[0];
+                            const systemCenterX = firstPlanetInArrival
+                                ? firstPlanetInArrival.x -
+                                  (Math.random() * 100 - 50)
+                                : this.gameConfig.PLAYER_SPAWN_X || 400; 
+                            const systemCenterY = firstPlanetInArrival
+                                ? firstPlanetInArrival.y -
+                                  (Math.random() * 100 - 50)
+                                : this.gameConfig.PLAYER_SPAWN_Y || 300;
 
-    //     ctx.beginPath();
-    //     ctx.arc(exp.x, exp.y, currentRadius, 0, Math.PI * 2);
-    //     ctx.fillStyle = `rgba(255, 165, 0, ${opacity * 0.7})`; // Orange-ish explosion
-    //     ctx.fill();
+                            newX =
+                                systemCenterX -
+                                (dx / dist) * arrivalOffsetFromCenter;
+                            newY =
+                                systemCenterY -
+                                (dy / dist) * arrivalOffsetFromCenter;
+                            newAngle = Math.atan2(dy, dx) + Math.PI;
+                        } else {
+                            const firstPlanet = arrivalSystemData.planets[0];
+                            newX =
+                                (firstPlanet
+                                    ? firstPlanet.x
+                                    : this.gameConfig.PLAYER_SPAWN_X || 400) -
+                                (200 + Math.random() * 100);
+                            newY =
+                                (firstPlanet
+                                    ? firstPlanet.y
+                                    : this.gameConfig.PLAYER_SPAWN_Y || 300) +
+                                (Math.random() * 100 - 50);
+                            newAngle = 0;
+                        }
+                    } else {
+                        const firstPlanet = arrivalSystemData.planets[0];
+                        newX =
+                            (firstPlanet
+                                ? firstPlanet.x
+                                : this.gameConfig.PLAYER_SPAWN_X || 400) - 250;
+                        newY = firstPlanet
+                            ? firstPlanet.y
+                            : this.gameConfig.PLAYER_SPAWN_Y || 300;
+                        newAngle = 0;
+                    }
+                }
 
-    //     // Could add more particle effects here
-    // },
+                player.x = newX;
+                player.y = newY;
+                player.vx = 0;
+                player.vy = 0;
+                player.angle = newAngle;
+                player.dockedAtPlanetIdentifier = null;
+                // player.lastDamageTime = Date.now(); // Reset shield delay after jump - not needed anymore
 
-    drawHUD() {
-        ctx.font = "14px monospace";
-        ctx.fillStyle = "#00FF00";
+                console.log(
+                    `Player ${socket.id} hyperjump complete. Old system: ${oldSystem}, New system: ${player.system}. Arrived at ${player.x.toFixed(0)},${player.y.toFixed(0)}.`,
+                );
 
+                socket.emit("hyperjumpComplete", {
+                    newSystem: player.system,
+                    newX: player.x,
+                    newY: player.y,
+                    newAngle: player.angle,
+                });
+
+                this.broadcastPlayerState(socket.id, player);
+            }, this.gameConfig.HYPERJUMP_CHARGE_TIME_MS);
+        });
+
+        socket.on("cancelHyperjump", () => {
+            const player = this.getPlayer(socket.id);
+            if (
+                player &&
+                player.hyperjumpState === "charging" &&
+                player.hyperjumpChargeTimeoutId
+            ) {
+                clearTimeout(player.hyperjumpChargeTimeoutId);
+                player.hyperjumpChargeTimeoutId = null;
+                player.hyperjumpState = "idle";
+                this.updatePlayerState(socket.id, { hyperjumpState: "idle" });
+                socket.emit("hyperjumpCancelled", {
+                    message: "Hyperjump cancelled by player.",
+                });
+                console.log(`Player ${socket.id} cancelled hyperjump charge.`);
+            }
+        });
+
+        socket.on("equipWeapon", ({ weapon: weaponName }) => {
+            const player = this.getPlayer(socket.id);
+            if (!player || player.hyperjumpState === "charging") {
+                return socket.emit("actionFailed", {
+                    message:
+                        "Cannot modify equipment while hyperdrive is active.",
+                });
+            }
+            const weaponData = this.gameConfig.staticWeaponsData[weaponName];
+            if (!weaponData)
+                return socket.emit("actionFailed", {
+                    message: "Invalid weapon.",
+                });
+
+            if (!player.weapons.includes(weaponName)) {
+                if (player.credits >= weaponData.price) {
+                    player.credits -= weaponData.price;
+                    player.weapons.push(weaponName);
+                    player.activeWeapon = weaponName;
+                    this.updatePlayerState(socket.id, {
+                        credits: player.credits,
+                        weapons: player.weapons,
+                        activeWeapon: player.activeWeapon,
+                    });
+                    socket.emit("actionSuccess", {
+                        message: `Purchased and equipped ${weaponName}.`,
+                    });
+                } else {
+                    return socket.emit("actionFailed", {
+                        message: "Not enough credits.",
+                    });
+                }
+            } else {
+                player.activeWeapon = weaponName;
+                this.updatePlayerState(socket.id, {
+                    activeWeapon: player.activeWeapon,
+                });
+                socket.emit("actionSuccess", {
+                    message: `Equipped ${weaponName}.`,
+                });
+            }
+        });
+
+        socket.on("buyShip", ({ shipTypeIndex }) => {
+            const player = this.getPlayer(socket.id);
+            if (!player || player.hyperjumpState === "charging") {
+                return socket.emit("actionFailed", {
+                    message: "Cannot buy ship while hyperdrive is active.",
+                });
+            }
+            if (shipTypeIndex < 0 || shipTypeIndex >= this.shipTypes.length) {
+                return socket.emit("actionFailed", {
+                    message: "Invalid ship type.",
+                });
+            }
+            const newShipType = this.shipTypes[shipTypeIndex];
+            if (player.credits < newShipType.price) {
+                return socket.emit("actionFailed", {
+                    message: "Not enough credits.",
+                });
+            }
+            player.credits -= newShipType.price;
+            
+            this.initializePlayerData(player, shipTypeIndex); 
+            player.health = player.maxHealth; // Ensure full health on new ship
+            player.shield = player.maxShield; // Ensure full shields on new ship
+            player.cargo = new Array(this.tradeGoods.length).fill(0); 
+            player.weapons = [];
+            player.activeWeapon = null;
+
+            this.updatePlayerState(socket.id, {
+                credits: player.credits,
+                type: player.type,
+                maxCargo: player.maxCargo,
+                cargo: player.cargo,
+                maxHealth: player.maxHealth,
+                health: player.health,
+                maxShield: player.maxShield,
+                shield: player.shield,
+                // No need to send rechargeRate/DelayMs if not used by client
+                weapons: player.weapons,
+                activeWeapon: player.activeWeapon,
+            });
+            socket.emit("actionSuccess", {
+                message: `Successfully purchased ${newShipType.name}.`,
+            });
+        });
+    }
+
+    checkAllPlayerMissionTimeouts(missionManager) {
+        Object.values(this.players).forEach((player) => {
+            if (
+                player &&
+                !player.destroyed &&
+                player.activeMissions.length > 0
+            ) {
+                const { changed, completedOrFailed } =
+                    missionManager.checkPlayerMissionTimeouts(player);
+                if (changed) {
+                    completedOrFailed.forEach((update) =>
+                        this.io.to(player.id).emit("missionUpdate", update),
+                    );
+                    this.updatePlayerState(player.id, {
+                        credits: player.credits,
+                        activeMissions: player.activeMissions,
+                    });
+                }
+            }
+        });
+    }
+
+    handlePlayerHitDuringHyperjumpCharge(playerId) {
+        const player = this.getPlayer(playerId);
         if (
-            gameState.hyperjumpDeniedMessage &&
-            !gameState.isChargingHyperjump
+            player &&
+            player.hyperjumpState === "charging" &&
+            player.hyperjumpChargeTimeoutId
         ) {
-            ctx.fillStyle = "red";
-            ctx.font = "16px monospace";
-            const messageWidth = ctx.measureText(
-                gameState.hyperjumpDeniedMessage,
-            ).width;
-            ctx.fillText(
-                gameState.hyperjumpDeniedMessage,
-                canvas.width / 2 - messageWidth / 2,
-                canvas.height - 60,
+            clearTimeout(player.hyperjumpChargeTimeoutId);
+            player.hyperjumpChargeTimeoutId = null;
+            player.hyperjumpState = "idle";
+            // player.lastDamageTime = Date.now(); // Not needed anymore
+            this.updatePlayerState(playerId, { hyperjumpState: "idle" }); // Removed lastDamageTime
+            this.io
+                .to(playerId)
+                .emit("hyperjumpCancelled", {
+                    message: "Hyperjump disrupted by enemy fire!",
+                });
+            console.log(
+                `Player ${playerId} hyperjump charge disrupted by damage.`,
             );
-            ctx.fillStyle = "#00FF00"; 
+        }
+    }
+}
+
+module.exports = PlayerManager;
+/* ===== END: hypernova/server/modules/player_manager.js ===== */
+
+/* ===== START: hypernova/server/server.js ===== */
+// hypernova/server/server.js
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const path = require("path");
+const fs = require("fs").promises; // Use promises for async file operations
+const bodyParser = require("body-parser"); // To parse JSON request bodies
+
+const gameConfig = require("./config/game_config");
+const DataLoader = require("./utils/data_loader");
+
+const PlayerManager = require("./modules/player_manager");
+const WorldManager = require("./modules/world_manager");
+const EconomyManager = require("./modules/economy_manager");
+const MissionManager = require("./modules/mission_manager");
+const CombatManager = require("./modules/combat_manager");
+
+const app = express();
+const serverHttp = http.createServer(app);
+const io = new Server(serverHttp, {
+    cors: {
+        origin: "*", // Be more restrictive in production
+        methods: ["GET", "POST"],
+    },
+});
+
+app.use(bodyParser.json()); // Middleware to parse JSON request bodies
+app.use(express.static(path.join(__dirname, "../client")));
+
+app.get("/socket.io/socket.io.js", (req, res) => {
+    res.sendFile(
+        path.join(
+            __dirname,
+            "../../node_modules/socket.io/client-dist/socket.io.js",
+        ),
+    );
+});
+
+const USERS_DIR = path.join(__dirname, "data/users");
+
+async function ensureUsersDir() {
+    try {
+        await fs.mkdir(USERS_DIR, { recursive: true });
+        console.log("Users directory ensured:", USERS_DIR);
+    } catch (error) {
+        console.error("Failed to create users directory:", error);
+    }
+}
+ensureUsersDir(); // Call this to ensure directory exists on server startup
+
+// --- Authentication and User Data ---
+async function findUser(username) {
+    const filePath = path.join(USERS_DIR, `${username}.json`);
+    try {
+        const data = await fs.readFile(filePath, "utf-8");
+        return JSON.parse(data);
+    } catch (error) {
+        if (error.code === "ENOENT") return null; // User file not found
+        console.error(`Error reading user file for ${username}:`, error);
+        throw error; // Re-throw other errors
+    }
+}
+
+async function createUser(username, password) {
+    // WARNING: Storing plain text passwords is a major security risk!
+    // Use bcrypt.hashSync(password, saltRounds) in a real app.
+    const userFilePath = path.join(USERS_DIR, `${username}.json`);
+    const userData = {
+        username,
+        password /* In a real app, store HASHED password */,
+    };
+    try {
+        await fs.writeFile(userFilePath, JSON.stringify(userData, null, 2));
+        console.log(`User ${username} created.`);
+        return userData;
+    } catch (err) {
+        console.error(`Error creating user ${username}:`, err);
+        return null; // Indicate failure
+    }
+}
+
+app.post("/login", async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "Username and password are required.",
+        });
+    }
+
+    try {
+        let user = await findUser(username);
+        if (!user) {
+            // Simplified: Auto-register if user not found
+            console.log(`User ${username} not found. Registering...`);
+            user = await createUser(username, password);
+            if (!user) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Failed to register user.",
+                });
+            }
+            // Security note: Do not send password back, even in registration success
+            return res.json({
+                success: true,
+                username: user.username,
+                message: "Registration successful. Logged in.",
+            });
         }
 
-        if (!gameState.myShip || gameState.myShip.destroyed) {
-            ctx.fillStyle = "red";
-            ctx.font = "24px monospace";
-            const msg = "SHIP DESTROYED - AWAITING RESPAWN";
-            ctx.textAlign = "center";
-            ctx.fillText(msg, canvas.width / 2, canvas.height / 2);
-            ctx.textAlign = "left";
-            return;
+        // WARNING: Plain text password comparison. Insecure!
+        // In a real app: const match = await bcrypt.compare(password, user.hashedPassword);
+        if (user.password !== password) {
+            return res
+                .status(401)
+                .json({ success: false, message: "Invalid password." });
         }
+        // Security note: Do not send password back
+        res.json({
+            success: true,
+            username: user.username,
+            message: "Login successful",
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error during login.",
+        });
+    }
+});
+
+// --- Progress Saving and Loading ---
+app.post("/save-progress", async (req, res) => {
+    // In a real app, authenticate user here (e.g., check session token from request headers)
+    const { username, shipData, dockedAtDetails } = req.body;
+    if (!username) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Username required." });
+    }
+    if (!shipData) {
+        return res.status(400).json({
+            success: false,
+            message: "Ship data required for saving progress.",
+        });
+    }
+
+    const progressFilePath = path.join(USERS_DIR, `${username}_progress.json`);
+    const progress = {
+        username,
+        lastSaved: new Date().toISOString(),
+        shipData, 
+        dockedAtDetails, 
+    };
+
+    try {
+        await fs.writeFile(progressFilePath, JSON.stringify(progress, null, 2));
+        res.json({ success: true, message: "Progress saved." });
+    } catch (error) {
+        console.error(`Error saving progress for ${username}:`, error);
+        res.status(500).json({
+            success: false,
+            message: "Server error saving progress.",
+        });
+    }
+});
+
+app.get("/load-progress", async (req, res) => {
+    // In a real app, authenticate user here
+    const { username } = req.query;
+    if (!username) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Username required." });
+    }
+
+    const progressFilePath = path.join(USERS_DIR, `${username}_progress.json`);
+    try {
+        const data = await fs.readFile(progressFilePath, "utf-8");
+        res.json(JSON.parse(data)); 
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            return res.status(200).json(null); 
+        }
+        console.error(`Error loading progress for ${username}:`, error);
+        res.status(500).json({
+            success: false,
+            message: "Server error loading progress.",
+        });
+    }
+});
+
+async function startServer() {
+    const staticData = await DataLoader.loadAllData();
+    gameConfig.staticWeaponsData = staticData.weapons;
+
+    const worldManager = new WorldManager(
+        io,
+        staticData.systemsBase,
+        staticData.tradeGoods,
+        gameConfig,
+    );
+
+    const playerManager = new PlayerManager(
+        io,
+        staticData.shipTypes,
+        staticData.tradeGoods,
+        gameConfig,
+        worldManager,
+    );
+
+    const economyManager = new EconomyManager(
+        io,
+        worldManager,
+        playerManager,
+        staticData.tradeGoods,
+        gameConfig,
+    );
+    const missionManager = new MissionManager(
+        io,
+        worldManager,
+        playerManager,
+        staticData.tradeGoods,
+        gameConfig,
+    );
+    const combatManager = new CombatManager(
+        io,
+        playerManager,
+        missionManager,
+        staticData.weapons,
+        gameConfig,
+    );
+
+    worldManager.initialize(economyManager, missionManager);
+
+    setInterval(
+        () => economyManager.updateAllPlanetEconomies(),
+        gameConfig.ECONOMY_UPDATE_INTERVAL_MS,
+    );
+    setInterval(
+        () => missionManager.populateAllPlanetMissions(),
+        gameConfig.MISSION_GENERATION_INTERVAL_MS,
+    );
+    setInterval(
+        () => playerManager.checkAllPlayerMissionTimeouts(missionManager),
+        gameConfig.PLAYER_MISSION_CHECK_INTERVAL_MS,
+    );
+    // Removed shield regeneration interval
+    // setInterval( 
+    //     () => playerManager.regenerateShields(),
+    //     gameConfig.SHIELD_REGEN_INTERVAL_MS
+    // );
+
+
+    io.on("connection", (socket) => {
+        const initialWorldData = {
+            systems: worldManager.getSystemsForClient(), 
+            economies: worldManager.getEconomiesForClient(),
+        };
+        playerManager.handleConnection(socket, initialWorldData);
+
+        economyManager.registerSocketHandlers(socket);
+        missionManager.registerSocketHandlers(socket);
+        combatManager.registerSocketHandlers(socket);
+        worldManager.registerSocketHandlers(socket, playerManager);
+
+        socket.on("disconnect", () => {
+            playerManager.handleDisconnect(socket);
+        });
+    });
+
+    serverHttp.listen(gameConfig.PORT, () =>
+        console.log(
+            `Server structured and listening on port ${gameConfig.PORT}`,
+        ),
+    );
+}
+
+startServer().catch((error) => {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+});
+/* ===== END: hypernova/server/server.js ===== */
+
+/* ===== START: hypernova/server/modules/combat_manager.js ===== */
+// server/modules/combat_manager.js
+class CombatManager {
+    constructor(io, playerManager, missionManager, weaponsData, gameConfig) {
+        this.io = io;
+        this.playerManager = playerManager;
+        this.missionManager = missionManager;
+        this.weaponsData = weaponsData;
+        this.gameConfig = gameConfig;
+    }
+
+    registerSocketHandlers(socket) {
+        socket.on("fire", () => {
+            const attacker = this.playerManager.getPlayer(socket.id);
+            if (
+                !attacker ||
+                !attacker.activeWeapon ||
+                attacker.destroyed ||
+                attacker.dockedAtPlanetIdentifier ||
+                attacker.hyperjumpState === "charging"
+            ) {
+                if (attacker && attacker.hyperjumpState === "charging") {
+                    socket.emit("actionFailed", {
+                        message:
+                            "Cannot fire weapons while hyperdrive is charging.",
+                    });
+                }
+                return;
+            }
+
+            const weaponStats = this.weaponsData[attacker.activeWeapon];
+            if (!weaponStats) return;
+
+            const now = Date.now();
+            const timeSinceLastShot = now - (attacker.lastShot || 0);
+            const minTimeBetweenShots = 60000 / weaponStats.rpm;
+            if (timeSinceLastShot < minTimeBetweenShots) {
+                return; 
+            }
+            attacker.lastShot = now; 
+
+
+            const numBarrels = weaponStats.barrels || 1;
+            const baseBarrelOffset = weaponStats.barrelOffset || 0; 
+
+            for (let i = 0; i < numBarrels; i++) {
+                let shotAngle = attacker.angle;
+                let shotOriginX = attacker.x;
+                let shotOriginY = attacker.y;
+
+                if (numBarrels > 1 && baseBarrelOffset > 0) {
+                    let actualOffsetMagnitude = 0;
+                    if (numBarrels === 2) {
+                        actualOffsetMagnitude = (i === 0) ? -baseBarrelOffset : baseBarrelOffset;
+                    } else {
+                         actualOffsetMagnitude = (i === 0) ? -baseBarrelOffset : baseBarrelOffset; 
+                    }
+
+                    if (actualOffsetMagnitude !== 0) { 
+                        const perpendicularAngle = attacker.angle + Math.PI / 2; 
+                        shotOriginX = attacker.x + Math.cos(perpendicularAngle) * actualOffsetMagnitude;
+                        shotOriginY = attacker.y + Math.sin(perpendicularAngle) * actualOffsetMagnitude;
+                    }
+                }
+
+
+                const fwdX = Math.cos(shotAngle);
+                const fwdY = Math.sin(shotAngle);
+                const cosHalfBeam = Math.cos((weaponStats.beam || 0.1) * 0.5); 
+
+                const allPlayers = this.playerManager.getAllPlayers();
+
+                for (const targetId in allPlayers) {
+                    if (targetId === socket.id) continue;
+
+                    const target = allPlayers[targetId];
+                    if (
+                        !target ||
+                        target.system !== attacker.system ||
+                        target.destroyed ||
+                        target.dockedAtPlanetIdentifier
+                    )
+                        continue;
+
+                    const dx = target.x - shotOriginX; 
+                    const dy = target.y - shotOriginY; 
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist === 0 || dist > weaponStats.range) continue;
+
+                    const dirToTargetX = dx / dist;
+                    const dirToTargetY = dy / dist;
+                    const dotProduct = fwdX * dirToTargetX + fwdY * dirToTargetY;
+
+                    if (dotProduct < cosHalfBeam) continue;
+
+                    let damageDealt = weaponStats.damage;
+                    let targetDestroyedThisShot = false;
+
+                    let damageToShield = 0;
+                    if (target.shield > 0) {
+                        damageToShield = Math.min(target.shield, damageDealt);
+                        target.shield -= damageToShield;
+                        damageDealt -= damageToShield;
+                    }
+
+                    let damageToHealth = 0;
+                    if (damageDealt > 0) {
+                        damageToHealth = Math.min(target.health, damageDealt);
+                        target.health -= damageToHealth;
+                    }
+
+
+                    if (target.health > 0 && target.hyperjumpState === "charging") {
+                        this.playerManager.handlePlayerHitDuringHyperjumpCharge(
+                            target.id, 
+                        );
+                    }
+
+                    if (target.health <= 0) {
+                        target.health = 0;
+                        target.destroyed = true;
+                        targetDestroyedThisShot = true;
+
+                        if (
+                            target.hyperjumpState === "charging" &&
+                            target.hyperjumpChargeTimeoutId
+                        ) {
+                            clearTimeout(target.hyperjumpChargeTimeoutId);
+                            target.hyperjumpChargeTimeoutId = null;
+                            target.hyperjumpState = "idle";
+                            console.log(
+                                `Hyperjump charge for destroyed player ${target.id} cleared.`,
+                            );
+                        }
+                    }
+                    
+                    const updatePayload = {
+                        health: target.health,
+                        shield: target.shield,
+                        destroyed: target.destroyed,
+                        hyperjumpState: target.hyperjumpState,
+                        // lastDamageTime is not needed here since regen is manual
+                    };
+                    this.playerManager.updatePlayerState(target.id, updatePayload);
+
+
+                    if (targetDestroyedThisShot) {
+                        this.missionManager.handleTargetDestroyed(attacker, target);
+                    }
+                    break; 
+                }
+
+                const systemPlayers = Object.values(this.playerManager.getAllPlayers()).filter(
+                    (p) => p.system === attacker.system,
+                );
+                systemPlayers.forEach((p) => {
+                    this.io.to(p.id).emit("projectile", {
+                        x: shotOriginX,
+                        y: shotOriginY,
+                        angle: shotAngle,
+                        color: weaponStats.color,
+                        range: weaponStats.range,
+                        shooterId: attacker.id,
+                    });
+                });
+            } 
+        });
+    }
+}
+
+module.exports = CombatManager;
+/* ===== END: hypernova/server/modules/combat_manager.js ===== */
+
+/* ===== START: hypernova/client/js/ui_manager.js ===== */
+// client/js/ui_manager.js
+import { gameState } from "./game_state.js";
+import * as Network from "./network.js";
+import { Renderer } from "./renderer.js"; 
+
+let uiContainer = null;
+let dockMenuElement = null; 
+let rightHudPanel = null;
+let shipStatsContentDiv = null;
+let activeMissionsListUl = null;
+
+// Helper function for stat comparison display
+function getStatComparisonClass(currentValue, newValue) {
+    if (newValue > currentValue) return "stat-better";
+    if (newValue < currentValue) return "stat-worse";
+    return "stat-same"; // Or return "" for no specific class if same
+}
+function getStatComparisonSymbol(currentValue, newValue) {
+    if (newValue > currentValue) return "▲"; // Up arrow for better
+    if (newValue < currentValue) return "▼"; // Down arrow for worse
+    return ""; // No symbol if same
+}
+
+
+export const UIManager = {
+    init(containerElement) {
+        uiContainer = containerElement;
+        rightHudPanel = document.getElementById("right-hud-panel");
+        shipStatsContentDiv = document.getElementById("ship-stats-content");
+        activeMissionsListUl = document.getElementById("active-missions-list");
+    },
+
+    isMenuOpen() {
+        return gameState.isMenuOpen;
+    },
+
+    openDockMenu() {
+        if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
+            uiContainer.removeChild(dockMenuElement);
+        }
+
+        gameState.isMenuOpen = true; 
+        gameState.activeSubMenu = null;
+        document.body.classList.add("no-scroll");
+
+        dockMenuElement = document.createElement("div");
+        uiContainer.appendChild(dockMenuElement);
+
+        this.renderDockedStationInterface();
+        this.updateShipStatsPanel();
+        this.updateActiveMissionsPanel();
+        Renderer.drawMinimap();
+    },
+
+    closeDockMenu() {
+        if (dockMenuElement && dockMenuElement.parentNode === uiContainer) {
+            dockMenuElement.innerHTML = "";
+            uiContainer.removeChild(dockMenuElement);
+        }
+        dockMenuElement = null;
+        gameState.isMenuOpen = false; 
+        gameState.activeSubMenu = null;
+        gameState.selectedTradeIndex = 0;
+        gameState.selectedWeaponKey = null;
+        gameState.selectedShipIndex = 0;
+        gameState.selectedMissionIndex = 0;
+        document.body.classList.remove("no-scroll");
+    },
+
+    undockCleanup() {
+        gameState.docked = false;
+        gameState.dockedAtDetails = null;
+        this.closeDockMenu();
+        this.updateShipStatsPanel();
+        this.updateActiveMissionsPanel();
+    },
+
+    showRightHudPanel() {
+        if (rightHudPanel) {
+            rightHudPanel.classList.remove("hidden");
+            this.updateShipStatsPanel();
+            this.updateActiveMissionsPanel();
+        }
+    },
+
+    updateShipStatsPanel() {
+        if (!shipStatsContentDiv || !gameState.myShip || !gameState.currentUser)
+            return;
 
         const myShip = gameState.myShip;
-        const currentShipDef =
-            gameState.clientGameData.shipTypes[myShip.type || 0];
-        if (!currentShipDef) return; 
+        const shipType = gameState.clientGameData.shipTypes[myShip.type || 0];
+        const shipTypeName = shipType ? shipType.name : "Unknown";
+        const cargoCount = myShip.cargo
+            ? myShip.cargo.reduce((s, v) => s + v, 0)
+            : 0;
+        const maxCargo = shipType ? shipType.maxCargo : myShip.maxCargo || 0;
 
-        let cargoCount =
-            myShip.cargo && myShip.cargo.length > 0
-                ? myShip.cargo.reduce((s, v) => s + v, 0)
-                : 0;
-
-        const hudPadding = 15;
-        let yOffset = hudPadding + 14;
-
-        ctx.textAlign = "left";
-        ctx.fillText(
-            `Pilot: ${gameState.currentUser.username}`,
-            hudPadding,
-            yOffset,
-        );
-        yOffset += 18;
-        ctx.fillText(
-            `Credits: $${myShip.credits.toLocaleString()}`,
-            hudPadding,
-            yOffset,
-        );
-        yOffset += 18;
-
+        let shieldHtml = '';
         if (myShip.maxShield > 0) {
-            ctx.fillStyle = "#64B4FF"; 
-            ctx.fillText(
-                `Shield: ${Math.round(myShip.shield || 0)}/${myShip.maxShield || 0}`,
-                hudPadding,
-                yOffset,
-            );
-            yOffset += 18;
-            ctx.fillStyle = "#00FF00"; 
+            shieldHtml = `<div><span>Shield:</span> ${Math.round(myShip.shield || 0)} / ${myShip.maxShield || 0}</div>`;
         }
-        
-        ctx.fillText(
-            `Health: ${myShip.health || 0}/${myShip.maxHealth || 0}`,
-            hudPadding,
-            yOffset,
-        );
-        yOffset += 18;
-        ctx.fillText(
-            `Cargo: ${cargoCount}/${currentShipDef.maxCargo}`,
-            hudPadding,
-            yOffset,
-        );
-        yOffset += 18;
 
-        const systemName =
-            gameState.clientGameData.systems[myShip.system]?.name ||
-            "Unknown System";
-        ctx.fillText(`System: ${systemName}`, hudPadding, yOffset);
-        yOffset += 18;
+        shipStatsContentDiv.innerHTML = `
+            <div><span>Pilot:</span> ${gameState.currentUser.username}</div>
+            <div><span>Ship:</span> ${shipTypeName}</div>
+            <div><span>Credits:</span> $${myShip.credits.toLocaleString()}</div>
+            ${shieldHtml}
+            <div><span>Health:</span> ${myShip.health || 0} / ${myShip.maxHealth || 0}</div>
+            <div><span>Cargo:</span> ${cargoCount} / ${maxCargo}</div>
+        `;
+    },
 
-        if (myShip.activeWeapon) {
-            const weaponDisplayName =
-                gameState.clientGameData.weapons[myShip.activeWeapon]?.name ||
-                myShip.activeWeapon;
-            ctx.fillText(
-                `Weapon: ${weaponDisplayName}`,
-                hudPadding,
-                yOffset,
-            );
-        }
-        yOffset += 18 + 14; 
+    updateActiveMissionsPanel() {
+        if (!activeMissionsListUl || !gameState.myShip) return;
 
-        if (myShip.activeMissions && myShip.activeMissions.length > 0) {
-            ctx.fillText("Active Missions:", hudPadding, yOffset);
-            yOffset += 18;
-            myShip.activeMissions.slice(0, 3).forEach((mission) => {
-                let missionText =
-                    mission.title.length > 40
-                        ? mission.title.substring(0, 37) + "..."
-                        : mission.title;
+        activeMissionsListUl.innerHTML = "";
+
+        if (
+            gameState.myShip.activeMissions &&
+            gameState.myShip.activeMissions.length > 0
+        ) {
+            gameState.myShip.activeMissions.slice(0, 5).forEach((mission) => {
+                const li = document.createElement("li");
+                let missionText = `<strong>${mission.title}</strong>`;
                 if (
                     mission.type ===
                     gameState.clientGameData.MISSION_TYPES.BOUNTY
                 ) {
                     missionText += ` (${mission.targetsDestroyed || 0}/${mission.targetsRequired})`;
                 }
-                const timeRemainingMin = Math.max(
-                    0,
-                    Math.round((mission.timeLimit - Date.now()) / 60000),
-                );
-                missionText += ` (${timeRemainingMin}m)`;
-                ctx.fillText(`- ${missionText}`, hudPadding + 5, yOffset);
-                yOffset += 18;
-            });
-        }
-
-        if (
-            gameState.isChargingHyperjump &&
-            gameState.hyperjumpChargeStartTime
-        ) {
-            const chargeProgress = Math.min(
-                1,
-                (Date.now() - gameState.hyperjumpChargeStartTime) /
-                    HYPERJUMP_CHARGE_TIME_MS,
-            );
-            ctx.fillStyle = "#0af";
-            ctx.font = "18px monospace";
-            const chargeText = `Hyperdrive Charging: ${Math.round(chargeProgress * 100)}%`;
-            const textWidth = ctx.measureText(chargeText).width;
-            ctx.textAlign = "center";
-            ctx.fillText(chargeText, canvas.width / 2, canvas.height - 80);
-
-            const barWidth = 250;
-            const barHeight = 15;
-            const barX = canvas.width / 2 - barWidth / 2;
-            const barY = canvas.height - 60;
-
-            ctx.strokeStyle = "#0af";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(barX, barY, barWidth, barHeight);
-            ctx.fillRect(
-                barX + 2,
-                barY + 2,
-                (barWidth - 4) * chargeProgress,
-                barHeight - 4,
-            );
-            ctx.fillStyle = "#00FF00"; 
-            ctx.lineWidth = 1; 
-            ctx.textAlign = "left"; 
-        }
-
-        let messageDisplayedAtBottom = false; 
-        if (
-            gameState.plannedRoute.length > 0 &&
-            gameState.currentRouteLegIndex !== -1 &&
-            !gameState.docked &&
-            !gameState.isChargingHyperjump &&
-            !gameState.hyperjumpDeniedMessage
-        ) {
-            if (
-                gameState.currentRouteLegIndex < gameState.plannedRoute.length
-            ) {
-                const nextDestSystemIndex =
-                    gameState.plannedRoute[gameState.currentRouteLegIndex];
-                const nextDestSystem =
-                    gameState.clientGameData.systems[nextDestSystemIndex];
-                if (nextDestSystem) {
-                    ctx.font = "16px monospace";
-                    ctx.fillStyle = "#FFA500"; 
-                    const routeMsg = `Next Jump (J): ${nextDestSystem.name}`;
-                    ctx.textAlign = "center";
-                    ctx.fillText(
-                        routeMsg,
-                        canvas.width / 2,
-                        canvas.height - 30,
+                const timeRemainingMs = mission.timeLimit - Date.now();
+                let timeRemainingText = "";
+                if (timeRemainingMs <= 0) {
+                    timeRemainingText = "(Expired)";
+                } else {
+                    const timeRemainingMin = Math.max(
+                        0,
+                        Math.round(timeRemainingMs / 60000),
                     );
-                    messageDisplayedAtBottom = true;
+                    timeRemainingText = `(${timeRemainingMin}m left)`;
                 }
-            } else {
-                ctx.font = "16px monospace";
-                ctx.fillStyle = "#00FF00";
-                const routeMsg =
-                    "Route complete. Press J to clear or plot new.";
-                ctx.textAlign = "center";
-                ctx.fillText(routeMsg, canvas.width / 2, canvas.height - 30);
-                messageDisplayedAtBottom = true;
-            }
-            ctx.textAlign = "left";
-            ctx.fillStyle = "#00FF00";
-        }
-
-        if (
-            !messageDisplayedAtBottom &&
-            !gameState.docked &&
-            !gameState.isChargingHyperjump &&
-            !gameState.hyperjumpDeniedMessage
-        ) {
-            const planets =
-                gameState.clientGameData.systems[myShip.system]?.planets;
-            let canDock = false,
-                dockPlanetName = "";
-            if (planets) {
-                planets.forEach((p) => {
-                    const interactionRadiusSq =
-                        DOCKING_DISTANCE_SQUARED *
-                        Math.pow(p.planetImageScale || 1.0, 2) *
-                        2;
-                    if (
-                        (myShip.x - p.x) ** 2 + (myShip.y - p.y) ** 2 <
-                        interactionRadiusSq
-                    ) {
-                        canDock = true;
-                        dockPlanetName = p.name;
-                    }
-                });
-            }
-            if (canDock) {
-                ctx.font = "16px monospace";
-                const dockMsg = `Press 'D' to dock at ${dockPlanetName}`;
-                ctx.textAlign = "center";
-                ctx.fillText(dockMsg, canvas.width / 2, canvas.height - 30);
-                messageDisplayedAtBottom = true; 
-            }
-            ctx.textAlign = "left"; 
+                missionText += ` ${timeRemainingText}`;
+                li.innerHTML = missionText;
+                activeMissionsListUl.appendChild(li);
+            });
+        } else {
+            activeMissionsListUl.innerHTML = "<li>No active missions.</li>";
         }
     },
 
-    drawMinimap() {
-        if (
-            !minimapCtx ||
-            !minimapCanvas ||
-            !gameState.myShip ||
-            gameState.myShip.system === undefined
-        ) {
-            if (minimapCtx) {
-                minimapCtx.fillStyle = "#05080a";
-                minimapCtx.fillRect(
-                    0,
-                    0,
-                    minimapCanvas.width,
-                    minimapCanvas.height,
+    _prepareSubMenuHost() {
+        if (!dockMenuElement) {
+            console.error(
+                "Dock menu element does not exist. Cannot prepare sub-menu host.",
+            );
+            this.openDockMenu(); 
+            if (!dockMenuElement) return null;
+        }
+        let stationUI = dockMenuElement.querySelector("#docked-station-ui");
+        if (!stationUI) {
+            this.renderDockedStationInterface(); 
+            stationUI = dockMenuElement.querySelector("#docked-station-ui");
+            if (!stationUI) {
+                console.error(
+                    "Failed to create #docked-station-ui for sub-menu.",
                 );
+                return null;
             }
+        }
+
+        stationUI.classList.add("submenu-active");
+        const contentHost = stationUI.querySelector(".station-content-area");
+        if (!contentHost) {
+            console.error(
+                ".station-content-area not found within #docked-station-ui",
+            );
+            return null;
+        }
+        contentHost.innerHTML = ""; 
+        return contentHost;
+    },
+
+    renderDockedStationInterface() {
+        if (!dockMenuElement) {
+            if (uiContainer) {
+                dockMenuElement = document.createElement("div");
+                uiContainer.appendChild(dockMenuElement);
+            } else {
+                console.error(
+                    "UIManager: uiContainer not initialized, cannot create dockMenuElement.",
+                );
+                return;
+            }
+        }
+        if (!gameState.dockedAtDetails || !gameState.myShip) {
+            this.closeDockMenu(); 
             return;
         }
 
-        minimapCtx.fillStyle = "#05080a"; 
-        minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+        gameState.activeSubMenu = null; 
+        dockMenuElement.innerHTML = ""; 
 
-        const currentSystemData =
-            gameState.clientGameData.systems[gameState.myShip.system];
-        if (!currentSystemData || !currentSystemData.planets) return;
+        const planetName = gameState.dockedAtDetails.planetName;
+        const systemName = gameState.dockedAtDetails.systemName;
+        const planetDescriptions = {
+            Alpha: "A bustling trade hub in the Greek system, known for its agricultural surplus.",
+            Delta: "Rich in mineral wealth, Delta is a key mining outpost.",
+            Sol: "The cradle of humanity in the Roman system, a political and cultural center.",
+            Mars: "A rugged, terraformed world, primarily exporting raw ores.",
+            Beta: "A temperate planet in Nordic space, balancing agriculture and mining.",
+            Nile: "An arid world in the Egyptian system with surprisingly fertile river valleys.",
+            Giza: "Known for its ancient alien ruins and valuable ore deposits.",
+            Tara: "A verdant, spiritual center in the Celtic system, specializing in advanced medicines.",
+            Avalon: "A technologically advanced world, famous for its electronics manufacturing.",
+        };
+        const description =
+            planetDescriptions[planetName] ||
+            "No detailed information available for this planet.";
 
-        let minX = Infinity,
-            maxX = -Infinity,
-            minY = Infinity,
-            maxY = -Infinity;
-        currentSystemData.planets.forEach((p) => {
-            if (p.x < minX) minX = p.x;
-            if (p.x > maxX) maxX = p.x;
-            if (p.y < minY) minY = p.y;
-            if (p.y > maxY) maxY = p.y;
-        });
-        if (gameState.myShip.x < minX) minX = gameState.myShip.x;
-        if (gameState.myShip.x > maxX) maxX = gameState.myShip.x;
-        if (gameState.myShip.y < minY) minY = gameState.myShip.y;
-        if (gameState.myShip.y > maxY) maxY = gameState.myShip.y;
+        const html = `
+            <div id="docked-station-ui">
+                <div class="station-viewscreen">
+                    Docked at ${planetName} Station Control<br/>
+                    System: ${systemName}
+                </div>
+                <div class="station-dialogue-area">
+                    <p>Welcome to ${planetName}, Captain ${gameState.currentUser.username}. All systems nominal. Please select an option from the terminal.</p>
+                    <button id="station-dialogue-okay">Okay</button>
+                </div>
+                <div class="station-content-area">
+                    <div class="station-button-column">
+                        <button id="station-bar-btn" class="station-action-button">Bar</button>
+                        <button id="station-missions-btn" class="station-action-button">Mission BBS</button>
+                        <button id="station-trade-btn" class="station-action-button">Trade Center</button>
+                    </div>
+                    <div class="station-planet-info">
+                        <h3>${planetName} - ${systemName}</h3>
+                        <p>${description}</p>
+                        <p>Credits: $${gameState.myShip.credits.toLocaleString()}</p>
+                    </div>
+                    <div class="station-button-column">
+                        <button id="station-shipyard-btn" class="station-action-button">Shipyard</button>
+                        <button id="station-outfitter-btn" class="station-action-button">Outfitter</button>
+                        <button id="station-recharge-btn" class="station-action-button">Recharge S/H</button>
+                        <button id="station-leave-btn" class="station-action-button">Leave</button>
+                    </div>
+                </div>
+                <div class="station-footer-text main-footer">HyperNova Secure Terminal v2.7.4</div>
+            </div>
+        `;
+        dockMenuElement.innerHTML = html;
 
-        const systemWidth = Math.max(500, maxX - minX); 
-        const systemHeight = Math.max(500, maxY - minY);
-        const systemCenterX = minX + systemWidth / 2;
-        const systemCenterY = minY + systemHeight / 2;
+        document
+            .getElementById("station-dialogue-okay")
+            ?.addEventListener("click", () => {
+                const dialogueBox = dockMenuElement.querySelector(
+                    ".station-dialogue-area",
+                );
+                if (dialogueBox) dialogueBox.style.display = "none";
+            });
+        document
+            .getElementById("station-bar-btn")
+            ?.addEventListener("click", () => alert("Bar: Not implemented."));
+        document 
+            .getElementById("station-recharge-btn")
+            ?.addEventListener("click", () => {
+                Network.socket.emit("requestRecharge"); // Send request to server
+            });
+        document
+            .getElementById("station-leave-btn")
+            ?.addEventListener("click", () => Network.undock());
 
-        const mapPadding = 10; 
-        const mapDrawableWidth = minimapCanvas.width - 2 * mapPadding;
-        const mapDrawableHeight = minimapCanvas.height - 2 * mapPadding;
+        document
+            .getElementById("station-trade-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "trade";
+                gameState.selectedTradeIndex = 0;
+                this.renderTradeMenu();
+            });
+        document
+            .getElementById("station-shipyard-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "shipyard";
+                gameState.selectedShipIndex = 0;
+                this.renderShipyardMenu();
+            });
+        document
+            .getElementById("station-outfitter-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "outfitter";
+                const weaponKeysList = Object.keys(
+                    gameState.clientGameData.weapons,
+                );
+                if (
+                    !gameState.selectedWeaponKey ||
+                    !weaponKeysList.includes(gameState.selectedWeaponKey)
+                ) {
+                    gameState.selectedWeaponKey = weaponKeysList[0] || null;
+                }
+                this.renderOutfitterMenu();
+            });
+        document
+            .getElementById("station-missions-btn")
+            ?.addEventListener("click", () => {
+                gameState.activeSubMenu = "missions";
+                gameState.selectedMissionIndex = 0;
+                gameState.availableMissionsForCurrentPlanet = []; 
+                this.renderMissionsMenu(); 
+                if (gameState.dockedAtDetails) {
+                    Network.requestMissions(
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+            });
+    },
 
-        const scaleX = mapDrawableWidth / systemWidth;
-        const scaleY = mapDrawableHeight / systemHeight;
-        const scale = Math.min(scaleX, scaleY) * 0.9; 
+    renderTradeMenu() {
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.dockedAtDetails || !gameState.myShip) return;
 
-        minimapCtx.save();
-        minimapCtx.translate(minimapCanvas.width / 2, minimapCanvas.height / 2); 
+        const myShip = gameState.myShip;
+        const currentShipDef =
+            gameState.clientGameData.shipTypes[myShip.type || 0];
+        if (!currentShipDef) return; 
+        const cargoCount = myShip.cargo
+            ? myShip.cargo.reduce((s, v) => s + v, 0)
+            : 0;
+        const planetEco = gameState.dockedAtDetails; 
 
-        currentSystemData.planets.forEach((p) => {
-            const mapX = (p.x - systemCenterX) * scale;
-            const mapY = (p.y - systemCenterY) * scale;
-            const planetRadius = (p.planetImageScale || 1.0) * 3 * scale + 2; 
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Good</span>
+                            <span class="station-submenu-col col-qty">Qty</span>
+                            <span class="station-submenu-col col-price">Buy</span>
+                            <span class="station-submenu-col col-price">Sell</span>
+                            <span class="station-submenu-col col-stock">Stock</span>
+                         </div>`;
 
-            minimapCtx.fillStyle = p.fallbackColor || "#557799";
-            minimapCtx.beginPath();
-            minimapCtx.arc(
-                mapX,
-                mapY,
-                Math.max(2, planetRadius),
-                0,
-                Math.PI * 2,
+        if (
+            !planetEco ||
+            !planetEco.buyPrices ||
+            !planetEco.sellPrices ||
+            !planetEco.stock
+        ) {
+            itemsHtml +=
+                "<div class='station-submenu-item'>Loading prices...</div>";
+        } else {
+            gameState.clientGameData.tradeGoods.forEach((g, i) => {
+                const buyP =
+                    planetEco.buyPrices[g.name] !== undefined
+                        ? planetEco.buyPrices[g.name]
+                        : "N/A";
+                const sellP =
+                    planetEco.sellPrices[g.name] !== undefined
+                        ? planetEco.sellPrices[g.name]
+                        : "N/A";
+                const stockVal =
+                    planetEco.stock[g.name] !== undefined
+                        ? planetEco.stock[g.name]
+                        : 0;
+                const selectedClass =
+                    i === gameState.selectedTradeIndex ? "selected" : "";
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name">${g.name}</span>
+                        <span class="station-submenu-col col-qty">${myShip.cargo[i]}</span>
+                        <span class="station-submenu-col col-price">$${buyP}</span>
+                        <span class="station-submenu-col col-price">$${sellP}</span>
+                        <span class="station-submenu-col col-stock">${stockVal}</span>
+                    </div>`;
+            });
+        }
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Trade Center - ${planetEco.planetName}</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()} | Cargo: ${cargoCount}/${currentShipDef.maxCargo}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buy-btn" class="station-action-button">Buy (B)</button>
+                    <button id="submenu-sell-btn" class="station-action-button">Sell (S)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-buy-btn")
+            ?.addEventListener("click", () =>
+                Network.buyGood(gameState.selectedTradeIndex),
             );
-            minimapCtx.fill();
-
-            minimapCtx.fillStyle = "#ccc";
-            minimapCtx.font = `${Math.max(6, 8 * scale)}px monospace`;
-            minimapCtx.textAlign = "center";
-            minimapCtx.fillText(
-                p.name.substring(0, 3),
-                mapX,
-                mapY + planetRadius + 8 * scale,
+        document
+            .getElementById("submenu-sell-btn")
+            ?.addEventListener("click", () =>
+                Network.sellGood(gameState.selectedTradeIndex),
             );
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
+    },
+
+    renderOutfitterMenu() {
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.myShip || !gameState.clientGameData.weapons) return;
+    
+        const myShip = gameState.myShip;
+        const currentEquippedWeaponKey = myShip.activeWeapon;
+        const currentEquippedWeaponDef = currentEquippedWeaponKey ? gameState.clientGameData.weapons[currentEquippedWeaponKey] : null;
+    
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Weapon</span>
+                            <span class="station-submenu-col col-price">Price</span>
+                            <span class="station-submenu-col col-stat">Dmg</span>
+                            <span class="station-submenu-col col-stat">RPM</span>
+                            <span class="station-submenu-col col-stat">Range</span>
+                            <span class="station-submenu-col col-owned">Status</span>
+                         </div>`;
+    
+        const weaponKeys = Object.keys(gameState.clientGameData.weapons);
+        if (weaponKeys.length === 0) {
+            itemsHtml += "<div class='station-submenu-item'>(No weapons available)</div>";
+        } else {
+            if (!gameState.selectedWeaponKey || !weaponKeys.includes(gameState.selectedWeaponKey)) {
+                gameState.selectedWeaponKey = weaponKeys[0] || null;
+            }
+    
+            weaponKeys.forEach((wKey) => {
+                const wDef = gameState.clientGameData.weapons[wKey];
+                let statusText = "Buy";
+                let statusClass = "";
+    
+                if (myShip.weapons && myShip.weapons.includes(wKey)) {
+                    statusText = "Owned";
+                    if (wKey === currentEquippedWeaponKey) {
+                        statusText = "Equipped";
+                        statusClass = "item-equipped";
+                    } else {
+                        statusText = "Equip"; 
+                    }
+                }
+    
+                const selectedClass = wKey === gameState.selectedWeaponKey ? "selected" : "";
+                
+                let damageDisplay = `${wDef.damage}`;
+                if (wDef.barrels && wDef.barrels > 1) {
+                    damageDisplay += `x${wDef.barrels}`;
+                }
+
+                let dmgClass = "", rpmClass = "", rangeClass = "";
+                let dmgSymbol = "", rpmSymbol = "", rangeSymbol = "";
+
+                if (currentEquippedWeaponDef && wKey !== currentEquippedWeaponKey) {
+                    dmgClass = getStatComparisonClass(currentEquippedWeaponDef.damage * (currentEquippedWeaponDef.barrels || 1), wDef.damage * (wDef.barrels || 1));
+                    rpmClass = getStatComparisonClass(currentEquippedWeaponDef.rpm, wDef.rpm);
+                    rangeClass = getStatComparisonClass(currentEquippedWeaponDef.range, wDef.range);
+                    
+                    dmgSymbol = getStatComparisonSymbol(currentEquippedWeaponDef.damage * (currentEquippedWeaponDef.barrels || 1), wDef.damage * (wDef.barrels || 1));
+                    rpmSymbol = getStatComparisonSymbol(currentEquippedWeaponDef.rpm, wDef.rpm);
+                    rangeSymbol = getStatComparisonSymbol(currentEquippedWeaponDef.range, wDef.range);
+                }
+
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass} ${statusClass}" data-key="${wKey}">
+                        <span class="station-submenu-col col-name">${wDef.name}</span>
+                        <span class="station-submenu-col col-price">$${wDef.price.toLocaleString()}</span>
+                        <span class="station-submenu-col col-stat ${dmgClass}">${damageDisplay} ${dmgSymbol}</span>
+                        <span class="station-submenu-col col-stat ${rpmClass}">${wDef.rpm} ${rpmSymbol}</span>
+                        <span class="station-submenu-col col-stat ${rangeClass}">${wDef.range} ${rangeSymbol}</span>
+                        <span class="station-submenu-col col-owned">${statusText}</span>
+                    </div>`;
+            });
+        }
+    
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Outfitter</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buyequip-btn" class="station-action-button">Confirm (B)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+    
+        document.getElementById("submenu-buyequip-btn")?.addEventListener("click", () => {
+            if (gameState.selectedWeaponKey) Network.equipWeapon(gameState.selectedWeaponKey);
         });
+        document.getElementById("submenu-back-btn")?.addEventListener("click", () => this.renderDockedStationInterface());
+    },
+    
+    renderShipyardMenu() {
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.myShip) return;
+    
+        const myShip = gameState.myShip;
+        const currentShipDef = gameState.clientGameData.shipTypes[myShip.type || 0];
+    
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name">Ship</span>
+                            <span class="station-submenu-col col-price">Price</span>
+                            <span class="station-submenu-col col-stat">Cargo</span>
+                            <span class="station-submenu-col col-stat">Health</span>
+                            <span class="station-submenu-col col-stat">Shield</span>
+                            <span class="station-submenu-col col-current">Status</span>
+                         </div>`;
+    
+        if (gameState.clientGameData.shipTypes.length === 0) {
+            itemsHtml += "<div class='station-submenu-item'>(No ships available)</div>";
+        } else {
+            gameState.clientGameData.shipTypes.forEach((s, i) => {
+                let statusText = "Buy";
+                let statusClass = "";
+                if (myShip.type === i) {
+                    statusText = "Current";
+                    statusClass = "item-equipped"; 
+                }
+    
+                const selectedClass = i === gameState.selectedShipIndex ? "selected" : "";
 
-        const playerMapX = (gameState.myShip.x - systemCenterX) * scale;
-        const playerMapY = (gameState.myShip.y - systemCenterY) * scale;
-        minimapCtx.fillStyle = "#00FF00"; 
-        minimapCtx.save();
-        minimapCtx.translate(playerMapX, playerMapY);
-        minimapCtx.rotate(gameState.myShip.angle);
-        const playerSize = Math.max(2, 4 * scale);
-        minimapCtx.beginPath();
-        minimapCtx.moveTo(playerSize, 0);
-        minimapCtx.lineTo(-playerSize / 2, -playerSize / 1.5);
-        minimapCtx.lineTo(-playerSize / 2, playerSize / 1.5);
-        minimapCtx.closePath();
-        minimapCtx.fill();
-        minimapCtx.restore();
+                let cargoClass = "", healthClass = "", shieldClass = "";
+                let cargoSymbol = "", healthSymbol = "", shieldSymbol = "";
 
-        minimapCtx.restore(); 
+                if (currentShipDef && myShip.type !== i) {
+                    cargoClass = getStatComparisonClass(currentShipDef.maxCargo, s.maxCargo);
+                    healthClass = getStatComparisonClass(currentShipDef.maxHealth, s.maxHealth);
+                    shieldClass = getStatComparisonClass(currentShipDef.maxShield || 0, s.maxShield || 0);
+
+                    cargoSymbol = getStatComparisonSymbol(currentShipDef.maxCargo, s.maxCargo);
+                    healthSymbol = getStatComparisonSymbol(currentShipDef.maxHealth, s.maxHealth);
+                    shieldSymbol = getStatComparisonSymbol(currentShipDef.maxShield || 0, s.maxShield || 0);
+                }
+
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass} ${statusClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name">${s.name}</span>
+                        <span class="station-submenu-col col-price">$${s.price.toLocaleString()}</span>
+                        <span class="station-submenu-col col-stat ${cargoClass}">${s.maxCargo} ${cargoSymbol}</span>
+                        <span class="station-submenu-col col-stat ${healthClass}">${s.maxHealth} ${healthSymbol}</span>
+                        <span class="station-submenu-col col-stat ${shieldClass}">${s.maxShield || 0} ${shieldSymbol}</span>
+                        <span class="station-submenu-col col-current">${statusText}</span>
+                    </div>`;
+            });
+        }
+    
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Shipyard</h3>
+                <div>Credits: $${myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-buy-btn" class="station-action-button">Buy Ship (B)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+        document.getElementById("submenu-buy-btn")?.addEventListener("click", () => Network.buyShip(gameState.selectedShipIndex));
+        document.getElementById("submenu-back-btn")?.addEventListener("click", () => this.renderDockedStationInterface());
+    },
+
+    renderMissionsMenu() {
+        const host = this._prepareSubMenuHost();
+        if (!host || !gameState.dockedAtDetails || !gameState.myShip) return;
+
+        let itemsHtml = `<div class="station-submenu-header">
+                            <span class="station-submenu-col col-name" style="flex-basis: 70%;">Title</span>
+                            <span class="station-submenu-col col-reward">Reward</span>
+                         </div>`;
+
+        if (gameState.availableMissionsForCurrentPlanet.length === 0) {
+            itemsHtml +=
+                "<div class='station-submenu-item'>(No missions currently available)</div>";
+        } else {
+            if (
+                gameState.selectedMissionIndex >=
+                gameState.availableMissionsForCurrentPlanet.length
+            ) {
+                gameState.selectedMissionIndex = Math.max(
+                    0,
+                    gameState.availableMissionsForCurrentPlanet.length - 1,
+                );
+            }
+
+            gameState.availableMissionsForCurrentPlanet.forEach((m, i) => {
+                const selectedClass =
+                    i === gameState.selectedMissionIndex ? "selected" : "";
+                let titleDisplay =
+                    m.title.length > 60
+                        ? m.title.substring(0, 57) + "..."
+                        : m.title;
+                itemsHtml += `
+                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                        <span class="station-submenu-col col-name" style="flex-basis: 70%;">${titleDisplay}</span>
+                        <span class="station-submenu-col col-reward">$${m.rewardCredits.toLocaleString()}</span>
+                    </div>`;
+                if (i === gameState.selectedMissionIndex) {
+                    const timeLeftMs = m.timeLimit - Date.now();
+                    const timeLeftMin = Math.max(
+                        0,
+                        Math.round(timeLeftMs / 60000),
+                    );
+                    itemsHtml += `<div class="mission-details-section">
+                                    <p><strong>Description:</strong> ${m.description}</p>
+                                    <p><strong>Time Limit:</strong> ${timeLeftMin} min | <strong>Penalty:</strong> $${m.penaltyCredits.toLocaleString()}</p>`;
+                    if (
+                        m.type ===
+                        gameState.clientGameData.MISSION_TYPES.CARGO_DELIVERY
+                    ) {
+                        itemsHtml += `<p><strong>Deliver:</strong> ${m.cargoQuantity} ${m.cargoGoodName}</p>`;
+                    } else if (
+                        m.type === gameState.clientGameData.MISSION_TYPES.BOUNTY
+                    ) {
+                        const targetSysName =
+                            gameState.clientGameData.systems[
+                                m.targetSystemIndex
+                            ]?.name || "Unknown System";
+                        itemsHtml += `<p><strong>Target:</strong> ${m.targetsRequired} ${m.targetShipName}(s) in ${targetSysName}</p>`;
+                    }
+                    itemsHtml += `</div>`;
+                }
+            });
+        }
+
+        host.innerHTML = `
+            <div class="station-submenu-content">
+                <h3>Mission BBS - ${gameState.dockedAtDetails.planetName}</h3>
+                <div>Credits: $${gameState.myShip.credits.toLocaleString()}</div>
+                <div class="station-submenu-item-list">${itemsHtml}</div>
+                <div class="station-submenu-actions">
+                    <button id="submenu-accept-btn" class="station-action-button">Accept (A)</button>
+                    <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
+                </div>
+            </div>`;
+
+        document
+            .getElementById("submenu-accept-btn")
+            ?.addEventListener("click", () => {
+                if (
+                    gameState.availableMissionsForCurrentPlanet.length > 0 &&
+                    gameState.availableMissionsForCurrentPlanet[
+                        gameState.selectedMissionIndex
+                    ]
+                ) {
+                    const missionToAccept =
+                        gameState.availableMissionsForCurrentPlanet[
+                            gameState.selectedMissionIndex
+                        ];
+                    Network.acceptMission(
+                        missionToAccept.id,
+                        gameState.dockedAtDetails.systemIndex,
+                        gameState.dockedAtDetails.planetIndex,
+                    );
+                }
+            });
+        document
+            .getElementById("submenu-back-btn")
+            ?.addEventListener("click", () =>
+                this.renderDockedStationInterface(),
+            );
     },
 };
-/* ===== END: hypernova/client/js/renderer.js ===== */
+/* ===== END: hypernova/client/js/ui_manager.js ===== */
