@@ -150,8 +150,8 @@ app.post("/save-progress", async (req, res) => {
     const progress = {
         username,
         lastSaved: new Date().toISOString(),
-        shipData,
-        dockedAtDetails, // Can be null if not docked
+        shipData, // This now includes shield, maxShield from client's network.js
+        dockedAtDetails, 
     };
 
     try {
@@ -178,11 +178,10 @@ app.get("/load-progress", async (req, res) => {
     const progressFilePath = path.join(USERS_DIR, `${username}_progress.json`);
     try {
         const data = await fs.readFile(progressFilePath, "utf-8");
-        res.json(JSON.parse(data)); // Send the progress data back
+        res.json(JSON.parse(data)); 
     } catch (error) {
         if (error.code === "ENOENT") {
-            // It's not an error if a user has no saved progress yet
-            return res.status(200).json(null); // Send null or an empty object, client should handle this
+            return res.status(200).json(null); 
         }
         console.error(`Error loading progress for ${username}:`, error);
         res.status(500).json({
@@ -247,10 +246,15 @@ async function startServer() {
         () => playerManager.checkAllPlayerMissionTimeouts(missionManager),
         gameConfig.PLAYER_MISSION_CHECK_INTERVAL_MS,
     );
+    setInterval( // New interval for shield regeneration
+        () => playerManager.regenerateShields(),
+        gameConfig.SHIELD_REGEN_INTERVAL_MS
+    );
+
 
     io.on("connection", (socket) => {
         const initialWorldData = {
-            systems: worldManager.getSystemsForClient(), // This now includes universe map data
+            systems: worldManager.getSystemsForClient(), 
             economies: worldManager.getEconomiesForClient(),
         };
         playerManager.handleConnection(socket, initialWorldData);
@@ -276,4 +280,3 @@ startServer().catch((error) => {
     console.error("Failed to start server:", error);
     process.exit(1);
 });
-

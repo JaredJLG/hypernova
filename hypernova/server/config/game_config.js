@@ -29,7 +29,7 @@ module.exports = {
     // Hyperjump configuration
     MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED: 22500, // (150px)^2
     HYPERJUMP_CHARGE_TIME_MS: 3000, // 3 seconds
-    // MAP_WIDTH: 800, // Example, if needed for arrival points
-    // MAP_HEIGHT: 600, // Example
+    
+    // Shield configuration
+    SHIELD_REGEN_INTERVAL_MS: 100, // How often the server attempts to regenerate shields
 };
-

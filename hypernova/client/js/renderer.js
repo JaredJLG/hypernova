@@ -322,47 +322,47 @@ export const Renderer = {
             ctx.closePath();
             ctx.fill();
         }
+
+        // Draw shield bubble if shield is up
+        if (ship.shield > 0 && ship.maxShield > 0) {
+            const shieldRadius = Math.max(
+                (shipTypeDefinition.imgWidth || 30) * shipScale * 0.6,
+                (shipTypeDefinition.imgHeight || 30) * shipScale * 0.6
+            );
+            const shieldOpacity = Math.min(0.6, (ship.shield / ship.maxShield) * 0.5 + 0.1);
+            ctx.beginPath();
+            ctx.arc(0, 0, shieldRadius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(100, 180, 255, ${shieldOpacity})`; // Light blue, opacity based on shield strength
+            ctx.fill();
+            
+            // Optional: add a border to the shield
+            // ctx.strokeStyle = `rgba(150, 200, 255, ${shieldOpacity + 0.2})`;
+            // ctx.lineWidth = 1.5;
+            // ctx.stroke();
+        }
+
         ctx.restore();
     },
 
     drawProjectile(p) {
-        const elapsedTime = (Date.now() - p.time) / 1000.0; // Time in seconds
-        // Projectile speed determined by its range and lifespan
+        const elapsedTime = (Date.now() - p.time) / 1000.0; 
         const projectileDisplaySpeed = p.range / (PROJECTILE_LIFESPAN_MS / 1000.0);
         const distanceTravelled = projectileDisplaySpeed * elapsedTime;
 
-        // Current position of the projectile's tip
         const currentX = p.startX + Math.cos(p.startAngle) * distanceTravelled;
         const currentY = p.startY + Math.sin(p.startAngle) * distanceTravelled;
 
-        // Define projectile visual length (e.g. 1/10th of its range, or a fixed size)
-        const visualLength = Math.min(20, p.range / 5); // Cap visual length
-        const projectileWidth = 3; // Thickness of the bolt
+        const visualLength = Math.min(20, p.range / 5); 
+        const projectileWidth = 3; 
 
         ctx.save();
-        // Translate to the current tip of the projectile
         ctx.translate(currentX, currentY);
-        ctx.rotate(p.startAngle); // Rotate to the projectile's direction
+        ctx.rotate(p.startAngle); 
 
-        // Draw the projectile shape (e.g., a rectangle/thick line)
-        // The shape will be drawn extending "backwards" from its current tip position
-        // because we translated to the tip.
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
         ctx.shadowBlur = 7;
-
-        // Draw as a rectangle (bolt)
-        // Origin is at (0,0) which is the tip. Draw backwards.
         ctx.fillRect(-visualLength, -projectileWidth / 2, visualLength, projectileWidth);
-
-        // Rounded ends for the bolt:
-        // ctx.beginPath();
-        // ctx.moveTo(-visualLength + projectileWidth / 2, 0); // Start of line segment
-        // ctx.lineTo(0 - projectileWidth / 2, 0); // End of line segment (just before tip circle)
-        // ctx.lineWidth = projectileWidth;
-        // ctx.strokeStyle = p.color;
-        // ctx.lineCap = "round";
-        // ctx.stroke();
 
         ctx.restore();
     },
@@ -409,32 +409,52 @@ export const Renderer = {
                 : 0;
 
         const hudPadding = 15;
+        let yOffset = hudPadding + 14;
+
         ctx.textAlign = "left";
         ctx.fillText(
             `Pilot: ${gameState.currentUser.username}`,
             hudPadding,
-            hudPadding + 14,
+            yOffset,
         );
+        yOffset += 18;
         ctx.fillText(
             `Credits: $${myShip.credits.toLocaleString()}`,
             hudPadding,
-            hudPadding + 32,
+            yOffset,
         );
-        ctx.fillText( // Shield display will be added here in next phase
+        yOffset += 18;
+
+        // Shield display
+        if (myShip.maxShield > 0) {
+            ctx.fillStyle = "#64B4FF"; // Light blue for shield text
+            ctx.fillText(
+                `Shield: ${Math.round(myShip.shield || 0)}/${myShip.maxShield || 0}`,
+                hudPadding,
+                yOffset,
+            );
+            yOffset += 18;
+            ctx.fillStyle = "#00FF00"; // Reset to green
+        }
+        
+        ctx.fillText(
             `Health: ${myShip.health || 0}/${myShip.maxHealth || 0}`,
             hudPadding,
-            hudPadding + 50, // Adjust Y if shields are added above
+            yOffset,
         );
+        yOffset += 18;
         ctx.fillText(
             `Cargo: ${cargoCount}/${currentShipDef.maxCargo}`,
             hudPadding,
-            hudPadding + 68, // Adjust Y
+            yOffset,
         );
+        yOffset += 18;
 
         const systemName =
             gameState.clientGameData.systems[myShip.system]?.name ||
             "Unknown System";
-        ctx.fillText(`System: ${systemName}`, hudPadding, hudPadding + 86); // Adjust Y
+        ctx.fillText(`System: ${systemName}`, hudPadding, yOffset);
+        yOffset += 18;
 
         if (myShip.activeWeapon) {
             const weaponDisplayName =
@@ -443,14 +463,14 @@ export const Renderer = {
             ctx.fillText(
                 `Weapon: ${weaponDisplayName}`,
                 hudPadding,
-                hudPadding + 104, // Adjust Y
+                yOffset,
             );
         }
+        yOffset += 18 + 14; // Extra space before missions
 
-        let hudNextY = hudPadding + 138; // Adjust Y
         if (myShip.activeMissions && myShip.activeMissions.length > 0) {
-            ctx.fillText("Active Missions:", hudPadding, hudNextY);
-            hudNextY += 18;
+            ctx.fillText("Active Missions:", hudPadding, yOffset);
+            yOffset += 18;
             myShip.activeMissions.slice(0, 3).forEach((mission) => {
                 let missionText =
                     mission.title.length > 40
@@ -467,8 +487,8 @@ export const Renderer = {
                     Math.round((mission.timeLimit - Date.now()) / 60000),
                 );
                 missionText += ` (${timeRemainingMin}m)`;
-                ctx.fillText(`- ${missionText}`, hudPadding + 5, hudNextY);
-                hudNextY += 18;
+                ctx.fillText(`- ${missionText}`, hudPadding + 5, yOffset);
+                yOffset += 18;
             });
         }
 

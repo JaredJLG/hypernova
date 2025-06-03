@@ -30,96 +30,143 @@ class CombatManager {
             const weaponStats = this.weaponsData[attacker.activeWeapon];
             if (!weaponStats) return;
 
-            const fwdX = Math.cos(attacker.angle);
-            const fwdY = Math.sin(attacker.angle);
-            const cosHalfBeam = Math.cos(weaponStats.beam * 0.5);
+            const now = Date.now();
+            const timeSinceLastShot = now - (attacker.lastShot || 0);
+            const minTimeBetweenShots = 60000 / weaponStats.rpm;
+            if (timeSinceLastShot < minTimeBetweenShots) {
+                return; 
+            }
+            attacker.lastShot = now; 
 
-            const allPlayers = this.playerManager.getAllPlayers();
 
-            for (const targetId in allPlayers) {
-                if (targetId === socket.id) continue;
+            const numBarrels = weaponStats.barrels || 1;
+            const baseBarrelOffset = weaponStats.barrelOffset || 0; 
 
-                const target = allPlayers[targetId];
-                if (
-                    !target ||
-                    target.system !== attacker.system ||
-                    target.destroyed ||
-                    target.dockedAtPlanetIdentifier
-                )
-                    continue;
+            for (let i = 0; i < numBarrels; i++) {
+                let shotAngle = attacker.angle;
+                let shotOriginX = attacker.x;
+                let shotOriginY = attacker.y;
 
-                const dx = target.x - attacker.x;
-                const dy = target.y - attacker.y;
-                const dist = Math.hypot(dx, dy);
+                if (numBarrels > 1 && baseBarrelOffset > 0) {
+                    let actualOffsetMagnitude = 0;
+                    if (numBarrels === 2) {
+                        actualOffsetMagnitude = (i === 0) ? -baseBarrelOffset : baseBarrelOffset;
+                    } else {
+                         actualOffsetMagnitude = (i === 0) ? -baseBarrelOffset : baseBarrelOffset; 
+                    }
 
-                if (dist === 0 || dist > weaponStats.range) continue;
-
-                const dirToTargetX = dx / dist;
-                const dirToTargetY = dy / dist;
-                const dotProduct = fwdX * dirToTargetX + fwdY * dirToTargetY;
-
-                if (dotProduct < cosHalfBeam) continue;
-
-                target.health -= weaponStats.damage;
-                let targetDestroyedThisShot = false;
-
-                if (target.health > 0 && target.hyperjumpState === "charging") {
-                    this.playerManager.handlePlayerHitDuringHyperjumpCharge(
-                        target.id,
-                    );
+                    if (actualOffsetMagnitude !== 0) { 
+                        const perpendicularAngle = attacker.angle + Math.PI / 2; 
+                        shotOriginX = attacker.x + Math.cos(perpendicularAngle) * actualOffsetMagnitude;
+                        shotOriginY = attacker.y + Math.sin(perpendicularAngle) * actualOffsetMagnitude;
+                    }
                 }
 
-                if (target.health <= 0) {
-                    target.health = 0;
-                    target.destroyed = true;
-                    targetDestroyedThisShot = true;
 
+                const fwdX = Math.cos(shotAngle);
+                const fwdY = Math.sin(shotAngle);
+                const cosHalfBeam = Math.cos((weaponStats.beam || 0.1) * 0.5); 
+
+                const allPlayers = this.playerManager.getAllPlayers();
+
+                for (const targetId in allPlayers) {
+                    if (targetId === socket.id) continue;
+
+                    const target = allPlayers[targetId];
                     if (
-                        target.hyperjumpState === "charging" &&
-                        target.hyperjumpChargeTimeoutId
-                    ) {
-                        clearTimeout(target.hyperjumpChargeTimeoutId);
-                        target.hyperjumpChargeTimeoutId = null;
-                        target.hyperjumpState = "idle";
-                        console.log(
-                            `Hyperjump charge for destroyed player ${target.id} cleared.`,
+                        !target ||
+                        target.system !== attacker.system ||
+                        target.destroyed ||
+                        target.dockedAtPlanetIdentifier
+                    )
+                        continue;
+
+                    const dx = target.x - shotOriginX; 
+                    const dy = target.y - shotOriginY; 
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist === 0 || dist > weaponStats.range) continue;
+
+                    const dirToTargetX = dx / dist;
+                    const dirToTargetY = dy / dist;
+                    const dotProduct = fwdX * dirToTargetX + fwdY * dirToTargetY;
+
+                    if (dotProduct < cosHalfBeam) continue;
+
+                    // --- Shield and Health Damage Logic ---
+                    target.lastDamageTime = Date.now(); // Update last damage time for shield regen delay
+                    let damageDealt = weaponStats.damage;
+                    let targetDestroyedThisShot = false;
+
+                    let damageToShield = 0;
+                    if (target.shield > 0) {
+                        damageToShield = Math.min(target.shield, damageDealt);
+                        target.shield -= damageToShield;
+                        damageDealt -= damageToShield;
+                    }
+
+                    let damageToHealth = 0;
+                    if (damageDealt > 0) {
+                        damageToHealth = Math.min(target.health, damageDealt);
+                        target.health -= damageToHealth;
+                    }
+                    // --- End Shield and Health Damage Logic ---
+
+
+                    if (target.health > 0 && target.hyperjumpState === "charging") {
+                        this.playerManager.handlePlayerHitDuringHyperjumpCharge(
+                            target.id, // Pass target.id, not target object directly
                         );
                     }
-                    console.log(
-                        `Player ${target.id} destroyed by ${attacker.id}`,
-                    );
+
+                    if (target.health <= 0) {
+                        target.health = 0;
+                        target.destroyed = true;
+                        targetDestroyedThisShot = true;
+
+                        if (
+                            target.hyperjumpState === "charging" &&
+                            target.hyperjumpChargeTimeoutId
+                        ) {
+                            clearTimeout(target.hyperjumpChargeTimeoutId);
+                            target.hyperjumpChargeTimeoutId = null;
+                            target.hyperjumpState = "idle";
+                            console.log(
+                                `Hyperjump charge for destroyed player ${target.id} cleared.`,
+                            );
+                        }
+                    }
+                    
+                    this.playerManager.updatePlayerState(target.id, {
+                        health: target.health,
+                        shield: target.shield,
+                        destroyed: target.destroyed,
+                        hyperjumpState: target.hyperjumpState, 
+                        lastDamageTime: target.lastDamageTime
+                    });
+
+                    if (targetDestroyedThisShot) {
+                        this.missionManager.handleTargetDestroyed(attacker, target);
+                    }
+                    break; 
                 }
 
-                this.playerManager.updatePlayerState(target.id, {
-                    // Changed to updatePlayerState for broader sync
-                    health: target.health,
-                    destroyed: target.destroyed,
-                    hyperjumpState: target.hyperjumpState, // ensure hyperjump state is also synced if changed
+                const systemPlayers = Object.values(this.playerManager.getAllPlayers()).filter(
+                    (p) => p.system === attacker.system,
+                );
+                systemPlayers.forEach((p) => {
+                    this.io.to(p.id).emit("projectile", {
+                        x: shotOriginX,
+                        y: shotOriginY,
+                        angle: shotAngle,
+                        color: weaponStats.color,
+                        range: weaponStats.range,
+                        shooterId: attacker.id,
+                    });
                 });
-
-                if (targetDestroyedThisShot) {
-                    this.missionManager.handleTargetDestroyed(attacker, target);
-                }
-                break;
-            }
-
-            // Emit projectile to all players in the attacker's system
-            const systemPlayers = Object.values(allPlayers).filter(
-                (p) => p.system === attacker.system,
-            );
-            systemPlayers.forEach((p) => {
-                this.io.to(p.id).emit("projectile", {
-                    x: attacker.x,
-                    y: attacker.y,
-                    angle: attacker.angle,
-                    color: weaponStats.color,
-                    range: weaponStats.range,
-                    shooterId: attacker.id,
-                });
-            });
+            } 
         });
     }
 }
 
 module.exports = CombatManager;
-

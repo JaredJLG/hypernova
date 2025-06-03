@@ -17,10 +17,24 @@ class PlayerManager {
         this.worldManager = worldManagerInstance;
     }
 
+    initializePlayerData(player, shipTypeIndex) {
+        const shipType = this.shipTypes[shipTypeIndex] || this.shipTypes[0];
+        player.type = shipTypeIndex;
+        player.maxCargo = shipType.maxCargo;
+        player.maxHealth = shipType.maxHealth || 100;
+        player.health = player.maxHealth;
+        
+        player.maxShield = shipType.maxShield || 0;
+        player.shield = player.maxShield;
+        player.shieldRechargeRate = shipType.shieldRechargeRate || 0;
+        player.shieldRechargeDelayMs = shipType.shieldRechargeDelayMs || 5000;
+        player.lastDamageTime = 0;
+    }
+
+
     handleConnection(socket, initialWorldData = {}) {
-        const defaultShipType =
-            this.shipTypes[this.gameConfig.DEFAULT_PLAYER_SHIP_TYPE_INDEX] ||
-            this.shipTypes[0];
+        const defaultShipTypeIndex = this.gameConfig.DEFAULT_PLAYER_SHIP_TYPE_INDEX;
+        
         this.players[socket.id] = {
             id: socket.id,
             x: this.gameConfig.PLAYER_SPAWN_X || 400,
@@ -28,12 +42,8 @@ class PlayerManager {
             angle: 0,
             vx: 0,
             vy: 0,
-            type: this.gameConfig.DEFAULT_PLAYER_SHIP_TYPE_INDEX,
             credits: this.gameConfig.DEFAULT_PLAYER_CREDITS,
             cargo: new Array(this.tradeGoods.length).fill(0),
-            maxCargo: defaultShipType.maxCargo,
-            health: defaultShipType.maxHealth || 100,
-            maxHealth: defaultShipType.maxHealth || 100,
             weapons: [],
             activeMissions: [],
             activeWeapon: null,
@@ -46,19 +56,20 @@ class PlayerManager {
                 Math.floor(Math.random() * 0xffffff)
                     .toString(16)
                     .padStart(6, "0"),
-            hyperjumpState: "idle", // idle, charging, jumping, cooldown
+            hyperjumpState: "idle", 
             hyperjumpChargeTimeoutId: null,
         };
+        this.initializePlayerData(this.players[socket.id], defaultShipTypeIndex);
 
         console.log(
-            `Player ${socket.id} connected. Initial ship: ${defaultShipType.name}. Initial credits: ${this.players[socket.id].credits}`,
+            `Player ${socket.id} connected. Initial ship: ${this.shipTypes[defaultShipTypeIndex].name}. Initial credits: ${this.players[socket.id].credits}`,
         );
 
         socket.emit("init", {
             id: socket.id,
-            ships: this.players, // Send all current players
+            ships: this.players, 
             gameData: {
-                ...initialWorldData, // Will include systems with universeX,Y,connections
+                ...initialWorldData, 
                 tradeGoods: this.tradeGoods,
                 weapons: this.gameConfig.staticWeaponsData,
                 shipTypes: this.shipTypes,
@@ -90,19 +101,22 @@ class PlayerManager {
                     player.activeWeapon = receivedSyncData.activeWeapon;
                 if (receivedSyncData.health !== undefined)
                     player.health = receivedSyncData.health;
+                if (receivedSyncData.shield !== undefined) // Load shield
+                    player.shield = receivedSyncData.shield;
                 if (receivedSyncData.activeMissions !== undefined)
                     player.activeMissions = receivedSyncData.activeMissions;
+                
+                player.lastDamageTime = Date.now(); // Reset damage timer on load to prevent instant regen
 
                 if (receivedSyncData.type !== undefined) {
-                    player.type = receivedSyncData.type;
-                    const shipTypeDef = this.shipTypes[player.type];
-                    if (shipTypeDef) {
-                        player.maxCargo = shipTypeDef.maxCargo;
-                        player.maxHealth = shipTypeDef.maxHealth;
-                        if (player.health > player.maxHealth)
-                            player.health = player.maxHealth;
-                    }
+                    // Re-initialize ship-specific stats including shields
+                    this.initializePlayerData(player, receivedSyncData.type);
+                    // Then override with loaded values if they exist (health, shield already handled above)
+                    if (receivedSyncData.health !== undefined) player.health = receivedSyncData.health;
+                    if (receivedSyncData.shield !== undefined) player.shield = receivedSyncData.shield;
+
                 }
+
 
                 player.hyperjumpState = "idle";
                 if (player.hyperjumpChargeTimeoutId) {
@@ -194,6 +208,10 @@ class PlayerManager {
     updatePlayerState(playerId, updates) {
         if (this.players[playerId]) {
             Object.assign(this.players[playerId], updates);
+            // Ensure shield value doesn't exceed maxShield if updated directly
+            if (updates.shield !== undefined && this.players[playerId].maxShield !== undefined) {
+                this.players[playerId].shield = Math.max(0, Math.min(this.players[playerId].shield, this.players[playerId].maxShield));
+            }
             this.io.emit("state", { [playerId]: updates });
         }
     }
@@ -202,6 +220,24 @@ class PlayerManager {
         if (this.players[playerId]) {
             this.io.emit("state", { [playerId]: fullPlayerData });
         }
+    }
+
+    regenerateShields() {
+        Object.values(this.players).forEach(player => {
+            if (player.destroyed || player.dockedAtPlanetIdentifier) return;
+
+            if (Date.now() - player.lastDamageTime > player.shieldRechargeDelayMs) {
+                if (player.shield < player.maxShield) {
+                    const regenAmount = player.shieldRechargeRate * (this.gameConfig.SHIELD_REGEN_INTERVAL_MS / 1000.0);
+                    const oldShield = player.shield;
+                    player.shield = Math.min(player.maxShield, player.shield + regenAmount);
+                    
+                    if (player.shield !== oldShield) { // Only update if changed
+                        this.updatePlayerState(player.id, { shield: player.shield });
+                    }
+                }
+            }
+        });
     }
 
     registerSocketHandlers(socket) {
@@ -231,7 +267,6 @@ class PlayerManager {
         });
 
         socket.on("requestHyperjump", (data) => {
-            // data = { targetSystemIndex: number | null }
             const player = this.getPlayer(socket.id);
             if (!player || player.destroyed) return;
 
@@ -259,7 +294,7 @@ class PlayerManager {
                     if (!planet) continue;
                     const distSq =
                         (player.x - planet.x) ** 2 + (player.y - planet.y) ** 2;
-                    const planetScale = planet.planetImageScale || 1.0; // Use actual scale from planet data
+                    const planetScale = planet.planetImageScale || 1.0; 
                     const minSafeDistSq =
                         (this.gameConfig
                             .MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED ||
@@ -289,7 +324,7 @@ class PlayerManager {
             }
             const currentSystemData = this.worldManager.getSystem(
                 player.system,
-            ); // Renamed to avoid conflict
+            ); 
             if (
                 !currentSystemData ||
                 !currentSystemData.connections ||
@@ -374,7 +409,7 @@ class PlayerManager {
                             const systemCenterX = firstPlanetInArrival
                                 ? firstPlanetInArrival.x -
                                   (Math.random() * 100 - 50)
-                                : this.gameConfig.PLAYER_SPAWN_X || 400; // A rough center
+                                : this.gameConfig.PLAYER_SPAWN_X || 400; 
                             const systemCenterY = firstPlanetInArrival
                                 ? firstPlanetInArrival.y -
                                   (Math.random() * 100 - 50)
@@ -420,6 +455,7 @@ class PlayerManager {
                 player.vy = 0;
                 player.angle = newAngle;
                 player.dockedAtPlanetIdentifier = null;
+                player.lastDamageTime = Date.now(); // Reset shield delay after jump
 
                 console.log(
                     `Player ${socket.id} hyperjump complete. Old system: ${oldSystem}, New system: ${player.system}. Arrived at ${player.x.toFixed(0)},${player.y.toFixed(0)}.`,
@@ -516,13 +552,14 @@ class PlayerManager {
                 });
             }
             player.credits -= newShipType.price;
-            player.type = shipTypeIndex;
-            player.maxCargo = newShipType.maxCargo;
-            player.cargo = new Array(this.tradeGoods.length).fill(0);
-            player.maxHealth = newShipType.maxHealth || 100;
-            player.health = player.maxHealth;
+            
+            // Re-initialize player with new ship type stats
+            this.initializePlayerData(player, shipTypeIndex); 
+            // Carry over non-ship-specific things or reset them as needed
+            player.cargo = new Array(this.tradeGoods.length).fill(0); 
             player.weapons = [];
             player.activeWeapon = null;
+
 
             this.updatePlayerState(socket.id, {
                 credits: player.credits,
@@ -531,6 +568,11 @@ class PlayerManager {
                 cargo: player.cargo,
                 maxHealth: player.maxHealth,
                 health: player.health,
+                maxShield: player.maxShield,
+                shield: player.shield,
+                shieldRechargeRate: player.shieldRechargeRate,
+                shieldRechargeDelayMs: player.shieldRechargeDelayMs,
+                lastDamageTime: Date.now(), // Reset damage timer on new ship
                 weapons: player.weapons,
                 activeWeapon: player.activeWeapon,
             });
@@ -572,7 +614,8 @@ class PlayerManager {
             clearTimeout(player.hyperjumpChargeTimeoutId);
             player.hyperjumpChargeTimeoutId = null;
             player.hyperjumpState = "idle";
-            this.updatePlayerState(playerId, { hyperjumpState: "idle" });
+            player.lastDamageTime = Date.now(); // Record damage time
+            this.updatePlayerState(playerId, { hyperjumpState: "idle", lastDamageTime: player.lastDamageTime });
             this.io
                 .to(playerId)
                 .emit("hyperjumpCancelled", {
