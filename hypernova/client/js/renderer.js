@@ -55,7 +55,7 @@ function generateParallaxStars() {
         );
         for (let i = 0; i < numStars; i++) {
             layer.stars.push({
-                x: Math.random() * canvas.width * 3 - canvas.width,
+                x: Math.random() * canvas.width * 3 - canvas.width, // Distribute over a larger area to avoid pop-in during fast pans
                 y: Math.random() * canvas.height * 3 - canvas.height,
                 radius: getRandom(layer.minStarSize, layer.maxStarSize),
                 opacity: getRandom(layer.opacity * 0.5, layer.opacity),
@@ -72,9 +72,6 @@ export const Renderer = {
         minimapCanvas = document.getElementById("minimapCanvas");
         if (minimapCanvas) {
             minimapCtx = minimapCanvas.getContext("2d");
-            // Set minimap canvas fixed size or make it responsive based on its container
-            // For now, CSS sets its height, width is 100% of container.
-            // If its container size changes, this might need adjustment or call from resize.
             minimapCanvas.width = minimapCanvas.clientWidth;
             minimapCanvas.height = minimapCanvas.clientHeight;
         } else {
@@ -84,8 +81,6 @@ export const Renderer = {
         gameState.camera.width = canvas.width;
         gameState.camera.height = canvas.height;
         generateParallaxStars();
-        // lastCameraX = gameState.camera.x; // Not currently used
-        // lastCameraY = gameState.camera.y; // Not currently used
         initialized = true;
         console.log(
             "Renderer initialized with canvas:",
@@ -100,11 +95,8 @@ export const Renderer = {
     },
 
     updateViewPort(width, height) {
-        // canvas.width and height are already set by main.js's resizeCanvas
-        // gameState.camera.width and height are also set by main.js's resizeCanvas
-        generateParallaxStars(); // Regenerate parallax stars for new viewport size
+        generateParallaxStars();
 
-        // Update minimap canvas size if it's tied to viewport changes (optional)
         if (minimapCanvas) {
             minimapCanvas.width = minimapCanvas.clientWidth;
             minimapCanvas.height = minimapCanvas.clientHeight;
@@ -125,21 +117,28 @@ export const Renderer = {
             if (bgImg) {
                 const camX = gameState.camera.x;
                 const camY = gameState.camera.y;
-                const parallaxFactor = 0.1;
+                const parallaxFactor = 0.1; // How much the background moves relative to camera
 
                 const imgWidth = bgImg.width;
                 const imgHeight = bgImg.height;
 
+                // Calculate the starting position for drawing the tiled background
+                // Ensures seamless tiling by accounting for camera position and parallax
                 const startX =
                     Math.floor((camX * parallaxFactor) / imgWidth) * imgWidth;
                 const startY =
                     Math.floor((camY * parallaxFactor) / imgHeight) * imgHeight;
 
                 ctx.save();
+                // Translate the context by the parallax-adjusted camera offset
+                // This makes the background appear to move slower than the foreground
                 ctx.translate(
                     -(camX * parallaxFactor),
                     -(camY * parallaxFactor),
                 );
+
+                // Tile the image to fill the screen and beyond to avoid edges during movement
+                // The loop bounds are expanded to cover potential screen movement
                 for (
                     let x = startX - imgWidth;
                     x <
@@ -159,14 +158,15 @@ export const Renderer = {
                 }
                 ctx.restore();
             } else {
-                ctx.fillStyle = systemData.fallbackColor || "#010205";
+                ctx.fillStyle = systemData.fallbackColor || "#010205"; // Use a fallback if image not loaded
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
         } else {
+            // Default very dark blue if no system-specific background
             ctx.fillStyle = "#000003";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-        this.drawParallaxStars();
+        this.drawParallaxStars(); // Draw stars on top of the background image
     },
 
     drawParallaxStars() {
@@ -176,14 +176,27 @@ export const Renderer = {
         PARALLAX_LAYERS.forEach((layer) => {
             ctx.beginPath();
             layer.stars.forEach((star) => {
-                const screenX = (star.x - camX * layer.speed) % canvas.width;
-                const screenY = (star.y - camY * layer.speed) % canvas.height;
-                const finalX = screenX < 0 ? screenX + canvas.width : screenX;
-                const finalY = screenY < 0 ? screenY + canvas.height : screenY;
-                ctx.moveTo(finalX + star.radius, finalY);
-                ctx.arc(finalX, finalY, star.radius, 0, Math.PI * 2);
+                // Calculate screen position with parallax and wrapping
+                const parallaxX = star.x - camX * layer.speed;
+                const parallaxY = star.y - camY * layer.speed;
+
+                // Wrap stars around the screen width/height to create an infinite effect
+                // The effective size for wrapping should be larger than the canvas to avoid pop-in
+                const wrapWidth = canvas.width + canvas.width / layer.speed; // Effective width for star wrapping
+                const wrapHeight = canvas.height + canvas.height / layer.speed; // Effective height
+
+                let screenX = parallaxX % wrapWidth;
+                if (screenX < 0) screenX += wrapWidth;
+                screenX %= canvas.width; // Final position on canvas
+
+                let screenY = parallaxY % wrapHeight;
+                if (screenY < 0) screenY += wrapHeight;
+                screenY %= canvas.height; // Final position on canvas
+
+                ctx.moveTo(screenX + star.radius, screenY); // moveTo before arc
+                ctx.arc(screenX, screenY, star.radius, 0, Math.PI * 2);
             });
-            ctx.fillStyle = `rgba(255, 255, 240, ${layer.opacity})`; // Use layer's base opacity here, not string literal 'layer.opacity'
+            ctx.fillStyle = `rgba(255, 255, 240, ${layer.opacity})`;
             ctx.fill();
         });
     },
@@ -260,24 +273,25 @@ export const Renderer = {
                 renderSize,
                 renderSize,
             );
-            ctx.globalCompositeOperation = "lighter";
-            const glowRadius = renderSize * 0.65;
+            // Atmospheric glow effect
+            ctx.globalCompositeOperation = "lighter"; // Additive blending for glow
+            const glowRadius = renderSize * 0.65; // Slightly larger than planet
             const gradient = ctx.createRadialGradient(
                 planet.x,
                 planet.y,
-                renderSize * 0.48,
+                renderSize * 0.48, // Inner radius slightly smaller than planet
                 planet.x,
                 planet.y,
-                glowRadius,
+                glowRadius, // Outer radius for glow extent
             );
-            gradient.addColorStop(0, `rgba(120, 170, 255, 0.25)`);
+            gradient.addColorStop(0, `rgba(120, 170, 255, 0.25)`); // Brighter at planet edge
             gradient.addColorStop(0.7, `rgba(120, 170, 255, 0.1)`);
-            gradient.addColorStop(1, `rgba(120, 170, 255, 0)`);
+            gradient.addColorStop(1, `rgba(120, 170, 255, 0)`); // Fade to transparent
             ctx.fillStyle = gradient;
             ctx.beginPath();
             ctx.arc(planet.x, planet.y, glowRadius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.globalCompositeOperation = "source-over";
+            ctx.globalCompositeOperation = "source-over"; // Reset blending mode
             ctx.restore();
         } else {
             ctx.fillStyle = planet.fallbackColor || "#335577";
@@ -287,14 +301,14 @@ export const Renderer = {
         }
 
         ctx.fillStyle = "#E0E8FF";
-        ctx.font = `${Math.max(10, 12 * scale)}px monospace`;
+        ctx.font = `${Math.max(10, 12 * scale)}px monospace`; // Scale font size with planet
         ctx.textAlign = "center";
         ctx.shadowColor = "black";
         ctx.shadowBlur = 2;
         ctx.fillText(
             planet.name,
             planet.x,
-            planet.y + renderSize / 2 + Math.max(12, 15 * scale),
+            planet.y + renderSize / 2 + Math.max(12, 15 * scale), // Position name below planet
         );
         ctx.shadowBlur = 0;
         ctx.textAlign = "left";
@@ -317,6 +331,7 @@ export const Renderer = {
             const h = (shipTypeDefinition.imgHeight || img.height) * shipScale;
             ctx.drawImage(img, -w / 2, -h / 2, w, h);
         } else {
+            // Fallback drawing if image not loaded
             ctx.fillStyle = ship.color || "#0f0";
             ctx.beginPath();
             ctx.moveTo(15 * shipScale, 0);
@@ -336,8 +351,8 @@ export const Renderer = {
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(p.range / 4, 0);
-        ctx.shadowColor = p.color;
+        ctx.lineTo(p.range / 4, 0); // Draw projectile as a short line
+        ctx.shadowColor = p.color; // Glow effect for projectile
         ctx.shadowBlur = 5;
         ctx.stroke();
         ctx.restore();
@@ -347,6 +362,7 @@ export const Renderer = {
         ctx.font = "14px monospace";
         ctx.fillStyle = "#00FF00";
 
+        // Display hyperjump denied message if present and not charging
         if (
             gameState.hyperjumpDeniedMessage &&
             !gameState.isChargingHyperjump
@@ -361,7 +377,7 @@ export const Renderer = {
                 canvas.width / 2 - messageWidth / 2,
                 canvas.height - 60,
             );
-            ctx.fillStyle = "#00FF00";
+            ctx.fillStyle = "#00FF00"; // Reset color
         }
 
         if (!gameState.myShip || gameState.myShip.destroyed) {
@@ -377,7 +393,7 @@ export const Renderer = {
         const myShip = gameState.myShip;
         const currentShipDef =
             gameState.clientGameData.shipTypes[myShip.type || 0];
-        if (!currentShipDef) return;
+        if (!currentShipDef) return; // Should not happen if myShip.type is valid
 
         let cargoCount =
             myShip.cargo && myShip.cargo.length > 0
@@ -423,11 +439,13 @@ export const Renderer = {
             );
         }
 
+        // Active Missions (simplified for main HUD)
         let hudNextY = hudPadding + 138;
         if (myShip.activeMissions && myShip.activeMissions.length > 0) {
             ctx.fillText("Active Missions:", hudPadding, hudNextY);
             hudNextY += 18;
             myShip.activeMissions.slice(0, 3).forEach((mission) => {
+                // Show top 3
                 let missionText =
                     mission.title.length > 40
                         ? mission.title.substring(0, 37) + "..."
@@ -448,6 +466,7 @@ export const Renderer = {
             });
         }
 
+        // Hyperjump Charge Bar
         if (
             gameState.isChargingHyperjump &&
             gameState.hyperjumpChargeStartTime
@@ -463,10 +482,12 @@ export const Renderer = {
             const textWidth = ctx.measureText(chargeText).width;
             ctx.textAlign = "center";
             ctx.fillText(chargeText, canvas.width / 2, canvas.height - 80);
+
             const barWidth = 250;
             const barHeight = 15;
             const barX = canvas.width / 2 - barWidth / 2;
             const barY = canvas.height - 60;
+
             ctx.strokeStyle = "#0af";
             ctx.lineWidth = 2;
             ctx.strokeRect(barX, barY, barWidth, barHeight);
@@ -476,12 +497,58 @@ export const Renderer = {
                 (barWidth - 4) * chargeProgress,
                 barHeight - 4,
             );
-            ctx.fillStyle = "#00FF00";
-            ctx.lineWidth = 1;
-            ctx.textAlign = "left";
+            ctx.fillStyle = "#00FF00"; // Reset color
+            ctx.lineWidth = 1; // Reset line width
+            ctx.textAlign = "left"; // Reset alignment
         }
 
+        // === ROUTE AND DOCKING MESSAGES (NEW/MODIFIED) ===
+        let messageDisplayedAtBottom = false; // Flag to prevent overlapping messages
+
+        // Route Message
         if (
+            gameState.plannedRoute.length > 0 &&
+            gameState.currentRouteLegIndex !== -1 &&
+            !gameState.docked &&
+            !gameState.isChargingHyperjump &&
+            !gameState.hyperjumpDeniedMessage
+        ) {
+            if (
+                gameState.currentRouteLegIndex < gameState.plannedRoute.length
+            ) {
+                const nextDestSystemIndex =
+                    gameState.plannedRoute[gameState.currentRouteLegIndex];
+                const nextDestSystem =
+                    gameState.clientGameData.systems[nextDestSystemIndex];
+                if (nextDestSystem) {
+                    ctx.font = "16px monospace";
+                    ctx.fillStyle = "#FFA500"; // Orange, like route lines
+                    const routeMsg = `Next Jump (J): ${nextDestSystem.name}`;
+                    ctx.textAlign = "center";
+                    ctx.fillText(
+                        routeMsg,
+                        canvas.width / 2,
+                        canvas.height - 30,
+                    );
+                    messageDisplayedAtBottom = true;
+                }
+            } else {
+                // Route finished, awaiting clear
+                ctx.font = "16px monospace";
+                ctx.fillStyle = "#00FF00";
+                const routeMsg =
+                    "Route complete. Press J to clear or plot new.";
+                ctx.textAlign = "center";
+                ctx.fillText(routeMsg, canvas.width / 2, canvas.height - 30);
+                messageDisplayedAtBottom = true;
+            }
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#00FF00";
+        }
+
+        // Docking Message (only if no route message and other conditions met)
+        if (
+            !messageDisplayedAtBottom &&
             !gameState.docked &&
             !gameState.isChargingHyperjump &&
             !gameState.hyperjumpDeniedMessage
@@ -510,9 +577,11 @@ export const Renderer = {
                 const dockMsg = `Press 'D' to dock at ${dockPlanetName}`;
                 ctx.textAlign = "center";
                 ctx.fillText(dockMsg, canvas.width / 2, canvas.height - 30);
-                ctx.textAlign = "left";
+                messageDisplayedAtBottom = true; // Though it's the last one here
             }
+            ctx.textAlign = "left"; // Reset alignment
         }
+        // === END OF ROUTE AND DOCKING MESSAGES ===
     },
 
     drawMinimap() {
@@ -553,7 +622,7 @@ export const Renderer = {
             if (p.y < minY) minY = p.y;
             if (p.y > maxY) maxY = p.y;
         });
-        // Include player ship in bounds calculation
+        // Include player ship in bounds calculation for dynamic centering
         if (gameState.myShip.x < minX) minX = gameState.myShip.x;
         if (gameState.myShip.x > maxX) maxX = gameState.myShip.x;
         if (gameState.myShip.y < minY) minY = gameState.myShip.y;
@@ -606,27 +675,19 @@ export const Renderer = {
         const playerMapX = (gameState.myShip.x - systemCenterX) * scale;
         const playerMapY = (gameState.myShip.y - systemCenterY) * scale;
         minimapCtx.fillStyle = "#00FF00"; // Player color
-        minimapCtx.beginPath();
-        minimapCtx.arc(
-            playerMapX,
-            playerMapY,
-            Math.max(2, 3 * scale),
-            0,
-            Math.PI * 2,
-        ); // Player dot size
-        minimapCtx.fill();
-        // Simple triangle for player orientation
         minimapCtx.save();
         minimapCtx.translate(playerMapX, playerMapY);
         minimapCtx.rotate(gameState.myShip.angle);
+        // Draw as a small triangle
+        const playerSize = Math.max(2, 4 * scale);
         minimapCtx.beginPath();
-        minimapCtx.moveTo(5 * scale, 0);
-        minimapCtx.lineTo(-2 * scale, -2 * scale);
-        minimapCtx.lineTo(-2 * scale, 2 * scale);
+        minimapCtx.moveTo(playerSize, 0);
+        minimapCtx.lineTo(-playerSize / 2, -playerSize / 1.5);
+        minimapCtx.lineTo(-playerSize / 2, playerSize / 1.5);
         minimapCtx.closePath();
         minimapCtx.fill();
         minimapCtx.restore();
 
-        minimapCtx.restore();
+        minimapCtx.restore(); // Restore main transform
     },
 };

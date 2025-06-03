@@ -1,10 +1,10 @@
 {
   "username": "jaredg",
-  "lastSaved": "2025-06-02T00:49:47.787Z",
+  "lastSaved": "2025-06-03T01:54:58.729Z",
   "shipData": {
-    "x": 380,
-    "y": 480,
-    "angle": 0,
+    "x": 300,
+    "y": 150,
+    "angle": 5.741370614359145,
     "vx": 0,
     "vy": 0,
     "type": 0,
@@ -22,33 +22,33 @@
       "Laser"
     ],
     "activeWeapon": "Laser",
-    "system": 2,
+    "system": 15,
     "activeMissions": []
   },
   "dockedAtDetails": {
-    "systemIndex": 2,
+    "systemIndex": 15,
     "planetIndex": 0,
-    "planetName": "Beta",
-    "systemName": "Nordic",
+    "planetName": "Yemuro Station",
+    "systemName": "Yemuro",
     "buyPrices": {
-      "Food": 8,
-      "Ore": 37,
-      "Medicine": 147,
-      "Electronics": 294
+      "Food": 15,
+      "Ore": 74,
+      "Medicine": 105,
+      "Electronics": 147
     },
     "sellPrices": {
-      "Food": 7,
-      "Ore": 33,
-      "Medicine": 133,
-      "Electronics": 266
+      "Food": 13,
+      "Ore": 67,
+      "Medicine": 95,
+      "Electronics": 133
     },
     "stock": {
-      "Food": 2000,
-      "Ore": 2000,
-      "Medicine": 500,
-      "Electronics": 500
+      "Food": 500,
+      "Ore": 500,
+      "Medicine": 1000,
+      "Electronics": 2000
     },
-    "playerX": 380,
-    "playerY": 480
+    "playerX": 300,
+    "playerY": 150
   }
 }

@@ -135,14 +135,11 @@ app.post("/save-progress", async (req, res) => {
     // In a real app, authenticate user here (e.g., check session token from request headers)
     const { username, shipData, dockedAtDetails } = req.body;
     if (!username) {
-        // This check is more for direct API calls; if called by logged-in client, username should be reliable
-        // Or, better, get username from authenticated session/token on server-side
         return res
             .status(400)
             .json({ success: false, message: "Username required." });
     }
     if (!shipData) {
-        // Basic validation
         return res.status(400).json({
             success: false,
             message: "Ship data required for saving progress.",
@@ -199,7 +196,6 @@ async function startServer() {
     const staticData = await DataLoader.loadAllData();
     gameConfig.staticWeaponsData = staticData.weapons;
 
-    // Instantiate WorldManager first as PlayerManager will need it
     const worldManager = new WorldManager(
         io,
         staticData.systemsBase,
@@ -207,16 +203,14 @@ async function startServer() {
         gameConfig,
     );
 
-    // Pass the worldManager instance to PlayerManager
     const playerManager = new PlayerManager(
         io,
         staticData.shipTypes,
         staticData.tradeGoods,
         gameConfig,
-        worldManager, // <<< MODIFICATION HERE: Pass worldManager instance
+        worldManager,
     );
 
-    // Other managers can now receive playerManager and worldManager as needed
     const economyManager = new EconomyManager(
         io,
         worldManager,
@@ -239,8 +233,6 @@ async function startServer() {
         gameConfig,
     );
 
-    // Initialize worldManager AFTER all managers it might use internally during initialization are created
-    // (though in this case, it mainly uses economyManager and missionManager passed to it)
     worldManager.initialize(economyManager, missionManager);
 
     setInterval(
@@ -248,7 +240,7 @@ async function startServer() {
         gameConfig.ECONOMY_UPDATE_INTERVAL_MS,
     );
     setInterval(
-        () => missionManager.populateAllPlanetMissions(), // This probably needs this.systems from worldManager
+        () => missionManager.populateAllPlanetMissions(),
         gameConfig.MISSION_GENERATION_INTERVAL_MS,
     );
     setInterval(
@@ -258,16 +250,14 @@ async function startServer() {
 
     io.on("connection", (socket) => {
         const initialWorldData = {
-            systems: worldManager.getSystemsForClient(),
+            systems: worldManager.getSystemsForClient(), // This now includes universe map data
             economies: worldManager.getEconomiesForClient(),
         };
-        // PlayerManager's handleConnection now has access to worldManager via `this.worldManager`
         playerManager.handleConnection(socket, initialWorldData);
 
         economyManager.registerSocketHandlers(socket);
         missionManager.registerSocketHandlers(socket);
         combatManager.registerSocketHandlers(socket);
-        // WorldManager registers its own handlers for 'dock' and 'undock' etc.
         worldManager.registerSocketHandlers(socket, playerManager);
 
         socket.on("disconnect", () => {
@@ -284,5 +274,5 @@ async function startServer() {
 
 startServer().catch((error) => {
     console.error("Failed to start server:", error);
-    process.exit(1); // Exit if server fails to start
+    process.exit(1);
 });

@@ -1,27 +1,22 @@
 // hypernova/client/js/network.js
 import { gameState } from "./game_state.js";
 import { UIManager } from "./ui_manager.js";
-import { HYPERJUMP_DENIED_MESSAGE_DURATION_MS } from "./client_config.js";
+import {
+    HYPERJUMP_DENIED_MESSAGE_DURATION_MS,
+    MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED,
+} from "./client_config.js";
 
-// NEW: Function to save progress to the server
 export async function saveProgress() {
-    // Make it async
+    // ... (existing code)
     if (!gameState.socket || !gameState.myShip || !gameState.currentUser) {
         console.warn(
             "saveProgress: Cannot save - No socket, ship, or user data.",
         );
-        console.warn(
-            `saveProgress details: socket: ${!!gameState.socket}, myShip: ${!!gameState.myShip}, currentUser: ${!!gameState.currentUser}`,
-        );
         return;
     }
-
-    // Add a specific log here
     console.log(
         `saveProgress: Preparing data. Current gameState.docked: ${gameState.docked}, dockedAtDetails being saved: ${JSON.stringify(gameState.docked ? gameState.dockedAtDetails : null)}`,
     );
-
-    // Prepare the data to be saved
     const progressData = {
         username: gameState.currentUser.username,
         shipData: {
@@ -30,17 +25,16 @@ export async function saveProgress() {
             angle: gameState.myShip.angle,
             vx: gameState.myShip.vx,
             vy: gameState.myShip.vy,
-            type: gameState.myShip.type, // This is likely an index
+            type: gameState.myShip.type,
             credits: gameState.myShip.credits,
-            cargo: gameState.myShip.cargo, // Array of numbers
+            cargo: gameState.myShip.cargo,
             maxCargo: gameState.myShip.maxCargo,
             health: gameState.myShip.health,
             maxHealth: gameState.myShip.maxHealth,
-            weapons: gameState.myShip.weapons, // Array of weapon names/IDs
-            activeWeapon: gameState.myShip.activeWeapon, // Name/ID of active weapon
-            system: gameState.myShip.system, // Current system index
-            activeMissions: gameState.myShip.activeMissions, // Array of mission objects/IDs
-            // dockedAtPlanetIdentifier is handled by saving `dockedAtDetails` if docked
+            weapons: gameState.myShip.weapons,
+            activeWeapon: gameState.myShip.activeWeapon,
+            system: gameState.myShip.system,
+            activeMissions: gameState.myShip.activeMissions,
         },
         dockedAtDetails: gameState.docked ? gameState.dockedAtDetails : null,
     };
@@ -73,10 +67,11 @@ export function initNetwork(onReadyCallback) {
     gameState.socket = socket;
 
     socket.on("init", (data) => {
+        // ... (existing code - no changes here)
         console.log(
-            "network.js/init: Received init data:",
-            JSON.stringify(data),
-        ); // Log full init data
+            "network.js/init: Received init data (first 200 chars):",
+            JSON.stringify(data).substring(0, 200),
+        );
         if (!data || !data.id || !data.gameData) {
             console.error(
                 "network.js/init: Incomplete init data received from server.",
@@ -86,7 +81,6 @@ export function initNetwork(onReadyCallback) {
         gameState.myId = data.id;
         console.log("network.js/init: Set gameState.myId to:", gameState.myId);
 
-        // Populate clientGameData from server (user's existing logic)
         gameState.clientGameData.systems = data.gameData.systems || [];
         gameState.clientGameData.tradeGoods = data.gameData.tradeGoods || [];
         gameState.clientGameData.weapons = data.gameData.weapons || {};
@@ -95,10 +89,14 @@ export function initNetwork(onReadyCallback) {
             data.gameData.MISSION_TYPES || {};
         gameState.clientPlanetEconomies = data.gameData.economies || [];
 
-        // Collect image paths to load (user's existing logic)
         const uniqueImageFiles = new Set();
         if (gameState.clientGameData.systems) {
             gameState.clientGameData.systems.forEach((system) => {
+                if (system.backgroundFile) {
+                    uniqueImageFiles.add(
+                        `assets/images/backgrounds/${system.backgroundFile}`,
+                    );
+                }
                 if (system.planets) {
                     system.planets.forEach((planet) => {
                         if (planet.imageFile) {
@@ -118,106 +116,39 @@ export function initNetwork(onReadyCallback) {
             });
         }
         gameState.imagePathsToLoad = Array.from(uniqueImageFiles);
-        // console.log("network.js/init: Image paths to load:", gameState.imagePathsToLoad);
 
         if (data.ships) {
             for (const shipId in data.ships) {
-                console.log(
-                    "network.js/init: Processing ship from server init data for shipId:",
-                    shipId,
-                );
-                gameState.updateShipData(shipId, data.ships[shipId]); // updateShipData calls defaultShipProps
+                gameState.updateShipData(shipId, data.ships[shipId]);
             }
         }
-        console.log(
-            "network.js/init: After processing server ships. Current myShip:",
-            JSON.stringify(gameState.myShip),
-            "Current gameState.docked:",
-            gameState.docked,
-        );
 
         if (gameState.pendingProgressToApply && gameState.myId) {
-            console.log(
-                "network.js/init: Applying pendingProgressToApply. Current gameState.docked BEFORE apply:",
-                gameState.docked,
-                "Pending progress:",
-                JSON.stringify(gameState.pendingProgressToApply),
-            );
             const pendingProgress = gameState.pendingProgressToApply;
-
-            gameState.updateShipData(
-                // This will call defaultShipProps
-                gameState.myId,
-                pendingProgress.shipData,
-            );
-            console.log(
-                "network.js/init (pending): After updateShipData. myShip:",
-                JSON.stringify(gameState.myShip),
-            );
-
+            gameState.updateShipData(gameState.myId, pendingProgress.shipData);
             if (
-                gameState.myShip && // Ensure myShip exists after updateShipData
+                gameState.myShip &&
                 pendingProgress.shipData.system !== undefined
             ) {
                 gameState.myShip.system = pendingProgress.shipData.system;
-                console.log(
-                    "network.js/init (pending): Set gameState.myShip.system to",
-                    gameState.myShip.system,
-                );
             }
-
             if (pendingProgress.dockedAtDetails) {
                 gameState.docked = true;
                 gameState.dockedAtDetails = pendingProgress.dockedAtDetails;
-                console.log(
-                    "network.js/init (pending): SETTING gameState.docked = true, details:",
-                    JSON.stringify(gameState.dockedAtDetails),
-                );
             } else {
                 gameState.docked = false;
                 gameState.dockedAtDetails = null;
-                console.log(
-                    "network.js/init (pending): SETTING gameState.docked = false (no dockedAtDetails in pending progress)",
-                );
             }
-            console.log(
-                "network.js/init: Applied pendingProgressToApply. gameState.docked is now:",
-                gameState.docked,
-                "myShip:",
-                JSON.stringify(gameState.myShip),
-            );
             delete gameState.pendingProgressToApply;
-        } else if (gameState.myShip) {
-            // This branch means: myId is set, myShip exists (likely from server's data.ships), and there was NO pendingProgressToApply.
-            // defaultShipProps would have been called via updateShipData when data.ships was processed.
-            console.log(
-                "network.js/init: (No pending progress, myShip exists). gameState.docked:",
-                gameState.docked,
-                "myShip:",
-                JSON.stringify(gameState.myShip),
-            );
-        } else if (gameState.myId) {
-            // This branch means: myId is set, but myShip was NOT in data.ships and NO pendingProgressToApply.
-            // This implies a new ship situation or a ship not yet created on the server but client knows its ID.
-            console.log(
-                "network.js/init: (No pending progress, myShip DID NOT exist). Creating and applying defaults for myId:",
-                gameState.myId,
-                "Current gameState.docked:",
-                gameState.docked,
-            );
-            gameState.allShips[gameState.myId] = {}; // Create the ship object.
-            gameState.defaultShipProps(gameState.myShip); // Apply default properties.
-            console.log(
-                "network.js/init: (New ship scenario) Created and applied defaults. gameState.docked:",
-                gameState.docked,
-                "myShip:",
-                JSON.stringify(gameState.myShip),
-            );
+        } else if (gameState.myId && !gameState.myShip) {
+            // Ensure myShip object exists even if no prior data
+            gameState.allShips[gameState.myId] = {};
+            gameState.defaultShipProps(gameState.myShip);
         }
 
         console.log(
-            "network.js/init: Client initialization sequence in 'init' handler complete. Final My ship:",
-            JSON.stringify(gameState.myShip),
+            "network.js/init: Client initialization sequence complete. Final My ship type:",
+            gameState.myShip ? gameState.myShip.type : "N/A",
             "Final gameState.docked:",
             gameState.docked,
         );
@@ -228,42 +159,39 @@ export function initNetwork(onReadyCallback) {
     });
 
     socket.on("state", (updatedShipDataMap) => {
-        // console.log("network.js/state: Received state update:", updatedShipDataMap);
         for (const id in updatedShipDataMap) {
             const update = updatedShipDataMap[id];
-            // If this state update includes hyperjump state changes from server, reflect them
             if (id === gameState.myId) {
                 if (
                     update.hyperjumpState === "idle" &&
                     gameState.isChargingHyperjump
                 ) {
-                    // Server says we are idle, but client thought it was charging (e.g. cancellation)
                     gameState.isChargingHyperjump = false;
                     gameState.hyperjumpChargeStartTime = null;
                 }
-                // Potentially other hyperjump state fields if server sends them in general state updates
             }
             gameState.updateShipData(id, update);
+            if (id === gameState.myId) {
+                // If my ship's data was updated
+                UIManager.updateShipStatsPanel();
+                UIManager.updateActiveMissionsPanel(); // Missions might depend on ship state (e.g. cargo for delivery)
+            }
         }
         if (
             gameState.myShip &&
             gameState.myShip.dockedAtPlanetIdentifier === null &&
             gameState.docked
         ) {
-            console.log(
-                "network.js/state: Server state indicates ship is not docked, but client gameState.docked was true. Cleaning up UI.",
-            );
+            // This case handles server-side undock (e.g. ship destroyed while docked)
             UIManager.undockCleanup();
         }
     });
 
     socket.on("playerJoined", (data) => {
-        console.log("network.js/playerJoined:", data.id);
         gameState.updateShipData(data.id, data.ship);
     });
 
     socket.on("playerLeft", (id) => {
-        console.log("network.js/playerLeft:", id);
         delete gameState.allShips[id];
     });
 
@@ -273,90 +201,129 @@ export function initNetwork(onReadyCallback) {
     });
 
     socket.on("dockConfirmed", (data) => {
-        console.log(
-            "network.js/dockConfirmed: Received data:",
-            JSON.stringify(data),
-        );
         gameState.docked = true;
         if (gameState.myShip) {
             gameState.myShip.dockedAtPlanetIdentifier = {
                 systemIndex: data.systemIndex,
                 planetIndex: data.planetIndex,
             };
-            // Server is authoritative for position upon docking
             gameState.myShip.x = data.playerX;
             gameState.myShip.y = data.playerY;
             gameState.myShip.vx = 0;
             gameState.myShip.vy = 0;
         }
         gameState.dockedAtDetails = { ...data };
-        console.log(
-            "network.js/dockConfirmed: Set gameState.docked = true. dockedAtDetails:",
-            JSON.stringify(gameState.dockedAtDetails),
-            "myShip.dockedAtPlanetIdentifier:",
-            gameState.myShip
-                ? JSON.stringify(gameState.myShip.dockedAtPlanetIdentifier)
-                : "N/A",
-        );
-        UIManager.openDockMenu();
-        console.log("network.js/dockConfirmed: Calling saveProgress().");
+        UIManager.openDockMenu(); // This will also update HUD panels
         saveProgress();
     });
 
     socket.on("undockConfirmed", () => {
-        console.log(
-            "network.js/undockConfirmed: Received from server. Current gameState.docked BEFORE UIManager.undockCleanup:",
-            gameState.docked,
-        );
-        UIManager.undockCleanup();
-        console.log(
-            "network.js/undockConfirmed: AFTER UIManager.undockCleanup. gameState.docked:",
-            gameState.docked,
-        );
+        UIManager.undockCleanup(); // This will also update HUD panels
     });
 
     socket.on("tradeError", ({ message }) => {
-        console.error("network.js/tradeError:", message);
         alert(`Trade Error: ${message}`);
     });
     socket.on("actionFailed", ({ message }) => {
-        console.warn("network.js/actionFailed:", message);
         alert(`Action Failed: ${message}`);
     });
     socket.on("actionSuccess", ({ message }) => {
-        console.log("network.js/actionSuccess:", message);
+        console.log("Action Success:", message);
     });
 
     socket.on("tradeSuccess", (data) => {
-        // ... (existing tradeSuccess logic) ...
-    });
-    socket.on("updatePlanetEconomies", (updatedSystemsEconomies) => {
-        // ... (existing updatePlanetEconomies logic) ...
-    });
-    socket.on("planetEconomyUpdate", (data) => {
-        // ... (existing planetEconomyUpdate logic) ...
-    });
-    socket.on("availableMissionsList", (data) => {
-        // ... (existing availableMissionsList logic) ...
-    });
-    socket.on("missionAccepted", (data) => {
-        // ... (existing missionAccepted logic) ...
-    });
-    socket.on("missionUpdate", (data) => {
-        // ... (existing missionUpdate logic) ...
+        if (gameState.myShip) {
+            gameState.myShip.credits = data.credits;
+            gameState.myShip.cargo = data.cargo;
+        }
+        if (
+            gameState.docked &&
+            gameState.dockedAtDetails &&
+            data.updatedPlanetData
+        ) {
+            Object.assign(gameState.dockedAtDetails, data.updatedPlanetData);
+        }
+        if (gameState.activeSubMenu === "trade") UIManager.renderTradeMenu();
+        UIManager.updateShipStatsPanel(); // Update HUD
     });
 
-    // Hyperjump related handlers
+    socket.on("updatePlanetEconomies", (updatedSystemsEconomies) => {
+        /* Not directly used client-side yet */
+    });
+
+    socket.on("planetEconomyUpdate", (data) => {
+        if (
+            gameState.docked &&
+            gameState.dockedAtDetails &&
+            gameState.dockedAtDetails.systemIndex === data.systemIndex &&
+            gameState.dockedAtDetails.planetIndex === data.planetIndex
+        ) {
+            Object.assign(gameState.dockedAtDetails, data);
+            if (gameState.activeSubMenu === "trade")
+                UIManager.renderTradeMenu();
+        }
+    });
+
+    socket.on("availableMissionsList", (data) => {
+        gameState.availableMissionsForCurrentPlanet = data.missions;
+        if (gameState.activeSubMenu === "missions")
+            UIManager.renderMissionsMenu();
+    });
+
+    socket.on("missionAccepted", (data) => {
+        if (gameState.myShip)
+            gameState.myShip.activeMissions.push(data.mission);
+        if (
+            gameState.activeSubMenu === "missions" &&
+            gameState.dockedAtDetails
+        ) {
+            const missionIdx =
+                gameState.availableMissionsForCurrentPlanet.findIndex(
+                    (m) => m.id === data.mission.id,
+                );
+            if (missionIdx > -1)
+                gameState.availableMissionsForCurrentPlanet.splice(
+                    missionIdx,
+                    1,
+                );
+            UIManager.renderMissionsMenu();
+        }
+        UIManager.updateActiveMissionsPanel(); // Update HUD
+    });
+
+    socket.on("missionUpdate", (data) => {
+        if (gameState.myShip && gameState.myShip.activeMissions) {
+            const missionIdx = gameState.myShip.activeMissions.findIndex(
+                (m) => m.id === data.missionId,
+            );
+            if (missionIdx !== -1) {
+                if (
+                    data.status === "COMPLETED" ||
+                    data.status === "FAILED_TIME"
+                ) {
+                    gameState.myShip.activeMissions.splice(missionIdx, 1);
+                    if (data.creditsAwarded)
+                        gameState.myShip.credits += data.creditsAwarded; // If server sends credit update
+                    if (data.creditsPenalized)
+                        gameState.myShip.credits -= data.creditsPenalized;
+                } else if (data.progress) {
+                    gameState.myShip.activeMissions[
+                        missionIdx
+                    ].targetsDestroyed = parseInt(data.progress.split("/")[0]);
+                }
+            }
+        }
+        UIManager.updateActiveMissionsPanel(); // Update HUD
+        UIManager.updateShipStatsPanel(); // Credits might have changed
+        if (data.message) alert(data.message);
+    });
+
     socket.on("hyperjumpChargeStarted", ({ chargeTime }) => {
-        console.log("Network: Hyperjump charge started by server.");
         gameState.isChargingHyperjump = true;
         gameState.hyperjumpChargeStartTime = Date.now();
-        // Client will use its own HYPERJUMP_CHARGE_TIME_MS for progress bar,
-        // but server's chargeTime could be used if they differ.
     });
 
     socket.on("hyperjumpDenied", ({ message }) => {
-        console.warn("Network: Hyperjump denied by server:", message);
         gameState.isChargingHyperjump = false;
         gameState.hyperjumpChargeStartTime = null;
         gameState.hyperjumpDeniedMessage = message;
@@ -370,11 +337,10 @@ export function initNetwork(onReadyCallback) {
     });
 
     socket.on("hyperjumpCancelled", ({ message }) => {
-        console.log("Network: Hyperjump cancelled by server:", message);
         gameState.isChargingHyperjump = false;
         gameState.hyperjumpChargeStartTime = null;
         if (message) {
-            gameState.hyperjumpDeniedMessage = message; // Re-use denied message display
+            gameState.hyperjumpDeniedMessage = message;
             if (gameState.hyperjumpDeniedMessageTimeoutId) {
                 clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
             }
@@ -386,7 +352,8 @@ export function initNetwork(onReadyCallback) {
     });
 
     socket.on("hyperjumpComplete", (data) => {
-        console.log("Network: Hyperjump complete. New state:", data);
+        // ... (route progression logic remains the same)
+        const previousSystem = gameState.myShip ? gameState.myShip.system : -1;
         gameState.isChargingHyperjump = false;
         gameState.hyperjumpChargeStartTime = null;
 
@@ -401,13 +368,45 @@ export function initNetwork(onReadyCallback) {
             gameState.myShip.dockedAtPlanetIdentifier = null;
         }
         gameState.docked = false;
-        UIManager.undockCleanup();
-        // Client is now in the new system, position set by server.
-        // The regular 'state' update from server will also reflect this for other players.
+        UIManager.undockCleanup(); // This will update HUD panels
+
+        if (
+            gameState.plannedRoute.length > 0 &&
+            gameState.currentRouteLegIndex !== -1
+        ) {
+            const expectedSystem =
+                gameState.plannedRoute[gameState.currentRouteLegIndex];
+            if (data.newSystem === expectedSystem) {
+                gameState.currentRouteLegIndex++;
+                if (
+                    gameState.currentRouteLegIndex >=
+                    gameState.plannedRoute.length
+                ) {
+                    console.log("Route completed.");
+                    gameState.plannedRoute = [];
+                    gameState.currentRouteLegIndex = -1;
+                } else {
+                    const nextSystemName =
+                        gameState.clientGameData.systems[
+                            gameState.plannedRoute[
+                                gameState.currentRouteLegIndex
+                            ]
+                        ]?.name || "Unknown System";
+                    console.log(
+                        `Route advanced. Next jump: ${nextSystemName}. Press J.`,
+                    );
+                }
+            } else {
+                console.log("Jumped to an unexpected system. Clearing route.");
+                gameState.plannedRoute = [];
+                gameState.currentRouteLegIndex = -1;
+            }
+        }
     });
 }
 
 export function sendControls() {
+    // ... (existing code)
     if (
         !gameState.socket ||
         !gameState.myShip ||
@@ -415,103 +414,119 @@ export function sendControls() {
     ) {
         return;
     }
-    // Data sent in 'control' reflects current client state, including drift during hyperjump charge.
-    // Server will decide how to use this data if player is charging.
     gameState.socket.emit("control", {
         x: gameState.myShip.x,
         y: gameState.myShip.y,
         angle: gameState.myShip.angle,
         vx: gameState.myShip.vx,
         vy: gameState.myShip.vy,
-        system: gameState.myShip.system, // Keep sending current system; server manages actual jump
+        system: gameState.myShip.system,
     });
 }
 
 export function fireWeapon() {
+    // ... (existing code)
     if (
         !gameState.socket ||
         !gameState.myShip ||
         gameState.myShip.destroyed ||
         !gameState.myShip.activeWeapon ||
         gameState.docked ||
-        gameState.isChargingHyperjump // Prevent firing if charging
+        gameState.isChargingHyperjump ||
+        gameState.isMapOpen
     ) {
-        console.warn(
-            "fireWeapon: Pre-condition failed (e.g., charging hyperjump).",
-        );
+        if (gameState.isMapOpen)
+            console.warn("fireWeapon: Cannot fire, map is open.");
         return;
     }
-    console.log("fireWeapon: Emitting 'fire'.");
     gameState.socket.emit("fire");
 }
 
 export function equipWeapon(weaponName) {
+    // ... (existing code - already calls UIManager.updateShipStatsPanel after server confirmation via 'state' event)
     if (!gameState.socket || gameState.isChargingHyperjump) {
-        // Prevent equipping if charging
         if (gameState.isChargingHyperjump)
             console.warn("equipWeapon: Cannot equip while charging hyperjump.");
         return;
     }
-    console.log(`equipWeapon called with: ${weaponName}.`);
     gameState.socket.emit("equipWeapon", { weapon: weaponName });
 }
 
 export function requestDock(systemIndex, planetIndex) {
+    // ... (existing code)
     if (!gameState.socket || gameState.isChargingHyperjump) {
-        // Prevent docking if charging
         if (gameState.isChargingHyperjump)
             console.warn("requestDock: Cannot dock while charging hyperjump.");
         return;
     }
-    console.log(
-        `requestDock called for system ${systemIndex}, planet ${planetIndex}.`,
-    );
     gameState.socket.emit("dock", { systemIndex, planetIndex });
 }
 
 export function undock() {
-    // Undocking while charging hyperjump should not be possible as player should not be docked.
-    // If somehow state is inconsistent, this is a regular undock request.
+    // ... (existing code)
     if (!gameState.socket || !gameState.docked) {
         console.warn(
             `undock: Pre-condition failed. Socket: ${!!gameState.socket}, gameState.docked: ${gameState.docked}.`,
         );
         return;
     }
-    console.log("undock: Emitting 'undock' to server.");
     gameState.socket.emit("undock");
     saveProgress();
 }
 
 export function buyGood(goodIndex) {
-    // ... (existing buyGood, no direct hyperjump interaction needed as it requires docking) ...
+    // ... (existing code - UIManager.updateShipStatsPanel called by tradeSuccess)
+    const good = gameState.clientGameData.tradeGoods[goodIndex];
+    if (!good || !gameState.dockedAtDetails || !gameState.socket) return;
+    gameState.socket.emit("buyGood", {
+        goodName: good.name,
+        quantity: 1,
+        systemIndex: gameState.dockedAtDetails.systemIndex,
+        planetIndex: gameState.dockedAtDetails.planetIndex,
+    });
 }
 export function sellGood(goodIndex) {
-    // ... (existing sellGood) ...
+    // ... (existing code - UIManager.updateShipStatsPanel called by tradeSuccess)
+    const good = gameState.clientGameData.tradeGoods[goodIndex];
+    if (!good || !gameState.dockedAtDetails || !gameState.socket) return;
+    gameState.socket.emit("sellGood", {
+        goodName: good.name,
+        quantity: 1,
+        systemIndex: gameState.dockedAtDetails.systemIndex,
+        planetIndex: gameState.dockedAtDetails.planetIndex,
+    });
 }
 export function buyShip(shipTypeIndex) {
+    // ... (existing code - UIManager.updateShipStatsPanel called after server confirmation via 'state' event)
     if (
         !gameState.socket ||
         !gameState.myShip ||
         gameState.isChargingHyperjump
     ) {
-        // Prevent buying ship if charging
         if (gameState.isChargingHyperjump)
             console.warn("buyShip: Cannot buy ship while charging hyperjump.");
         return;
     }
-    // ... rest of buyShip logic ...
+    gameState.socket.emit("buyShip", { shipTypeIndex });
 }
 
 export function requestMissions(systemIndex, planetIndex) {
-    // ... (existing requestMissions) ...
+    // ... (existing code)
+    if (!gameState.socket) return;
+    gameState.socket.emit("requestMissions", { systemIndex, planetIndex });
 }
 export function acceptMission(missionId, systemIndex, planetIndex) {
-    // ... (existing acceptMission) ...
+    // ... (existing code - UIManager.updateActiveMissionsPanel called by missionAccepted)
+    if (!gameState.socket) return;
+    gameState.socket.emit("acceptMission", {
+        missionId,
+        systemIndex,
+        planetIndex,
+    });
 }
 
-// New function for hyperjump request
-export function requestHyperjump() {
+export function requestHyperjump(targetSystemIndex = null) {
+    // ... (existing code - no direct HUD calls needed here, hyperjumpDeniedMessage is handled by HUD render)
     if (
         !gameState.socket ||
         !gameState.myShip ||
@@ -524,18 +539,77 @@ export function requestHyperjump() {
         if (gameState.isChargingHyperjump) reason = "already charging";
         if (gameState.myShip?.destroyed) reason = "ship destroyed";
         console.warn(`requestHyperjump: Cannot request. Reason: ${reason}`);
+
+        const alertMessage = `Hyperjump denied: ${reason === "docked" ? "Cannot engage hyperdrive while docked." : reason === "already charging" ? "Hyperdrive already engaged." : reason === "ship destroyed" ? "Ship systems critical." : "Cannot engage hyperdrive."}`;
+        // Set up denied message to be shown in HUD
+        gameState.hyperjumpDeniedMessage = alertMessage;
+        if (gameState.hyperjumpDeniedMessageTimeoutId)
+            clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
+        gameState.hyperjumpDeniedMessageTimeoutId = setTimeout(() => {
+            gameState.hyperjumpDeniedMessage = null;
+            gameState.hyperjumpDeniedMessageTimeoutId = null;
+        }, HYPERJUMP_DENIED_MESSAGE_DURATION_MS);
         return;
     }
-    console.log("network.js: Emitting 'requestHyperjump'.");
-    gameState.socket.emit("requestHyperjump");
+
+    const currentSystemData =
+        gameState.clientGameData.systems[gameState.myShip.system];
+    if (currentSystemData && currentSystemData.planets) {
+        for (const planet of currentSystemData.planets) {
+            if (!planet) continue;
+            const distSq =
+                (gameState.myShip.x - planet.x) ** 2 +
+                (gameState.myShip.y - planet.y) ** 2;
+            const planetScale = planet.planetImageScale || 1.0;
+            const baseMinJumpDistSq =
+                MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED || 22500;
+            const minJumpDistSq =
+                baseMinJumpDistSq * Math.pow(planetScale, 2) * 1.5;
+
+            if (distSq < minJumpDistSq) {
+                gameState.hyperjumpDeniedMessage =
+                    "Too close to a celestial body to engage hyperdrive.";
+                if (gameState.hyperjumpDeniedMessageTimeoutId)
+                    clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
+                gameState.hyperjumpDeniedMessageTimeoutId = setTimeout(() => {
+                    gameState.hyperjumpDeniedMessage = null;
+                    gameState.hyperjumpDeniedMessageTimeoutId = null;
+                }, HYPERJUMP_DENIED_MESSAGE_DURATION_MS);
+                return;
+            }
+        }
+    }
+    if (targetSystemIndex === null) {
+        gameState.hyperjumpDeniedMessage =
+            "Error: No target system selected for hyperjump.";
+        if (gameState.hyperjumpDeniedMessageTimeoutId)
+            clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
+        gameState.hyperjumpDeniedMessageTimeoutId = setTimeout(() => {
+            gameState.hyperjumpDeniedMessage = null;
+            gameState.hyperjumpDeniedMessageTimeoutId = null;
+        }, HYPERJUMP_DENIED_MESSAGE_DURATION_MS);
+        return;
+    }
+    if (targetSystemIndex === gameState.myShip.system) {
+        gameState.hyperjumpDeniedMessage = "Cannot jump to the current system.";
+        if (gameState.hyperjumpDeniedMessageTimeoutId)
+            clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
+        gameState.hyperjumpDeniedMessageTimeoutId = setTimeout(() => {
+            gameState.hyperjumpDeniedMessage = null;
+            gameState.hyperjumpDeniedMessageTimeoutId = null;
+        }, HYPERJUMP_DENIED_MESSAGE_DURATION_MS);
+        return;
+    }
+
+    console.log(
+        `network.js: Emitting 'requestHyperjump' for system ${targetSystemIndex}.`,
+    );
+    gameState.socket.emit("requestHyperjump", { targetSystemIndex });
 }
 
-// Optional: if client-side cancellation is desired
 export function cancelHyperjumpRequest() {
+    // ... (existing code)
     if (!gameState.socket || !gameState.isChargingHyperjump) return;
     console.log("network.js: Emitting 'cancelHyperjump'.");
     gameState.socket.emit("cancelHyperjump");
-    // Client optimistically stops visual charging, server confirms actual cancellation.
-    // gameState.isChargingHyperjump = false; // Let server message handle this state change fully
-    // gameState.hyperjumpChargeStartTime = null;
 }
