@@ -1,6 +1,6 @@
 {
   "username": "55",
-  "lastSaved": "2025-06-03T14:17:35.261Z",
+  "lastSaved": "2025-06-03T15:59:40.734Z",
   "shipData": {
     "x": 300,
     "y": 500,
@@ -8,7 +8,7 @@
     "vx": 0,
     "vy": 0,
     "type": 0,
-    "credits": 1000,
+    "credits": 500,
     "cargo": [
       0,
       0,
@@ -18,8 +18,12 @@
     "maxCargo": 10,
     "health": 100,
     "maxHealth": 100,
-    "weapons": [],
-    "activeWeapon": null,
+    "shield": 0,
+    "maxShield": 0,
+    "weapons": [
+      "Laser"
+    ],
+    "activeWeapon": "Laser",
     "system": 4,
     "activeMissions": []
   },

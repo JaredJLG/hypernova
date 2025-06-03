@@ -30,12 +30,13 @@ export function initInputListeners(canvas) {
         }
 
         const keyLower = e.key.toLowerCase();
+        // Include Space in gameSpecificKeys if not already there, or handle it separately
         const gameSpecificKeys = [
             "arrowup",
             "arrowdown",
             "arrowleft",
             "arrowright",
-            " ",
+            " ", // Ensure space is here
             "d",
             "h",
             "q",
@@ -49,7 +50,7 @@ export function initInputListeners(canvas) {
             "s",
             "a",
             "escape",
-            "j", // Added 'j'
+            "j",
         ];
 
         if (gameState.isMapOpen) {
@@ -57,9 +58,11 @@ export function initInputListeners(canvas) {
                 UniverseMapManager.closeMap();
                 e.preventDefault();
             }
+            // Potentially add map-specific key handlers here if needed
             return;
         }
 
+        // Prevent default for game-specific keys when not in map or input
         if (gameSpecificKeys.includes(keyLower)) {
             e.preventDefault();
         }
@@ -69,7 +72,6 @@ export function initInputListeners(canvas) {
             keyLower !== "h" &&
             keyLower !== "j"
         ) {
-            // Check against h and j
             clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
             gameState.hyperjumpDeniedMessage = null;
             gameState.hyperjumpDeniedMessageTimeoutId = null;
@@ -81,10 +83,12 @@ export function initInputListeners(canvas) {
 
         if (!gameState.docked) {
             // In-space controls
-            if (e.code === "Space" && !gameState.isChargingHyperjump) {
-                if (!gameState.isMapOpen) Network.fireWeapon();
-            }
             switch (keyLower) {
+                case " ": // Spacebar
+                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen) {
+                        gameState.controls.firing = true;
+                    }
+                    break;
                 case "arrowup":
                     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
                         gameState.controls.accelerating = true;
@@ -110,7 +114,7 @@ export function initInputListeners(canvas) {
                     break;
                 case "j": // New: Initiate hyperjump for planned route
                     if (
-                        !gameState.isMapOpen && // Not in map
+                        !gameState.isMapOpen &&
                         !gameState.docked &&
                         !gameState.isChargingHyperjump &&
                         gameState.plannedRoute.length > 0 &&
@@ -123,12 +127,8 @@ export function initInputListeners(canvas) {
                                 gameState.currentRouteLegIndex
                             ];
                         if (targetSystemIndex !== gameState.myShip.system) {
-                            // Ensure not trying to jump to current system
                             Network.requestHyperjump(targetSystemIndex);
                         } else {
-                            // This case should ideally be prevented by route planning logic
-                            // or handled in hyperjumpComplete by advancing leg.
-                            // For now, just inform if trying to jump to current system via 'J'.
                             console.warn(
                                 "Attempted to 'J' jump to current system. Advancing route leg.",
                             );
@@ -139,18 +139,15 @@ export function initInputListeners(canvas) {
                             ) {
                                 gameState.plannedRoute = [];
                                 gameState.currentRouteLegIndex = -1;
-                                // UIManager.showToast("Route completed."); // Optional feedback
                             }
                         }
                     } else if (
                         !gameState.docked &&
                         !gameState.isChargingHyperjump
                     ) {
-                        // Clear route if 'j' is pressed with no valid route leg or route finished
                         if (gameState.plannedRoute.length > 0) {
                             gameState.plannedRoute = [];
                             gameState.currentRouteLegIndex = -1;
-                            // UIManager.showToast("Route cleared or finished."); // Optional
                         }
                     }
                     break;
@@ -189,37 +186,38 @@ export function initInputListeners(canvas) {
         }
         if (gameState.isMapOpen) return;
 
-        if (
-            !gameState.myShip ||
-            gameState.myShip.destroyed ||
-            gameState.docked
-        ) {
+
+        const keyLower = e.key.toLowerCase();
+        // Reset ship movement controls if ship exists, not destroyed, and not docked
+        if (gameState.myShip && !gameState.myShip.destroyed && !gameState.docked) {
+            switch (keyLower) {
+                case "arrowup":
+                    gameState.controls.accelerating = false;
+                    break;
+                case "arrowdown":
+                    gameState.controls.decelerating = false;
+                    break;
+                case "arrowleft":
+                    gameState.controls.rotatingLeft = false;
+                    break;
+                case "arrowright":
+                    gameState.controls.rotatingRight = false;
+                    break;
+                case " ": // Spacebar
+                    gameState.controls.firing = false;
+                    break;
+            }
+        } else { // If docked, destroyed, or no ship, ensure all controls are off
             gameState.controls.accelerating = false;
             gameState.controls.decelerating = false;
             gameState.controls.rotatingLeft = false;
             gameState.controls.rotatingRight = false;
-            return;
-        }
-        const keyLower = e.key.toLowerCase();
-        switch (keyLower) {
-            case "arrowup":
-                gameState.controls.accelerating = false;
-                break;
-            case "arrowdown":
-                gameState.controls.decelerating = false;
-                break;
-            case "arrowleft":
-                gameState.controls.rotatingLeft = false;
-                break;
-            case "arrowright":
-                gameState.controls.rotatingRight = false;
-                break;
+            gameState.controls.firing = false;
         }
     });
 }
 
 function tryDockAction() {
-    // ... (existing code, no changes needed here for routing)
     if (
         !gameState.myShip ||
         !gameState.clientGameData.systems[gameState.myShip.system]
@@ -256,7 +254,6 @@ function tryDockAction() {
 }
 
 function cycleWeaponAction(direction) {
-    // ... (existing code, no changes needed here for routing)
     if (
         !gameState.myShip ||
         !gameState.myShip.weapons ||
@@ -273,7 +270,6 @@ function cycleWeaponAction(direction) {
 }
 
 function handleMenuKeyDown(keyLower) {
-    // ... (existing code, no changes needed here for routing)
     if (!gameState.docked || !gameState.myShip) {
         return;
     }
@@ -421,34 +417,10 @@ function handleMenuKeyDown(keyLower) {
 }
 
 export function processInputs() {
-    // ... (existing code, some minor adjustments for damping if map is open)
     if (gameState.isMapOpen) {
-        // If map is open, apply damping and send controls, but no player input processing
         if (
             gameState.myShip &&
             !gameState.myShip.destroyed &&
-            !gameState.docked // Only apply physics if not docked
-        ) {
-            const myShip = gameState.myShip;
-            myShip.vx *= DAMPING;
-            myShip.vy *= DAMPING;
-            myShip.x += myShip.vx;
-            myShip.y += myShip.vy;
-            Network.sendControls(); // Still send position updates
-        }
-        // Reset controls flags if map is open
-        gameState.controls.accelerating = false;
-        gameState.controls.decelerating = false;
-        gameState.controls.rotatingLeft = false;
-        gameState.controls.rotatingRight = false;
-        return;
-    }
-
-    if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked) {
-        if (
-            gameState.myShip &&
-            !gameState.myShip.destroyed &&
-            gameState.isChargingHyperjump && // Only apply physics if charging hyperjump
             !gameState.docked
         ) {
             const myShip = gameState.myShip;
@@ -458,14 +430,41 @@ export function processInputs() {
             myShip.y += myShip.vy;
             Network.sendControls();
         }
-        // Reset controls flags if destroyed or docked (and not charging hyperjump)
         gameState.controls.accelerating = false;
         gameState.controls.decelerating = false;
         gameState.controls.rotatingLeft = false;
         gameState.controls.rotatingRight = false;
+        gameState.controls.firing = false; // Ensure firing stops if map opens
         return;
     }
-    // ... (rest of existing processInputs code for ship movement)
+
+    if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked) {
+        if (
+            gameState.myShip &&
+            !gameState.myShip.destroyed &&
+            gameState.isChargingHyperjump &&
+            !gameState.docked
+        ) {
+            const myShip = gameState.myShip;
+            myShip.vx *= DAMPING;
+            myShip.vy *= DAMPING;
+            myShip.x += myShip.vx;
+            myShip.y += myShip.vy;
+            Network.sendControls();
+        }
+        gameState.controls.accelerating = false;
+        gameState.controls.decelerating = false;
+        gameState.controls.rotatingLeft = false;
+        gameState.controls.rotatingRight = false;
+        gameState.controls.firing = false; // Ensure firing stops if docked/destroyed
+        return;
+    }
+
+    // Continuous firing check
+    if (gameState.controls.firing && !gameState.isChargingHyperjump) {
+        Network.fireWeapon(); // Server will handle RPM
+    }
+
     const myShip = gameState.myShip;
     if (
         !myShip ||
@@ -479,8 +478,8 @@ export function processInputs() {
     }
     const shipDef = gameState.clientGameData.shipTypes[myShip.type];
 
-    const thrust = (shipDef.speedMult || 1.0) * 0.1; // Assuming BASE_THRUST was 0.1
-    const rotSpd = (shipDef.rotMult || 1.0) * 0.07; // Assuming BASE_ROTATION_SPEED was 0.07
+    const thrust = (shipDef.speedMult || 1.0) * 0.1;
+    const rotSpd = (shipDef.rotMult || 1.0) * 0.07;
     const revThrust = thrust * (shipDef.revMult || 1.0);
 
     if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;
@@ -504,4 +503,3 @@ export function processInputs() {
 
     Network.sendControls();
 }
-
