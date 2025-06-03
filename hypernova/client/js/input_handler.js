@@ -2,14 +2,13 @@
 import { gameState } from "./game_state.js";
 import * as Network from "./network.js";
 import { UIManager } from "./ui_manager.js";
-import { UniverseMapManager } from "./universe_map_renderer.js"; // Corrected import name
+import { UniverseMapManager } from "./universe_map_renderer.js"; 
 import {
-    // BASE_THRUST, // Not used here
-    // BASE_ROTATION_SPEED, // Not used here
     DAMPING,
     DOCKING_DISTANCE_SQUARED,
-    // MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED, // Used in Network.js
-    // HYPERJUMP_DENIED_MESSAGE_DURATION_MS, // Used in Network.js
+    BASE_ROTATION_SPEED, // Will be used as max speed factor
+    ANGULAR_ACCELERATION,
+    ANGULAR_DAMPING
 } from "./client_config.js";
 
 function wrap(value, max) {
@@ -30,13 +29,12 @@ export function initInputListeners(canvas) {
         }
 
         const keyLower = e.key.toLowerCase();
-        // Include Space in gameSpecificKeys if not already there, or handle it separately
         const gameSpecificKeys = [
             "arrowup",
-            "arrowdown",
+            // "arrowdown", // Removed from direct game control
             "arrowleft",
             "arrowright",
-            " ", // Ensure space is here
+            " ", 
             "d",
             "h",
             "q",
@@ -58,11 +56,9 @@ export function initInputListeners(canvas) {
                 UniverseMapManager.closeMap();
                 e.preventDefault();
             }
-            // Potentially add map-specific key handlers here if needed
             return;
         }
 
-        // Prevent default for game-specific keys when not in map or input
         if (gameSpecificKeys.includes(keyLower)) {
             e.preventDefault();
         }
@@ -84,7 +80,7 @@ export function initInputListeners(canvas) {
         if (!gameState.docked) {
             // In-space controls
             switch (keyLower) {
-                case " ": // Spacebar
+                case " ": 
                     if (!gameState.isChargingHyperjump && !gameState.isMapOpen) {
                         gameState.controls.firing = true;
                     }
@@ -93,10 +89,10 @@ export function initInputListeners(canvas) {
                     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
                         gameState.controls.accelerating = true;
                     break;
-                case "arrowdown":
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        gameState.controls.decelerating = true;
-                    break;
+                // case "arrowdown": // Decelerating control removed
+                //     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
+                //         gameState.controls.decelerating = true; 
+                //     break;
                 case "arrowleft":
                     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
                         gameState.controls.rotatingLeft = true;
@@ -110,9 +106,8 @@ export function initInputListeners(canvas) {
                         tryDockAction();
                     break;
                 case "h":
-                    // 'H' currently does nothing specific here.
                     break;
-                case "j": // New: Initiate hyperjump for planned route
+                case "j": 
                     if (
                         !gameState.isMapOpen &&
                         !gameState.docked &&
@@ -163,12 +158,11 @@ export function initInputListeners(canvas) {
                     if (!gameState.docked) {
                         UniverseMapManager.toggleMap();
                     } else {
-                        handleMenuKeyDown(keyLower); // For docked missions menu
+                        handleMenuKeyDown(keyLower); 
                     }
                     break;
             }
         } else {
-            // Docked controls
             handleMenuKeyDown(keyLower);
         }
     });
@@ -188,28 +182,27 @@ export function initInputListeners(canvas) {
 
 
         const keyLower = e.key.toLowerCase();
-        // Reset ship movement controls if ship exists, not destroyed, and not docked
         if (gameState.myShip && !gameState.myShip.destroyed && !gameState.docked) {
             switch (keyLower) {
                 case "arrowup":
                     gameState.controls.accelerating = false;
                     break;
-                case "arrowdown":
-                    gameState.controls.decelerating = false;
-                    break;
+                // case "arrowdown": // Decelerating control removed
+                //     gameState.controls.decelerating = false;
+                //     break;
                 case "arrowleft":
                     gameState.controls.rotatingLeft = false;
                     break;
                 case "arrowright":
                     gameState.controls.rotatingRight = false;
                     break;
-                case " ": // Spacebar
+                case " ": 
                     gameState.controls.firing = false;
                     break;
             }
-        } else { // If docked, destroyed, or no ship, ensure all controls are off
+        } else { 
             gameState.controls.accelerating = false;
-            gameState.controls.decelerating = false;
+            // gameState.controls.decelerating = false; // Removed
             gameState.controls.rotatingLeft = false;
             gameState.controls.rotatingRight = false;
             gameState.controls.firing = false;
@@ -298,7 +291,7 @@ function handleMenuKeyDown(keyLower) {
                 }
                 UIManager.renderOutfitterMenu();
                 break;
-            case "m": // This 'm' is for DOCKED missions
+            case "m": 
                 gameState.activeSubMenu = "missions";
                 gameState.selectedMissionIndex = 0;
                 gameState.availableMissionsForCurrentPlanet = [];
@@ -315,7 +308,6 @@ function handleMenuKeyDown(keyLower) {
                 break;
         }
     } else {
-        // We are in a sub-menu
         if (keyLower === "escape") {
             gameState.activeSubMenu = null;
             UIManager.renderDockedStationInterface();
@@ -428,13 +420,19 @@ export function processInputs() {
             myShip.vy *= DAMPING;
             myShip.x += myShip.vx;
             myShip.y += myShip.vy;
+            // Apply angular damping even if map is open to stop spin
+            myShip.angularVelocity *= ANGULAR_DAMPING;
+            if (Math.abs(myShip.angularVelocity) < 0.0001) myShip.angularVelocity = 0;
+            myShip.angle += myShip.angularVelocity;
+            myShip.angle = wrap(myShip.angle, 2 * Math.PI);
+
             Network.sendControls();
         }
         gameState.controls.accelerating = false;
-        gameState.controls.decelerating = false;
+        // gameState.controls.decelerating = false; // Removed
         gameState.controls.rotatingLeft = false;
         gameState.controls.rotatingRight = false;
-        gameState.controls.firing = false; // Ensure firing stops if map opens
+        gameState.controls.firing = false; 
         return;
     }
 
@@ -450,19 +448,23 @@ export function processInputs() {
             myShip.vy *= DAMPING;
             myShip.x += myShip.vx;
             myShip.y += myShip.vy;
+            // Apply angular damping if charging hyperjump
+            myShip.angularVelocity *= ANGULAR_DAMPING;
+             if (Math.abs(myShip.angularVelocity) < 0.0001) myShip.angularVelocity = 0;
+            myShip.angle += myShip.angularVelocity;
+            myShip.angle = wrap(myShip.angle, 2 * Math.PI);
             Network.sendControls();
         }
         gameState.controls.accelerating = false;
-        gameState.controls.decelerating = false;
+        // gameState.controls.decelerating = false; // Removed
         gameState.controls.rotatingLeft = false;
         gameState.controls.rotatingRight = false;
-        gameState.controls.firing = false; // Ensure firing stops if docked/destroyed
+        gameState.controls.firing = false; 
         return;
     }
-
-    // Continuous firing check
+    
     if (gameState.controls.firing && !gameState.isChargingHyperjump) {
-        Network.fireWeapon(); // Server will handle RPM
+        Network.fireWeapon(); 
     }
 
     const myShip = gameState.myShip;
@@ -478,22 +480,47 @@ export function processInputs() {
     }
     const shipDef = gameState.clientGameData.shipTypes[myShip.type];
 
-    const thrust = (shipDef.speedMult || 1.0) * 0.1;
-    const rotSpd = (shipDef.rotMult || 1.0) * 0.07;
-    const revThrust = thrust * (shipDef.revMult || 1.0);
+    const thrust = (shipDef.speedMult || 1.0) * 0.1; 
+    // const revThrust = thrust * (shipDef.revMult || 1.0); // revThrust no longer used by player
 
-    if (gameState.controls.rotatingLeft) myShip.angle -= rotSpd;
-    if (gameState.controls.rotatingRight) myShip.angle += rotSpd;
+    // Rotational physics
+    const maxAngVel = (shipDef.rotMult || 1.0) * BASE_ROTATION_SPEED;
+    const angAccel = ANGULAR_ACCELERATION; // Use the new constant
+
+    if (gameState.controls.rotatingLeft) {
+        myShip.angularVelocity -= angAccel;
+    }
+    if (gameState.controls.rotatingRight) {
+        myShip.angularVelocity += angAccel;
+    }
+
+    // Apply angular damping if no rotation input, or simply always apply some damping
+    if (!gameState.controls.rotatingLeft && !gameState.controls.rotatingRight) {
+        myShip.angularVelocity *= ANGULAR_DAMPING;
+    } else {
+         myShip.angularVelocity *= (ANGULAR_DAMPING + ((1-ANGULAR_DAMPING)*0.5) ); // Slightly less damping when accelerating turn
+    }
+    // More aggressive stop if very slow and no input
+    if (Math.abs(myShip.angularVelocity) < 0.001 && !gameState.controls.rotatingLeft && !gameState.controls.rotatingRight) {
+        myShip.angularVelocity = 0;
+    }
+
+
+    myShip.angularVelocity = Math.max(-maxAngVel, Math.min(maxAngVel, myShip.angularVelocity));
+    myShip.angle += myShip.angularVelocity;
     myShip.angle = wrap(myShip.angle, 2 * Math.PI);
 
+
+    // Linear physics
     if (gameState.controls.accelerating) {
         myShip.vx += thrust * Math.cos(myShip.angle);
         myShip.vy += thrust * Math.sin(myShip.angle);
     }
-    if (gameState.controls.decelerating) {
-        myShip.vx -= revThrust * Math.cos(myShip.angle);
-        myShip.vy -= revThrust * Math.sin(myShip.angle);
-    }
+    // Decelerating logic block removed
+    // if (gameState.controls.decelerating) {
+    //     myShip.vx -= revThrust * Math.cos(myShip.angle);
+    //     myShip.vy -= revThrust * Math.sin(myShip.angle);
+    // }
 
     myShip.vx *= DAMPING;
     myShip.vy *= DAMPING;

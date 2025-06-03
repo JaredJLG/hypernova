@@ -45,8 +45,8 @@ export const gameState = {
         rotatingLeft: false,
         rotatingRight: false,
         accelerating: false,
-        decelerating: false,
-        firing: false, // Added for continuous fire
+        // decelerating: false, // Removed
+        firing: false, 
     },
 
     isChargingHyperjump: false,
@@ -86,6 +86,8 @@ export const gameState = {
         if (ship.system === undefined) ship.system = 0;
         if (ship.dockedAtPlanetIdentifier === undefined)
             ship.dockedAtPlanetIdentifier = null;
+        if (ship.angularVelocity === undefined) ship.angularVelocity = 0; // Added for rotational inertia
+
 
         if (currentShipTypeData) {
             if (ship.maxHealth === undefined)
@@ -94,20 +96,16 @@ export const gameState = {
                 ship.health = ship.maxHealth;
             if (ship.maxCargo === undefined)
                 ship.maxCargo = currentShipTypeData.maxCargo || 10;
-            // ===== SHIELD INITIALIZATION (anticipating Step 4) =====
             if (ship.maxShield === undefined)
-                ship.maxShield = currentShipTypeData.maxShield || 0; // Default to 0 if not specified
+                ship.maxShield = currentShipTypeData.maxShield || 0; 
             if (ship.shield === undefined || ship.shield > ship.maxShield)
                 ship.shield = ship.maxShield;
-            // =========================================================
         } else {
             if (ship.maxHealth === undefined) ship.maxHealth = 100;
             if (ship.health === undefined) ship.health = 100;
             if (ship.maxCargo === undefined) ship.maxCargo = 10;
-            // ===== SHIELD INITIALIZATION (anticipating Step 4) =====
             if (ship.maxShield === undefined) ship.maxShield = 0;
             if (ship.shield === undefined) ship.shield = 0;
-            // =========================================================
         }
 
 
