@@ -3,7 +3,7 @@
         "name": "Laser",
         "price": 500,
         "damage": 10,
-        "range": 140,
+        "range": 700,
         "rpm": 300,
         "color": "#f00",
         "beam": 0.3
@@ -12,7 +12,7 @@
         "name": "Plasma",
         "price": 1500,
         "damage": 25,
-        "range": 200,
+        "range": 1000,
         "rpm": 180,
         "color": "#0ff",
         "beam": 0.3
@@ -21,7 +21,7 @@
         "name": "Railgun",
         "price": 3000,
         "damage": 40,
-        "range": 280,
+        "range": 1400,
         "rpm": 120,
         "color": "#ff0",
         "beam": 0.2
@@ -30,11 +30,20 @@
         "name": "FusionGun",
         "price": 8000,
         "damage": 70,
-        "range": 350,
+        "range": 1750,
         "rpm": 60,
         "color": "#f0f",
         "beam": 0.15
+    },
+    "DualLaser": {
+        "name": "Dual Laser",
+        "price": 1200,
+        "damage": 7,
+        "range": 700,
+        "rpm": 280,
+        "color": "#FF8C00",
+        "beam": 0.25,
+        "barrels": 2,
+        "barrelOffset": 4
     }
 }
-
-

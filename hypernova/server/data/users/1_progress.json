@@ -1,6 +1,6 @@
 {
   "username": "1",
-  "lastSaved": "2025-06-03T02:28:35.233Z",
+  "lastSaved": "2025-06-03T16:11:38.548Z",
   "shipData": {
     "x": 400,
     "y": 300,
@@ -18,6 +18,8 @@
     "maxCargo": 10,
     "health": 100,
     "maxHealth": 100,
+    "shield": 50,
+    "maxShield": 50,
     "weapons": [],
     "activeWeapon": null,
     "system": 0,

@@ -4,6 +4,7 @@ import {
     PROJECTILE_LIFESPAN_MS,
     DOCKING_DISTANCE_SQUARED,
     HYPERJUMP_CHARGE_TIME_MS,
+    // EXPLOSION_LIFESPAN_MS, // Will be used for AoE
 } from "./client_config.js";
 
 let ctx = null;
@@ -212,6 +213,13 @@ export const Renderer = {
             );
             gameState.projectiles.forEach((p) => this.drawProjectile(p));
 
+            // Draw explosions (for future AoE)
+            // gameState.explosions = gameState.explosions.filter(
+            //     (exp) => now - (exp.startTime || 0) < EXPLOSION_LIFESPAN_MS,
+            // );
+            // gameState.explosions.forEach((exp) => this.drawExplosion(exp));
+
+
             for (const id in gameState.allShips) {
                 const ship = gameState.allShips[id];
                 if (!ship || ship.system !== gameState.myShip.system) continue;
@@ -323,7 +331,6 @@ export const Renderer = {
             ctx.fill();
         }
 
-        // Draw shield bubble if shield is up
         if (ship.shield > 0 && ship.maxShield > 0) {
             const shieldRadius = Math.max(
                 (shipTypeDefinition.imgWidth || 30) * shipScale * 0.6,
@@ -332,15 +339,9 @@ export const Renderer = {
             const shieldOpacity = Math.min(0.6, (ship.shield / ship.maxShield) * 0.5 + 0.1);
             ctx.beginPath();
             ctx.arc(0, 0, shieldRadius, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(100, 180, 255, ${shieldOpacity})`; // Light blue, opacity based on shield strength
+            ctx.fillStyle = `rgba(100, 180, 255, ${shieldOpacity})`; 
             ctx.fill();
-            
-            // Optional: add a border to the shield
-            // ctx.strokeStyle = `rgba(150, 200, 255, ${shieldOpacity + 0.2})`;
-            // ctx.lineWidth = 1.5;
-            // ctx.stroke();
         }
-
         ctx.restore();
     },
 
@@ -352,7 +353,7 @@ export const Renderer = {
         const currentX = p.startX + Math.cos(p.startAngle) * distanceTravelled;
         const currentY = p.startY + Math.sin(p.startAngle) * distanceTravelled;
 
-        const visualLength = Math.min(20, p.range / 5); 
+        const visualLength = 15; // Fixed visual length for the bolt
         const projectileWidth = 3; 
 
         ctx.save();
@@ -366,6 +367,24 @@ export const Renderer = {
 
         ctx.restore();
     },
+
+    // drawExplosion(exp) { // For future AoE
+    //     const now = Date.now();
+    //     const timeSinceStart = now - exp.startTime;
+    //     const progress = timeSinceStart / exp.duration;
+
+    //     if (progress > 1) return;
+
+    //     const currentRadius = exp.radius * progress; // Simple expansion
+    //     const opacity = 1 - progress;
+
+    //     ctx.beginPath();
+    //     ctx.arc(exp.x, exp.y, currentRadius, 0, Math.PI * 2);
+    //     ctx.fillStyle = `rgba(255, 165, 0, ${opacity * 0.7})`; // Orange-ish explosion
+    //     ctx.fill();
+
+    //     // Could add more particle effects here
+    // },
 
     drawHUD() {
         ctx.font = "14px monospace";
@@ -425,16 +444,15 @@ export const Renderer = {
         );
         yOffset += 18;
 
-        // Shield display
         if (myShip.maxShield > 0) {
-            ctx.fillStyle = "#64B4FF"; // Light blue for shield text
+            ctx.fillStyle = "#64B4FF"; 
             ctx.fillText(
                 `Shield: ${Math.round(myShip.shield || 0)}/${myShip.maxShield || 0}`,
                 hudPadding,
                 yOffset,
             );
             yOffset += 18;
-            ctx.fillStyle = "#00FF00"; // Reset to green
+            ctx.fillStyle = "#00FF00"; 
         }
         
         ctx.fillText(
@@ -466,7 +484,7 @@ export const Renderer = {
                 yOffset,
             );
         }
-        yOffset += 18 + 14; // Extra space before missions
+        yOffset += 18 + 14; 
 
         if (myShip.activeMissions && myShip.activeMissions.length > 0) {
             ctx.fillText("Active Missions:", hudPadding, yOffset);

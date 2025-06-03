@@ -9,6 +9,19 @@ let rightHudPanel = null;
 let shipStatsContentDiv = null;
 let activeMissionsListUl = null;
 
+// Helper function for stat comparison display
+function getStatComparisonClass(currentValue, newValue) {
+    if (newValue > currentValue) return "stat-better";
+    if (newValue < currentValue) return "stat-worse";
+    return "stat-same"; // Or return "" for no specific class if same
+}
+function getStatComparisonSymbol(currentValue, newValue) {
+    if (newValue > currentValue) return "▲"; // Up arrow for better
+    if (newValue < currentValue) return "▼"; // Down arrow for worse
+    return ""; // No symbol if same
+}
+
+
 export const UIManager = {
     init(containerElement) {
         uiContainer = containerElement;
@@ -248,7 +261,7 @@ export const UIManager = {
         document
             .getElementById("station-bar-btn")
             ?.addEventListener("click", () => alert("Bar: Not implemented."));
-        document // TODO: Implement shield/hull recharge functionality
+        document 
             .getElementById("station-recharge-btn")
             ?.addEventListener("click", () =>
                 alert("Recharge Shields/Hull: Not implemented."),
@@ -389,108 +402,149 @@ export const UIManager = {
 
     renderOutfitterMenu() {
         const host = this._prepareSubMenuHost();
-        if (!host || !gameState.myShip || !gameState.clientGameData.weapons)
-            return;
-
+        if (!host || !gameState.myShip || !gameState.clientGameData.weapons) return;
+    
         const myShip = gameState.myShip;
+        const currentEquippedWeaponKey = myShip.activeWeapon;
+        const currentEquippedWeaponDef = currentEquippedWeaponKey ? gameState.clientGameData.weapons[currentEquippedWeaponKey] : null;
+    
         let itemsHtml = `<div class="station-submenu-header">
                             <span class="station-submenu-col col-name">Weapon</span>
                             <span class="station-submenu-col col-price">Price</span>
-                            <span class="station-submenu-col col-qty">Dmg</span>
-                            <span class="station-submenu-col col-qty">RPM</span>
-                            <span class="station-submenu-col col-qty">Range</span>
-                            <span class="station-submenu-col col-owned">Owned</span>
+                            <span class="station-submenu-col col-stat">Dmg</span>
+                            <span class="station-submenu-col col-stat">RPM</span>
+                            <span class="station-submenu-col col-stat">Range</span>
+                            <span class="station-submenu-col col-owned">Status</span>
                          </div>`;
-
+    
         const weaponKeys = Object.keys(gameState.clientGameData.weapons);
         if (weaponKeys.length === 0) {
-            itemsHtml +=
-                "<div class='station-submenu-item'>(No weapons available)</div>";
+            itemsHtml += "<div class='station-submenu-item'>(No weapons available)</div>";
         } else {
-            if (
-                !gameState.selectedWeaponKey ||
-                !weaponKeys.includes(gameState.selectedWeaponKey)
-            ) {
+            if (!gameState.selectedWeaponKey || !weaponKeys.includes(gameState.selectedWeaponKey)) {
                 gameState.selectedWeaponKey = weaponKeys[0] || null;
             }
+    
             weaponKeys.forEach((wKey) => {
                 const wDef = gameState.clientGameData.weapons[wKey];
-                const owned =
-                    myShip.weapons && myShip.weapons.includes(wKey)
-                        ? "Yes"
-                        : "No";
-                const selectedClass =
-                    wKey === gameState.selectedWeaponKey ? "selected" : "";
+                let statusText = "Buy";
+                let statusClass = "";
+    
+                if (myShip.weapons && myShip.weapons.includes(wKey)) {
+                    statusText = "Owned";
+                    if (wKey === currentEquippedWeaponKey) {
+                        statusText = "Equipped";
+                        statusClass = "item-equipped";
+                    } else {
+                        statusText = "Equip"; // Owned but not equipped
+                    }
+                }
+    
+                const selectedClass = wKey === gameState.selectedWeaponKey ? "selected" : "";
+                
+                let damageDisplay = `${wDef.damage}`;
+                if (wDef.barrels && wDef.barrels > 1) {
+                    damageDisplay += `x${wDef.barrels}`;
+                }
+
+                // Comparison logic
+                let dmgClass = "", rpmClass = "", rangeClass = "";
+                let dmgSymbol = "", rpmSymbol = "", rangeSymbol = "";
+
+                if (currentEquippedWeaponDef && wKey !== currentEquippedWeaponKey) {
+                    dmgClass = getStatComparisonClass(currentEquippedWeaponDef.damage * (currentEquippedWeaponDef.barrels || 1), wDef.damage * (wDef.barrels || 1));
+                    rpmClass = getStatComparisonClass(currentEquippedWeaponDef.rpm, wDef.rpm);
+                    rangeClass = getStatComparisonClass(currentEquippedWeaponDef.range, wDef.range);
+                    
+                    dmgSymbol = getStatComparisonSymbol(currentEquippedWeaponDef.damage * (currentEquippedWeaponDef.barrels || 1), wDef.damage * (wDef.barrels || 1));
+                    rpmSymbol = getStatComparisonSymbol(currentEquippedWeaponDef.rpm, wDef.rpm);
+                    rangeSymbol = getStatComparisonSymbol(currentEquippedWeaponDef.range, wDef.range);
+                }
+
                 itemsHtml += `
-                    <div class="station-submenu-item ${selectedClass}" data-key="${wKey}">
+                    <div class="station-submenu-item ${selectedClass} ${statusClass}" data-key="${wKey}">
                         <span class="station-submenu-col col-name">${wDef.name}</span>
                         <span class="station-submenu-col col-price">$${wDef.price.toLocaleString()}</span>
-                        <span class="station-submenu-col col-qty">${wDef.damage}${wDef.barrels > 1 ? 'x'+wDef.barrels : ''}</span>
-                        <span class="station-submenu-col col-qty">${wDef.rpm}</span>
-                        <span class="station-submenu-col col-qty">${wDef.range}</span>
-                        <span class="station-submenu-col col-owned">${owned}</span>
+                        <span class="station-submenu-col col-stat ${dmgClass}">${damageDisplay} ${dmgSymbol}</span>
+                        <span class="station-submenu-col col-stat ${rpmClass}">${wDef.rpm} ${rpmSymbol}</span>
+                        <span class="station-submenu-col col-stat ${rangeClass}">${wDef.range} ${rangeSymbol}</span>
+                        <span class="station-submenu-col col-owned">${statusText}</span>
                     </div>`;
             });
         }
-
+    
         host.innerHTML = `
             <div class="station-submenu-content">
                 <h3>Outfitter</h3>
                 <div>Credits: $${myShip.credits.toLocaleString()}</div>
                 <div class="station-submenu-item-list">${itemsHtml}</div>
                 <div class="station-submenu-actions">
-                    <button id="submenu-buyequip-btn" class="station-action-button">Buy/Equip (B)</button>
+                    <button id="submenu-buyequip-btn" class="station-action-button">Confirm (B)</button>
                     <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
                 </div>
             </div>`;
-
-        document
-            .getElementById("submenu-buyequip-btn")
-            ?.addEventListener("click", () => {
-                if (gameState.selectedWeaponKey)
-                    Network.equipWeapon(gameState.selectedWeaponKey);
-            });
-        document
-            .getElementById("submenu-back-btn")
-            ?.addEventListener("click", () =>
-                this.renderDockedStationInterface(),
-            );
+    
+        document.getElementById("submenu-buyequip-btn")?.addEventListener("click", () => {
+            if (gameState.selectedWeaponKey) Network.equipWeapon(gameState.selectedWeaponKey);
+        });
+        document.getElementById("submenu-back-btn")?.addEventListener("click", () => this.renderDockedStationInterface());
     },
-
+    
     renderShipyardMenu() {
         const host = this._prepareSubMenuHost();
         if (!host || !gameState.myShip) return;
-
+    
         const myShip = gameState.myShip;
+        const currentShipDef = gameState.clientGameData.shipTypes[myShip.type || 0];
+    
         let itemsHtml = `<div class="station-submenu-header">
                             <span class="station-submenu-col col-name">Ship</span>
                             <span class="station-submenu-col col-price">Price</span>
-                            <span class="station-submenu-col col-cargo">Cargo</span>
-                            <span class="station-submenu-col col-qty">Health</span>
-                            <span class="station-submenu-col col-qty">Shield</span>
-                            <span class="station-submenu-col col-current">Current</span>
+                            <span class="station-submenu-col col-stat">Cargo</span>
+                            <span class="station-submenu-col col-stat">Health</span>
+                            <span class="station-submenu-col col-stat">Shield</span>
+                            <span class="station-submenu-col col-current">Status</span>
                          </div>`;
-
+    
         if (gameState.clientGameData.shipTypes.length === 0) {
-            itemsHtml +=
-                "<div class='station-submenu-item'>(No ships available)</div>";
+            itemsHtml += "<div class='station-submenu-item'>(No ships available)</div>";
         } else {
             gameState.clientGameData.shipTypes.forEach((s, i) => {
-                const cur = myShip.type === i ? "Yes" : "No";
-                const selectedClass =
-                    i === gameState.selectedShipIndex ? "selected" : "";
+                let statusText = "Buy";
+                let statusClass = "";
+                if (myShip.type === i) {
+                    statusText = "Current";
+                    statusClass = "item-equipped"; // Use same class for visual consistency
+                }
+    
+                const selectedClass = i === gameState.selectedShipIndex ? "selected" : "";
+
+                // Comparison logic
+                let cargoClass = "", healthClass = "", shieldClass = "";
+                let cargoSymbol = "", healthSymbol = "", shieldSymbol = "";
+
+                if (currentShipDef && myShip.type !== i) {
+                    cargoClass = getStatComparisonClass(currentShipDef.maxCargo, s.maxCargo);
+                    healthClass = getStatComparisonClass(currentShipDef.maxHealth, s.maxHealth);
+                    shieldClass = getStatComparisonClass(currentShipDef.maxShield || 0, s.maxShield || 0);
+
+                    cargoSymbol = getStatComparisonSymbol(currentShipDef.maxCargo, s.maxCargo);
+                    healthSymbol = getStatComparisonSymbol(currentShipDef.maxHealth, s.maxHealth);
+                    shieldSymbol = getStatComparisonSymbol(currentShipDef.maxShield || 0, s.maxShield || 0);
+                }
+
                 itemsHtml += `
-                    <div class="station-submenu-item ${selectedClass}" data-index="${i}">
+                    <div class="station-submenu-item ${selectedClass} ${statusClass}" data-index="${i}">
                         <span class="station-submenu-col col-name">${s.name}</span>
                         <span class="station-submenu-col col-price">$${s.price.toLocaleString()}</span>
-                        <span class="station-submenu-col col-cargo">${s.maxCargo}</span>
-                        <span class="station-submenu-col col-qty">${s.maxHealth}</span>
-                        <span class="station-submenu-col col-qty">${s.maxShield || 0}</span>
-                        <span class="station-submenu-col col-current">${cur}</span>
+                        <span class="station-submenu-col col-stat ${cargoClass}">${s.maxCargo} ${cargoSymbol}</span>
+                        <span class="station-submenu-col col-stat ${healthClass}">${s.maxHealth} ${healthSymbol}</span>
+                        <span class="station-submenu-col col-stat ${shieldClass}">${s.maxShield || 0} ${shieldSymbol}</span>
+                        <span class="station-submenu-col col-current">${statusText}</span>
                     </div>`;
             });
         }
-
+    
         host.innerHTML = `
             <div class="station-submenu-content">
                 <h3>Shipyard</h3>
@@ -501,16 +555,8 @@ export const UIManager = {
                     <button id="submenu-back-btn" class="station-action-button">Back (Esc)</button>
                 </div>
             </div>`;
-        document
-            .getElementById("submenu-buy-btn")
-            ?.addEventListener("click", () =>
-                Network.buyShip(gameState.selectedShipIndex),
-            );
-        document
-            .getElementById("submenu-back-btn")
-            ?.addEventListener("click", () =>
-                this.renderDockedStationInterface(),
-            );
+        document.getElementById("submenu-buy-btn")?.addEventListener("click", () => Network.buyShip(gameState.selectedShipIndex));
+        document.getElementById("submenu-back-btn")?.addEventListener("click", () => this.renderDockedStationInterface());
     },
 
     renderMissionsMenu() {

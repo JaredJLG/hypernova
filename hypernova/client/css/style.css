@@ -1,4 +1,3 @@
-/* ===== START: hypernova/client/css/style.css ===== */
 /* Existing styles from your file */
 body {
   margin: 0;
@@ -600,9 +599,17 @@ body.no-scroll {
 .station-submenu-item.selected {
     background-color: rgba(0, 150, 150, 0.4) !important; /* Ensure override */
     border-left: 3px solid #00f2ea;
-    padding-left: 7px;
+    padding-left: 7px; /* Adjust padding for border */
     color: #ffffff !important;
 }
+
+.station-submenu-item.item-equipped { /* For Shipyard/Outfitter */
+    background-color: rgba(50, 120, 50, 0.3) !important;
+    color: #ccffcc !important;
+    border-left: 3px solid #66FF99;
+    padding-left: 7px;
+}
+
 
 .station-submenu-col {
     text-align: left;
@@ -610,15 +617,31 @@ body.no-scroll {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    box-sizing: border-box; /* Important for flex sizing */
 }
-.station-submenu-col.col-name { flex: 1 1 30%; min-width: 120px;} /* Allow shrinking but prefer 30% */
-.station-submenu-col.col-qty  { flex: 0 0 80px; text-align: right; } /* Fixed width */
-.station-submenu-col.col-price { flex: 0 0 90px; text-align: right; }/* Fixed width */
-.station-submenu-col.col-stock { flex: 0 0 90px; text-align: right; }/* Fixed width */
-.station-submenu-col.col-owned { flex: 0 0 70px; text-align: center; }/* Fixed width */
-.station-submenu-col.col-current { flex: 0 0 70px; text-align: center; }/* Fixed width */
-.station-submenu-col.col-cargo { flex: 0 0 80px; text-align: right;}/* Fixed width */
-.station-submenu-col.col-reward { flex: 0 0 100px; text-align: right;}/* Fixed width */
+
+/* Column widths */
+.station-submenu-col.col-name { flex: 1 1 30%; min-width: 100px;} 
+.station-submenu-col.col-qty  { flex: 0 0 70px; text-align: right; } 
+.station-submenu-col.col-price { flex: 0 0 90px; text-align: right; }
+.station-submenu-col.col-stock { flex: 0 0 80px; text-align: right; }
+.station-submenu-col.col-owned { flex: 0 0 80px; text-align: center; }
+.station-submenu-col.col-current { flex: 0 0 80px; text-align: center; }
+.station-submenu-col.col-cargo { flex: 0 0 70px; text-align: right;}
+.station-submenu-col.col-reward { flex: 0 0 100px; text-align: right;}
+.station-submenu-col.col-stat { flex: 0 0 70px; text-align: right; } /* For general stats in outfitter/shipyard */
+
+
+/* Stat comparison styling */
+.station-submenu-col .stat-better {
+    color: #77FF77; /* Light green for better */
+}
+.station-submenu-col .stat-worse {
+    color: #FF7777; /* Light red for worse */
+}
+.station-submenu-col .stat-same {
+    color: #AAAAAA; /* Grey for same, or inherit default */
+}
 
 
 .station-submenu-actions {
@@ -784,4 +807,3 @@ body.no-scroll {
     /* background-color: #000810; /* Optional: if container bg is not enough */
     cursor: pointer; /* Indicate it's clickable */
 }
-/* ===== END: hypernova/client/css/style.css ===== */
