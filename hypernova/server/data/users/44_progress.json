@@ -1,10 +1,10 @@
 {
   "username": "44",
-  "lastSaved": "2025-06-03T16:47:30.518Z",
+  "lastSaved": "2025-06-03T18:26:15.355Z",
   "shipData": {
     "x": 700,
     "y": 750,
-    "angle": 3.5069908169872406,
+    "angle": 0,
     "vx": 0,
     "vy": 0,
     "type": 0,
@@ -18,7 +18,7 @@
     "maxCargo": 10,
     "health": 20,
     "maxHealth": 100,
-    "shield": 10,
+    "shield": 50,
     "maxShield": 50,
     "weapons": [
       "Laser"

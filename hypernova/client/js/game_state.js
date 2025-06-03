@@ -9,7 +9,8 @@ export const gameState = {
     },
     projectiles: [],
     loadedImages: {},
-    imagePathsToLoad: [],
+    imagePathsToLoad: [], // This will be populated by main.js from gameData
+    generatedPlanetPlaceholders: {}, 
 
     // Camera/Viewport for full-screen rendering
     camera: {
@@ -21,7 +22,7 @@ export const gameState = {
     },
 
     clientGameData: {
-        systems: [], // Will be populated with data that includes universeX, universeY, connections, backgroundFile
+        systems: [], 
         tradeGoods: [],
         weapons: {},
         shipTypes: [],
@@ -31,8 +32,8 @@ export const gameState = {
 
     docked: false,
     dockedAtDetails: null,
-    isMenuOpen: false, // For docked station sub-menus
-    activeSubMenu: null, // For docked station sub-menus
+    isMenuOpen: false, 
+    activeSubMenu: null, 
 
     selectedTradeIndex: 0,
     selectedWeaponKey: null,
@@ -45,7 +46,6 @@ export const gameState = {
         rotatingLeft: false,
         rotatingRight: false,
         accelerating: false,
-        // decelerating: false, // Removed
         firing: false, 
     },
 
@@ -54,14 +54,11 @@ export const gameState = {
     hyperjumpDeniedMessage: null,
     hyperjumpDeniedMessageTimeoutId: null,
 
-    // Universe Map State
     isMapOpen: false,
-    mapSelectedSystemIndex: null, // Index of the system selected on the map for single manual jump
+    mapSelectedSystemIndex: null, 
 
-    // ===== NEW ROUTE PLANNING STATE =====
-    plannedRoute: [], // Array of system indices for the route
-    currentRouteLegIndex: -1, // Index of the next system to jump to in plannedRoute
-    // ===== END OF NEW ROUTE PLANNING STATE =====
+    plannedRoute: [], 
+    currentRouteLegIndex: -1, 
 
     updateShipData(id, data) {
         if (!this.allShips[id]) {
@@ -86,7 +83,7 @@ export const gameState = {
         if (ship.system === undefined) ship.system = 0;
         if (ship.dockedAtPlanetIdentifier === undefined)
             ship.dockedAtPlanetIdentifier = null;
-        if (ship.angularVelocity === undefined) ship.angularVelocity = 0; // Added for rotational inertia
+        if (ship.angularVelocity === undefined) ship.angularVelocity = 0;
 
 
         if (currentShipTypeData) {
@@ -133,3 +130,4 @@ export const gameState = {
         if (!ship.activeMissions) ship.activeMissions = [];
     },
 };
+

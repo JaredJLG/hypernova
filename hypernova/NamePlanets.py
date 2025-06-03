@@ -1,3 +1,131 @@
+import json
+import os
+import re
+from PIL import Image, ImageDraw, ImageFont
+
+
+# --- Sanitization and Hashing ---
+def sanitize_name_for_filename(
+        name):  # Not strictly needed here as filenames are from JSON
+    s_name = name.lower()
+    s_name = s_name.replace(' ', '_')
+    s_name = re.sub(r'[^\w_.-]', '', s_name)
+    s_name = re.sub(r'_+', '_', s_name)
+    return s_name
+
+
+def simple_hash_for_color(text):
+    hash_val = 0
+    if text:  # Ensure text is not None or empty
+        for char in text:
+            hash_val = (hash_val * 31 + ord(char)) & 0xFFFFFFFF
+    return hash_val
+
+
+# --- Placeholder Image Generation ---
+placeholder_planet_colors_pil = [
+    ("#4A90E2", "#FFFFFF"), ("#F5A623", "#FFFFFF"), ("#7ED321", "#000000"),
+    ("#BD10E0", "#FFFFFF"), ("#D0021B", "#FFFFFF"), ("#8B572A", "#FFFFFF"),
+    ("#50E3C2", "#000000"), ("#B8E986", "#000000"), ("#4A4A4A", "#FFFFFF"),
+    ("#F8E71C", "#000000")
+]
+
+
+def create_placeholder_planet_image(planet_name_on_image,
+                                    unique_id_for_color,
+                                    filepath,
+                                    size=(128, 128)):
+    # In the tool environment, os.path.exists might not behave as expected with a real filesystem.
+    # For this simulation, we'll assume we always try to create if the script runs.
+    # if os.path.exists(filepath):
+    #     print(f"Simulating: Skipping '{filepath}', file already exists.")
+    #     return
+
+    img = Image.new('RGB', size, color='#202028')
+    draw = ImageDraw.Draw(img)
+
+    color_hash = simple_hash_for_color(unique_id_for_color)
+    bg_color_hex, text_color_hex = placeholder_planet_colors_pil[
+        color_hash % len(placeholder_planet_colors_pil)]
+
+    draw.ellipse((2, 2, size[0] - 3, size[1] - 3),
+                 fill=bg_color_hex,
+                 outline=text_color_hex,
+                 width=1)
+
+    try:
+        font_size = max(12, int(size[0] / 9))
+        try:
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except IOError:
+            try:
+                font = ImageFont.truetype("DejaVuSans.ttf",
+                                          font_size)  # Common on Linux
+            except IOError:
+                font = ImageFont.load_default()  # Fallback
+    except Exception:
+        font = ImageFont.load_default()
+
+    words = planet_name_on_image.split(' ')
+    lines = []
+    current_line = ""
+    for word_idx, word in enumerate(words):
+        test_line = current_line + word
+        if word_idx < len(words) - 1 and current_line:
+            test_line_for_bbox = current_line + " " + word
+        else:
+            test_line_for_bbox = test_line
+
+        bbox = draw.textbbox((0, 0), test_line_for_bbox, font=font)
+        text_width = bbox[2] - bbox[0]
+
+        if text_width < size[0] * 0.85:
+            current_line = test_line_for_bbox if current_line else word
+        else:
+            if current_line:
+                lines.append(current_line.strip())
+            current_line = word
+    if current_line:
+        lines.append(current_line.strip())
+
+    if not lines and planet_name_on_image:
+        lines.append(planet_name_on_image)
+
+    total_text_height_approx = 0
+    actual_line_heights = []
+    for line_text in lines:
+        bbox_l = draw.textbbox((0, 0), line_text, font=font)
+        actual_line_heights.append(bbox_l[3] - bbox_l[1])
+        total_text_height_approx += (bbox_l[3] - bbox_l[1]) + 2
+
+    if total_text_height_approx > 0: total_text_height_approx -= 2
+
+    text_y = (size[1] - total_text_height_approx) / 2
+
+    for i, line_text in enumerate(lines):
+        bbox_l_draw = draw.textbbox((0, 0), line_text, font=font)
+        text_width_draw = bbox_l_draw[2] - bbox_l_draw[0]
+
+        position = ((size[0] - text_width_draw) / 2, text_y)
+        draw.text(position,
+                  line_text,
+                  fill=text_color_hex,
+                  font=font,
+                  anchor="lt")
+        text_y += actual_line_heights[i] + 2
+
+    try:
+        # Ensure the directory for the specific file exists
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        img.save(filepath, "JPEG", quality=85)
+        print(f"Simulating: Created placeholder: '{filepath}'")
+    except Exception as e:
+        print(f"Simulating: Error saving placeholder '{filepath}': {e}")
+
+
+# --- Main Script Logic ---
+# Using the JSON content directly instead of reading from a file path
+systems_init_json_content = """
 [
     {
         "name": "George's World (THX-1138)",
@@ -1209,3 +1337,73 @@
         ]
     }
 ]
+"""
+base_image_output_dir_relative_to_tool_root = "hypernova/client/assets/images/"  # The 'planets/' part is in imageFile
+
+try:
+    # Simulate ensuring the base output directory exists (it will be virtual in the tool)
+    # os.makedirs(base_image_output_dir_relative_to_tool_root, exist_ok=True)
+    # print(f"Simulating: Ensured base directory: {base_image_output_dir_relative_to_tool_root}")
+
+    systems_data_list = json.loads(systems_init_json_content)
+    print(
+        f"Simulating: Loaded {len(systems_data_list)} systems from embedded JSON."
+    )
+
+    generated_count = 0
+    skipped_count = 0
+
+    for system_info in systems_data_list:
+        for planet_info in system_info.get("planets", []):
+            planet_name = planet_info.get("name", "Unknown Planet")
+            image_file_path_in_json = planet_info.get("imageFile")
+
+            if not image_file_path_in_json or not image_file_path_in_json.startswith(
+                    "planets/"):
+                print(
+                    f"Skipping planet '{planet_name}' in system '{system_info.get('name')}' due to invalid imageFile: '{image_file_path_in_json}'"
+                )
+                skipped_count += 1
+                continue
+
+            # Construct the full path where the image should be saved relative to the tool's CWD
+            full_output_filepath = os.path.join(
+                base_image_output_dir_relative_to_tool_root,
+                image_file_path_in_json)
+
+            # Ensure the specific subdirectory (e.g., 'planets') exists
+            specific_planet_dir = os.path.dirname(full_output_filepath)
+            # os.makedirs(specific_planet_dir, exist_ok=True) # Actual dir creation
+            # print(f"Simulating: Ensured subdirectory: {specific_planet_dir}") # Simulate for tool
+
+            unique_id_for_props = os.path.basename(image_file_path_in_json)
+
+            # Check if file exists (simulated for tool, as real os.path.exists won't work as expected)
+            # In a real run, you'd use os.path.exists(full_output_filepath)
+            # For now, we assume no files exist and will try to generate all.
+
+            create_placeholder_planet_image(planet_name, unique_id_for_props,
+                                            full_output_filepath)
+            generated_count += 1
+
+    print(f"\nSimulating: Placeholder image file generation attempt complete.")
+    print(f"Simulating: Attempted to generate {generated_count} images.")
+    print(
+        f"Simulating: Skipped {skipped_count} planets due to invalid imageFile format."
+    )
+    # The following path is relative to where the tool *thinks* its root is.
+    # print(f"Simulating: Check the directory: {os.path.abspath(os.path.join(base_image_output_dir_relative_to_tool_root, 'planets'))}")
+    print(
+        "Note: Actual file creation depends on the tool's environment. The logs show the intended operations."
+    )
+
+except json.JSONDecodeError as e:
+    print(f"Error decoding embedded systems_init.json: {e}")
+except ImportError:
+    print(
+        "ERROR: Pillow (PIL) library not found. This script requires Pillow: pip install Pillow"
+    )
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+    import traceback
+    traceback.print_exc()

@@ -7,16 +7,12 @@ import {
 } from "./client_config.js";
 
 export async function saveProgress() {
-    // ... (existing code)
     if (!gameState.socket || !gameState.myShip || !gameState.currentUser) {
         console.warn(
             "saveProgress: Cannot save - No socket, ship, or user data.",
         );
         return;
     }
-    console.log(
-        `saveProgress: Preparing data. Current gameState.docked: ${gameState.docked}, dockedAtDetails being saved: ${JSON.stringify(gameState.docked ? gameState.dockedAtDetails : null)}`,
-    );
     const progressData = {
         username: gameState.currentUser.username,
         shipData: {
@@ -31,8 +27,8 @@ export async function saveProgress() {
             maxCargo: gameState.myShip.maxCargo,
             health: gameState.myShip.health,
             maxHealth: gameState.myShip.maxHealth,
-            shield: gameState.myShip.shield, // Save shield
-            maxShield: gameState.myShip.maxShield, // Save maxShield
+            shield: gameState.myShip.shield, 
+            maxShield: gameState.myShip.maxShield, 
             weapons: gameState.myShip.weapons,
             activeWeapon: gameState.myShip.activeWeapon,
             system: gameState.myShip.system,
@@ -142,9 +138,8 @@ export function initNetwork(onReadyCallback) {
             }
             delete gameState.pendingProgressToApply;
         } else if (gameState.myId && !gameState.myShip) {
-            // Ensure myShip object exists even if no prior data
-            gameState.allShips[gameState.myId] = {}; // This creates the object
-            gameState.defaultShipProps(gameState.myShip); // Then default props are applied
+            gameState.allShips[gameState.myId] = {}; 
+            gameState.defaultShipProps(gameState.myShip); 
         }
 
 
@@ -197,10 +192,12 @@ export function initNetwork(onReadyCallback) {
 
     socket.on("projectile", (data) => {
         const projectileData = { ...data }; // Clone
-        projectileData.startX = data.x;
-        projectileData.startY = data.y;
-        projectileData.startAngle = data.angle;
-        projectileData.time = Date.now();
+        projectileData.startX = data.x;         // Initial absolute X position
+        projectileData.startY = data.y;         // Initial absolute Y position
+        projectileData.startAngle = data.angle; // Firing angle
+        projectileData.shooterVx = data.shooterVx || 0; // Inherited X velocity from shooter
+        projectileData.shooterVy = data.shooterVy || 0; // Inherited Y velocity from shooter
+        projectileData.time = Date.now();       // Client-side spawn time for lifespan calculation
         // 'range' and 'color' are already in data from server
         gameState.projectiles.push(projectileData);
     });
@@ -216,6 +213,7 @@ export function initNetwork(onReadyCallback) {
             gameState.myShip.y = data.playerY;
             gameState.myShip.vx = 0;
             gameState.myShip.vy = 0;
+            gameState.myShip.angularVelocity = 0; // Stop rotation when docking
         }
         gameState.dockedAtDetails = { ...data };
         UIManager.openDockMenu(); 
@@ -234,6 +232,12 @@ export function initNetwork(onReadyCallback) {
     });
     socket.on("actionSuccess", ({ message }) => {
         console.log("Action Success:", message);
+         if (message.startsWith("Recharged!")) { // Or a more specific event
+            UIManager.updateShipStatsPanel(); // Update HUD after recharge
+            if(gameState.docked && gameState.activeSubMenu === null) { // If on main station screen
+                 UIManager.renderDockedStationInterface(); // Re-render to update credits in planet info
+            }
+        }
     });
 
     socket.on("tradeSuccess", (data) => {
@@ -367,6 +371,7 @@ export function initNetwork(onReadyCallback) {
             gameState.myShip.y = data.newY;
             gameState.myShip.vx = 0;
             gameState.myShip.vy = 0;
+            gameState.myShip.angularVelocity = 0; // Stop rotation after jump
             gameState.myShip.angle =
                 data.newAngle !== undefined ? data.newAngle : 0;
             gameState.myShip.dockedAtPlanetIdentifier = null;
@@ -421,8 +426,9 @@ export function sendControls() {
         x: gameState.myShip.x,
         y: gameState.myShip.y,
         angle: gameState.myShip.angle,
-        vx: gameState.myShip.vx,
+        vx: gameState.myShip.vx, // Send current velocity
         vy: gameState.myShip.vy,
+        // angularVelocity: gameState.myShip.angularVelocity, // Could send this too if server needs it for interpolation
         system: gameState.myShip.system,
     });
 }

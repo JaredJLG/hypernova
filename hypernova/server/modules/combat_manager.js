@@ -133,13 +133,12 @@ class CombatManager {
                             );
                         }
                     }
-                    
+
                     const updatePayload = {
                         health: target.health,
                         shield: target.shield,
                         destroyed: target.destroyed,
                         hyperjumpState: target.hyperjumpState,
-                        // lastDamageTime is not needed here since regen is manual
                     };
                     this.playerManager.updatePlayerState(target.id, updatePayload);
 
@@ -155,11 +154,13 @@ class CombatManager {
                 );
                 systemPlayers.forEach((p) => {
                     this.io.to(p.id).emit("projectile", {
-                        x: shotOriginX,
+                        x: shotOriginX, // Initial position of projectile
                         y: shotOriginY,
-                        angle: shotAngle,
+                        angle: shotAngle, // Firing angle relative to world
+                        shooterVx: attacker.vx, // Attacker's velocity X
+                        shooterVy: attacker.vy, // Attacker's velocity Y
                         color: weaponStats.color,
-                        range: weaponStats.range,
+                        range: weaponStats.range, // Max travel distance (for hitscan and visual lifespan)
                         shooterId: attacker.id,
                     });
                 });

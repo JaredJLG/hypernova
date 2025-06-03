@@ -1,3 +1,1217 @@
+/* ===== START: hypernova/server/data/systems_init.json ===== */
+[
+    {
+        "name": "George's World (THX-1138)",
+        "universeX": 80,
+        "universeY": 150,
+        "connections": [
+            1,
+            5
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Planet Alpha",
+                "x": 300,
+                "y": 300,
+                "imageFile": "planets/georges_world_thx1138_planet_alpha.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Satori",
+        "universeX": 200,
+        "universeY": 150,
+        "connections": [
+            0,
+            2,
+            4
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Satoria Prime",
+                "x": 250,
+                "y": 400,
+                "imageFile": "planets/satori_satoria_prime.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Persephone",
+        "universeX": 300,
+        "universeY": 120,
+        "connections": [
+            1,
+            3,
+            16,
+            17
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Persephone II",
+                "x": 400,
+                "y": 200,
+                "imageFile": "planets/persephone_persephone_ii.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Medicine"
+                ],
+                "consumes": [
+                    "Food"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Zaphod",
+        "universeX": 350,
+        "universeY": 200,
+        "connections": [
+            2,
+            4,
+            8,
+            15
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Zaphod Beeblebrox",
+                "x": 500,
+                "y": 350,
+                "imageFile": "planets/zaphod_zaphod_beeblebrox.jpg",
+                "planetImageScale": 1.2,
+                "produces": [
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Alkaid",
+        "universeX": 280,
+        "universeY": 250,
+        "connections": [
+            1,
+            3,
+            5,
+            7
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Alkaid VII",
+                "x": 300,
+                "y": 500,
+                "imageFile": "planets/alkaid_alkaid_vii.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Clotho",
+        "universeX": 200,
+        "universeY": 280,
+        "connections": [
+            0,
+            4,
+            6
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Clotho's Thread",
+                "x": 150,
+                "y": 300,
+                "imageFile": "planets/clotho_clothos_thread.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Orion",
+        "universeX": 250,
+        "universeY": 350,
+        "connections": [
+            5,
+            7,
+            9
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Orion Nebula Port",
+                "x": 400,
+                "y": 400,
+                "imageFile": "planets/orion_orion_nebula_port.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Medicine",
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Curzon",
+        "universeX": 350,
+        "universeY": 320,
+        "connections": [
+            4,
+            6,
+            8,
+            11
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Dax Station",
+                "x": 550,
+                "y": 250,
+                "imageFile": "planets/curzon_dax_station.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Risa",
+        "universeX": 380,
+        "universeY": 280,
+        "connections": [
+            3,
+            7,
+            14
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Pleasure Planet",
+                "x": 600,
+                "y": 450,
+                "imageFile": "planets/risa_pleasure_planet.jpg",
+                "planetImageScale": 1.3,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Atropos",
+        "universeX": 150,
+        "universeY": 400,
+        "connections": [
+            6,
+            10
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Atropos Prime",
+                "x": 200,
+                "y": 200,
+                "imageFile": "planets/atropos_atropos_prime.jpg",
+                "planetImageScale": 0.8,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Darven",
+        "universeX": 300,
+        "universeY": 420,
+        "connections": [
+            9,
+            11,
+            29
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Darven's Pass",
+                "x": 350,
+                "y": 350,
+                "imageFile": "planets/darven_darvens_pass.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Food",
+                    "Medicine"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Propus",
+        "universeX": 450,
+        "universeY": 380,
+        "connections": [
+            7,
+            10,
+            12,
+            28
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Propus Major",
+                "x": 500,
+                "y": 500,
+                "imageFile": "planets/propus_propus_major.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Polaris",
+        "universeX": 500,
+        "universeY": 350,
+        "connections": [
+            11,
+            13,
+            14,
+            43
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "North Star Port",
+                "x": 600,
+                "y": 200,
+                "imageFile": "planets/polaris_north_star_port.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Food"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Rigel",
+        "universeX": 600,
+        "universeY": 350,
+        "connections": [
+            12,
+            22,
+            23,
+            43
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Rigel Kentaurus",
+                "x": 700,
+                "y": 300,
+                "imageFile": "planets/rigel_rigel_kentaurus.jpg",
+                "planetImageScale": 1.2,
+                "produces": [
+                    "Food",
+                    "Medicine"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Matar",
+        "universeX": 550,
+        "universeY": 300,
+        "connections": [
+            8,
+            12,
+            15,
+            19
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Matar IV",
+                "x": 400,
+                "y": 550,
+                "imageFile": "planets/matar_matar_iv.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Electronics",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Yemuro",
+        "universeX": 500,
+        "universeY": 250,
+        "connections": [
+            3,
+            14,
+            16,
+            18
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Yemuro Station",
+                "x": 300,
+                "y": 150,
+                "imageFile": "planets/yemuro_yemuro_station.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Food",
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Turin",
+        "universeX": 500,
+        "universeY": 150,
+        "connections": [
+            2,
+            15,
+            17,
+            18
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Turin's Shroud",
+                "x": 450,
+                "y": 250,
+                "imageFile": "planets/turin_turins_shroud.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Cygnus",
+        "universeX": 550,
+        "universeY": 100,
+        "connections": [
+            2,
+            16,
+            41,
+            42
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Cygnus X-1",
+                "x": 600,
+                "y": 100,
+                "imageFile": "planets/cygnus_cygnus_x1.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Kathoon",
+        "universeX": 600,
+        "universeY": 180,
+        "connections": [
+            15,
+            16,
+            19,
+            20
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Kathoon Prime",
+                "x": 700,
+                "y": 200,
+                "imageFile": "planets/kathoon_kathoon_prime.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Levo",
+        "universeX": 650,
+        "universeY": 300,
+        "connections": [
+            14,
+            18,
+            21,
+            22
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Levo System",
+                "x": 800,
+                "y": 400,
+                "imageFile": "planets/levo_levo_system.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Medicine",
+                    "Food"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Spica",
+        "universeX": 700,
+        "universeY": 200,
+        "connections": [
+            18,
+            21,
+            41
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Spica Colony",
+                "x": 900,
+                "y": 150,
+                "imageFile": "planets/spica_spica_colony.jpg",
+                "planetImageScale": 1.2,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Vulcan",
+        "universeX": 750,
+        "universeY": 300,
+        "connections": [
+            19,
+            20,
+            22,
+            40
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Vulcanis",
+                "x": 850,
+                "y": 350,
+                "imageFile": "planets/vulcan_vulcanis.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food",
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Capella",
+        "universeX": 700,
+        "universeY": 400,
+        "connections": [
+            13,
+            19,
+            21,
+            23,
+            24,
+            39
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Capella IV",
+                "x": 800,
+                "y": 500,
+                "imageFile": "planets/capella_capella_iv.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Ore",
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Food",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Centauri",
+        "universeX": 600,
+        "universeY": 450,
+        "connections": [
+            13,
+            22,
+            24,
+            28,
+            29
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Alpha Centauri",
+                "x": 700,
+                "y": 600,
+                "imageFile": "planets/centauri_alpha_centauri.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Food",
+                    "Medicine",
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Barnard",
+        "universeX": 680,
+        "universeY": 480,
+        "connections": [
+            22,
+            23,
+            25,
+            39
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Barnard's Star",
+                "x": 750,
+                "y": 700,
+                "imageFile": "planets/barnard_barnards_star.jpg",
+                "planetImageScale": 0.8,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Eridani",
+        "universeX": 700,
+        "universeY": 520,
+        "connections": [
+            24,
+            26,
+            27,
+            39
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Epsilon Eridani",
+                "x": 850,
+                "y": 650,
+                "imageFile": "planets/eridani_epsilon_eridani.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Procyon",
+        "universeX": 700,
+        "universeY": 600,
+        "connections": [
+            25,
+            27,
+            31,
+            37
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Procyon B",
+                "x": 800,
+                "y": 800,
+                "imageFile": "planets/procyon_procyon_b.jpg",
+                "planetImageScale": 1.2,
+                "produces": [
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Ore",
+                    "Food"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Sol",
+        "universeX": 600,
+        "universeY": 550,
+        "connections": [
+            25,
+            26,
+            28,
+            30,
+            31
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Terra",
+                "x": 700,
+                "y": 750,
+                "imageFile": "planets/sol_terra.jpg",
+                "planetImageScale": 1.3,
+                "produces": [
+                    "Medicine",
+                    "Electronics",
+                    "Food"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Sirius",
+        "universeX": 550,
+        "universeY": 500,
+        "connections": [
+            11,
+            23,
+            27,
+            29,
+            30
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Sirius A",
+                "x": 650,
+                "y": 650,
+                "imageFile": "planets/sirius_sirius_a.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Altair",
+        "universeX": 500,
+        "universeY": 450,
+        "connections": [
+            10,
+            11,
+            23,
+            28,
+            43
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Altair IV Outpost",
+                "x": 550,
+                "y": 550,
+                "imageFile": "planets/altair_altair_iv_outpost.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Diphidia",
+        "universeX": 500,
+        "universeY": 600,
+        "connections": [
+            27,
+            28,
+            31,
+            32,
+            34
+        ],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Diphidia Mining",
+                "x": 600,
+                "y": 700,
+                "imageFile": "planets/diphidia_diphidia_mining.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Tau Ceti",
+        "universeX": 600,
+        "universeY": 620,
+        "connections": [
+            26,
+            27,
+            30,
+            32,
+            35
+        ],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Tau Ceti e",
+                "x": 750,
+                "y": 850,
+                "imageFile": "planets/tau_ceti_tau_ceti_e.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Food",
+                    "Medicine"
+                ],
+                "consumes": [
+                    "Electronics",
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Antares",
+        "universeX": 550,
+        "universeY": 650,
+        "connections": [
+            30,
+            31,
+            33,
+            34,
+            35
+        ],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Antares Trade Hub",
+                "x": 650,
+                "y": 900,
+                "imageFile": "planets/antares_antares_trade_hub.jpg",
+                "planetImageScale": 1.2,
+                "produces": [
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Food",
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Mentos",
+        "universeX": 480,
+        "universeY": 680,
+        "connections": [
+            32,
+            34,
+            44
+        ],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Mentos Prime",
+                "x": 500,
+                "y": 800,
+                "imageFile": "planets/mentos_mentos_prime.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Canopus",
+        "universeX": 400,
+        "universeY": 700,
+        "connections": [
+            30,
+            32,
+            33,
+            36,
+            38
+        ],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Canopus Station",
+                "x": 450,
+                "y": 950,
+                "imageFile": "planets/canopus_canopus_station.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Food",
+                    "Medicine"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Pollux",
+        "universeX": 600,
+        "universeY": 720,
+        "connections": [
+            31,
+            32,
+            36,
+            37,
+            45
+        ],
+        "backgroundFile": "green_nebula_background.png",
+        "planets": [
+            {
+                "name": "Pollux IV",
+                "x": 700,
+                "y": 900,
+                "imageFile": "planets/pollux_pollux_iv.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Ore",
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Castor",
+        "universeX": 550,
+        "universeY": 750,
+        "connections": [
+            34,
+            35,
+            45
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Gemini Port (Castor)",
+                "x": 600,
+                "y": 850,
+                "imageFile": "planets/castor_gemini_port_castor.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food",
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Vega",
+        "universeX": 700,
+        "universeY": 700,
+        "connections": [
+            26,
+            35,
+            39,
+            46
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Vega Colony",
+                "x": 800,
+                "y": 750,
+                "imageFile": "planets/vega_vega_colony.jpg",
+                "planetImageScale": 1.1,
+                "produces": [
+                    "Food",
+                    "Medicine"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Olympus",
+        "universeX": 300,
+        "universeY": 750,
+        "connections": [
+            34,
+            47
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Mount Olympus Base",
+                "x": 350,
+                "y": 900,
+                "imageFile": "planets/olympus_mount_olympus_base.jpg",
+                "planetImageScale": 0.9,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food",
+                    "Electronics"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Tiber",
+        "universeX": 450,
+        "universeY": 780,
+        "connections": [
+            34,
+            38,
+            45
+        ],
+        "backgroundFile": "deep_space_blue.png",
+        "planets": [
+            {
+                "name": "Tiberium Mines",
+                "x": 500,
+                "y": 900,
+                "imageFile": "planets/tiber_tiberium_mines.jpg",
+                "planetImageScale": 1.0,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Medicine"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "NGC-5465",
+        "universeX": 650,
+        "universeY": 150,
+        "connections": [
+            17,
+            18,
+            20,
+            42
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "NGC-5465 Outpost",
+                "x": 750,
+                "y": 100,
+                "imageFile": "planets/ngc5465_ngc5465_outpost.jpg",
+                "planetImageScale": 0.8,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "NGC-1023",
+        "universeX": 480,
+        "universeY": 80,
+        "connections": [
+            2,
+            17,
+            42
+        ],
+        "backgroundFile": "ice_field_background.png",
+        "planets": [
+            {
+                "name": "Listening Array 1023",
+                "x": 400,
+                "y": 50,
+                "imageFile": "planets/ngc1023_listening_array_1023.jpg",
+                "planetImageScale": 0.7,
+                "produces": [
+                    "Electronics"
+                ],
+                "consumes": [
+                    "Ore"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "NGC-6484",
+        "universeX": 50,
+        "universeY": 450,
+        "connections": [
+            9
+        ],
+        "backgroundFile": "purple_nebula_stars.png",
+        "planets": [
+            {
+                "name": "Deep Space 6484",
+                "x": 100,
+                "y": 400,
+                "imageFile": "planets/ngc6484_deep_space_6484.jpg",
+                "planetImageScale": 0.7,
+                "produces": [
+                    "Ore"
+                ],
+                "consumes": [
+                    "Food"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Altair",
+        "universeX": 500,
+        "universeY": 450,
+        "connections": [
+            11,
+            12,
+            23,
+            28,
+            29
+        ],
+        "backgroundFile": "gold_nebula_background.png",
+        "planets": [
+            {
+                "name": "Altair IV",
+                "x": 550,
+                "y": 550,
+                "imageFile": "planets/altair_altair_iv.jpg",
+                "planetImageScale": 1,
+                "produces": [
+                    "Food"
+                ],
+                "consumes": [
+                    "Electronics"
+                ]
+            }
+        ]
+    }
+]
+/* ===== END: hypernova/server/data/systems_init.json ===== */
+
 /* ===== START: hypernova/client/js/game_state.js ===== */
 // hypernova/client/js/game_state.js
 export const gameState = {
@@ -10,7 +1224,8 @@ export const gameState = {
     },
     projectiles: [],
     loadedImages: {},
-    imagePathsToLoad: [],
+    imagePathsToLoad: [], // This will be populated by main.js from gameData
+    generatedPlanetPlaceholders: {}, 
 
     // Camera/Viewport for full-screen rendering
     camera: {
@@ -22,7 +1237,7 @@ export const gameState = {
     },
 
     clientGameData: {
-        systems: [], // Will be populated with data that includes universeX, universeY, connections, backgroundFile
+        systems: [], 
         tradeGoods: [],
         weapons: {},
         shipTypes: [],
@@ -32,8 +1247,8 @@ export const gameState = {
 
     docked: false,
     dockedAtDetails: null,
-    isMenuOpen: false, // For docked station sub-menus
-    activeSubMenu: null, // For docked station sub-menus
+    isMenuOpen: false, 
+    activeSubMenu: null, 
 
     selectedTradeIndex: 0,
     selectedWeaponKey: null,
@@ -46,7 +1261,6 @@ export const gameState = {
         rotatingLeft: false,
         rotatingRight: false,
         accelerating: false,
-        // decelerating: false, // Removed
         firing: false, 
     },
 
@@ -55,14 +1269,11 @@ export const gameState = {
     hyperjumpDeniedMessage: null,
     hyperjumpDeniedMessageTimeoutId: null,
 
-    // Universe Map State
     isMapOpen: false,
-    mapSelectedSystemIndex: null, // Index of the system selected on the map for single manual jump
+    mapSelectedSystemIndex: null, 
 
-    // ===== NEW ROUTE PLANNING STATE =====
-    plannedRoute: [], // Array of system indices for the route
-    currentRouteLegIndex: -1, // Index of the next system to jump to in plannedRoute
-    // ===== END OF NEW ROUTE PLANNING STATE =====
+    plannedRoute: [], 
+    currentRouteLegIndex: -1, 
 
     updateShipData(id, data) {
         if (!this.allShips[id]) {
@@ -87,7 +1298,7 @@ export const gameState = {
         if (ship.system === undefined) ship.system = 0;
         if (ship.dockedAtPlanetIdentifier === undefined)
             ship.dockedAtPlanetIdentifier = null;
-        if (ship.angularVelocity === undefined) ship.angularVelocity = 0; // Added for rotational inertia
+        if (ship.angularVelocity === undefined) ship.angularVelocity = 0;
 
 
         if (currentShipTypeData) {
@@ -134,554 +1345,805 @@ export const gameState = {
         if (!ship.activeMissions) ship.activeMissions = [];
     },
 };
+
 /* ===== END: hypernova/client/js/game_state.js ===== */
 
-/* ===== START: hypernova/client/js/client_config.js ===== */
-// client/js/client_config.js
-export const BASE_THRUST = 0.1;
-export const BASE_ROTATION_SPEED = 0.12; // This will now be max angular velocity factor
-export const ANGULAR_ACCELERATION = 0.004; // How quickly ship reaches max turn speed (radians/frame^2 approx)
-export const ANGULAR_DAMPING = 0.92;     // How quickly ship stops turning (closer to 1 = less damping)
-export const DAMPING = 0.9995; 
-export const PROJECTILE_LIFESPAN_MS = 2000; 
-export const DOCKING_DISTANCE_SQUARED = 400; // (20px)^2
-export const MIN_HYPERJUMP_DISTANCE_FROM_PLANET_SQUARED = 22500; // (150px)^2 - adjust as needed
-export const HYPERJUMP_CHARGE_TIME_MS = 3000; // 3 seconds
-export const HYPERJUMP_DENIED_MESSAGE_DURATION_MS = 3000; // 3 seconds
-export const EXPLOSION_LIFESPAN_MS = 500; 
-/* ===== END: hypernova/client/js/client_config.js ===== */
-
-/* ===== START: hypernova/client/js/input_handler.js ===== */
-// client/js/input_handler.js
+/* ===== START: hypernova/client/js/renderer.js ===== */
+// hypernova/client/js/renderer.js
 import { gameState } from "./game_state.js";
-import * as Network from "./network.js";
-import { UIManager } from "./ui_manager.js";
-import { UniverseMapManager } from "./universe_map_renderer.js"; 
 import {
-    DAMPING,
+    PROJECTILE_LIFESPAN_MS,
     DOCKING_DISTANCE_SQUARED,
-    BASE_ROTATION_SPEED, // Will be used as max speed factor
-    ANGULAR_ACCELERATION,
-    ANGULAR_DAMPING
+    HYPERJUMP_CHARGE_TIME_MS,
 } from "./client_config.js";
 
-function wrap(value, max) {
-    return ((value % max) + max) % max;
+let ctx = null;
+let canvas = null;
+let minimapCanvas = null; 
+let minimapCtx = null;
+let initialized = false;
+
+const PARALLAX_LAYERS = [
+    { speed: 0.05, stars: [], starDensity: 0.000015, minStarSize: 0.2, maxStarSize: 0.7, opacity: 0.4 }, 
+    { speed: 0.15, stars: [], starDensity: 0.00003, minStarSize: 0.4, maxStarSize: 1.0, opacity: 0.6 },
+    { speed: 0.35, stars: [], starDensity: 0.00005, minStarSize: 0.6, maxStarSize: 1.5, opacity: 0.8 },
+];
+
+function getRandom(min, max) {
+    return Math.random() * (max - min) + min;
 }
 
-export function initInputListeners(canvas) {
-    window.addEventListener("keydown", (e) => {
-        const targetElement = e.target;
-        const isInputFocused =
-            targetElement &&
-            (targetElement.tagName.toUpperCase() === "INPUT" ||
-                targetElement.tagName.toUpperCase() === "TEXTAREA" ||
-                targetElement.isContentEditable);
-
-        if (isInputFocused) {
-            return;
+function generateParallaxStars() {
+    if (!canvas) return;
+    PARALLAX_LAYERS.forEach((layer) => {
+        layer.stars = [];
+        const numStars = Math.floor(canvas.width * canvas.height * layer.starDensity);
+        for (let i = 0; i < numStars; i++) {
+            layer.stars.push({
+                x: Math.random() * canvas.width * 3 - canvas.width, 
+                y: Math.random() * canvas.height * 3 - canvas.height,
+                radius: getRandom(layer.minStarSize, layer.maxStarSize),
+                opacity: getRandom(layer.opacity * 0.5, layer.opacity),
+            });
         }
+    });
+}
 
-        const keyLower = e.key.toLowerCase();
-        const gameSpecificKeys = [
-            "arrowup",
-            // "arrowdown", // Removed from direct game control
-            "arrowleft",
-            "arrowright",
-            " ", 
-            "d",
-            "h",
-            "q",
-            "e",
-            "t",
-            "y",
-            "o",
-            "m",
-            "u",
-            "b",
-            "s",
-            "a",
-            "escape",
-            "j",
-        ];
+function simpleHash(str) {
+    let hash = 0;
+    if (!str) return hash;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; 
+    }
+    return Math.abs(hash);
+}
 
-        if (gameState.isMapOpen) {
-            if (keyLower === "m" || keyLower === "escape") {
-                UniverseMapManager.closeMap();
-                e.preventDefault();
-            }
-            return;
-        }
+const placeholderPlanetColors = [
+    { base: '#4A90E2', detail: '#357ABD', text: '#FFFFFF' }, { base: '#F5A623', detail: '#D08C1E', text: '#FFFFFF' },
+    { base: '#7ED321', detail: '#68B01C', text: '#000000' }, { base: '#BD10E0', detail: '#9D0DB8', text: '#FFFFFF' },
+    { base: '#D0021B', detail: '#B00216', text: '#FFFFFF' }, { base: '#8B572A', detail: '#6E4522', text: '#FFFFFF' },
+    { base: '#50E3C2', detail: '#30C0A0', text: '#000000' }, { base: '#B8E986', detail: '#90C060', text: '#000000' },
+    { base: '#4A4A4A', detail: '#303030', text: '#FFFFFF' }, { base: '#F8E71C', detail: '#D8C00A', text: '#000000' }
+];
 
-        if (gameSpecificKeys.includes(keyLower)) {
-            e.preventDefault();
-        }
+function generatePlanetPlaceholder(planetName, planetImageFileKey, renderSize) {
+    const offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = renderSize;
+    offscreenCanvas.height = renderSize;
+    const offCtx = offscreenCanvas.getContext('2d');
 
-        if (
-            gameState.hyperjumpDeniedMessage &&
-            keyLower !== "h" &&
-            keyLower !== "j"
-        ) {
-            clearTimeout(gameState.hyperjumpDeniedMessageTimeoutId);
-            gameState.hyperjumpDeniedMessage = null;
-            gameState.hyperjumpDeniedMessageTimeoutId = null;
-        }
+    const colorIndex = simpleHash(planetImageFileKey) % placeholderPlanetColors.length;
+    const colors = placeholderPlanetColors[colorIndex];
 
-        if (!gameState.myShip || gameState.myShip.destroyed) {
-            return;
-        }
+    offCtx.fillStyle = colors.base;
+    offCtx.beginPath();
+    offCtx.arc(renderSize / 2, renderSize / 2, renderSize / 2, 0, Math.PI * 2);
+    offCtx.fill();
 
-        if (!gameState.docked) {
-            // In-space controls
-            switch (keyLower) {
-                case " ": 
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen) {
-                        gameState.controls.firing = true;
-                    }
-                    break;
-                case "arrowup":
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        gameState.controls.accelerating = true;
-                    break;
-                // case "arrowdown": // Decelerating control removed
-                //     if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                //         gameState.controls.decelerating = true; 
-                //     break;
-                case "arrowleft":
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        gameState.controls.rotatingLeft = true;
-                    break;
-                case "arrowright":
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        gameState.controls.rotatingRight = true;
-                    break;
-                case "d":
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        tryDockAction();
-                    break;
-                case "h":
-                    break;
-                case "j": 
-                    if (
-                        !gameState.isMapOpen &&
-                        !gameState.docked &&
-                        !gameState.isChargingHyperjump &&
-                        gameState.plannedRoute.length > 0 &&
-                        gameState.currentRouteLegIndex !== -1 &&
-                        gameState.currentRouteLegIndex <
-                            gameState.plannedRoute.length
-                    ) {
-                        const targetSystemIndex =
-                            gameState.plannedRoute[
-                                gameState.currentRouteLegIndex
-                            ];
-                        if (targetSystemIndex !== gameState.myShip.system) {
-                            Network.requestHyperjump(targetSystemIndex);
-                        } else {
-                            console.warn(
-                                "Attempted to 'J' jump to current system. Advancing route leg.",
-                            );
-                            gameState.currentRouteLegIndex++;
-                            if (
-                                gameState.currentRouteLegIndex >=
-                                gameState.plannedRoute.length
-                            ) {
-                                gameState.plannedRoute = [];
-                                gameState.currentRouteLegIndex = -1;
-                            }
-                        }
-                    } else if (
-                        !gameState.docked &&
-                        !gameState.isChargingHyperjump
-                    ) {
-                        if (gameState.plannedRoute.length > 0) {
-                            gameState.plannedRoute = [];
-                            gameState.currentRouteLegIndex = -1;
-                        }
-                    }
-                    break;
-                case "q":
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        cycleWeaponAction(-1);
-                    break;
-                case "e":
-                    if (!gameState.isChargingHyperjump && !gameState.isMapOpen)
-                        cycleWeaponAction(1);
-                    break;
-                case "m":
-                    if (!gameState.docked) {
-                        UniverseMapManager.toggleMap();
-                    } else {
-                        handleMenuKeyDown(keyLower); 
-                    }
-                    break;
-            }
+    offCtx.strokeStyle = colors.detail;
+    offCtx.lineWidth = Math.max(1, renderSize * 0.05);
+    offCtx.beginPath();
+    offCtx.arc(renderSize / 2, renderSize / 2, renderSize / 2 - offCtx.lineWidth / 2, 0, Math.PI * 2);
+    offCtx.stroke();
+
+    offCtx.fillStyle = colors.text;
+    let fontSize = Math.max(10, renderSize / 8);
+    offCtx.font = `bold ${fontSize}px Courier New`;
+    offCtx.textAlign = 'center';
+    offCtx.textBaseline = 'middle';
+
+    const words = planetName.split(' ');
+    let line = '';
+    const lines = [];
+    const maxWidth = renderSize * 0.8; 
+    
+    for (let n = 0; n < words.length; n++) {
+        let testLine = line + words[n] + ' ';
+        let metrics = offCtx.measureText(testLine.trim()); // Use trim for accurate measurement
+        let testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0 && line.length > 0) { // Ensure line is not empty before pushing
+            lines.push(line.trim());
+            line = words[n] + ' ';
         } else {
-            handleMenuKeyDown(keyLower);
-        }
-    });
-
-    window.addEventListener("keyup", (e) => {
-        const targetElement = e.target;
-        const isInputFocused =
-            targetElement &&
-            (targetElement.tagName.toUpperCase() === "INPUT" ||
-                targetElement.tagName.toUpperCase() === "TEXTAREA" ||
-                targetElement.isContentEditable);
-
-        if (isInputFocused) {
-            return;
-        }
-        if (gameState.isMapOpen) return;
-
-
-        const keyLower = e.key.toLowerCase();
-        if (gameState.myShip && !gameState.myShip.destroyed && !gameState.docked) {
-            switch (keyLower) {
-                case "arrowup":
-                    gameState.controls.accelerating = false;
-                    break;
-                // case "arrowdown": // Decelerating control removed
-                //     gameState.controls.decelerating = false;
-                //     break;
-                case "arrowleft":
-                    gameState.controls.rotatingLeft = false;
-                    break;
-                case "arrowright":
-                    gameState.controls.rotatingRight = false;
-                    break;
-                case " ": 
-                    gameState.controls.firing = false;
-                    break;
-            }
-        } else { 
-            gameState.controls.accelerating = false;
-            // gameState.controls.decelerating = false; // Removed
-            gameState.controls.rotatingLeft = false;
-            gameState.controls.rotatingRight = false;
-            gameState.controls.firing = false;
-        }
-    });
-}
-
-function tryDockAction() {
-    if (
-        !gameState.myShip ||
-        !gameState.clientGameData.systems[gameState.myShip.system]
-    )
-        return;
-    const planetsInCurrentSystem =
-        gameState.clientGameData.systems[gameState.myShip.system].planets;
-    let nearestDistSq = Infinity,
-        nearestPlanetIndex = -1;
-
-    planetsInCurrentSystem.forEach((p, index) => {
-        const planetScale = p.planetImageScale || 1.0;
-        const effectiveDockingDistanceSq =
-            DOCKING_DISTANCE_SQUARED * Math.pow(planetScale, 2) * 2.5;
-
-        const d2 =
-            (gameState.myShip.x - p.x) ** 2 + (gameState.myShip.y - p.y) ** 2;
-        if (d2 < nearestDistSq) {
-            nearestDistSq = d2;
-            nearestPlanetIndex = index;
-        }
-    });
-    if (nearestPlanetIndex !== -1) {
-        const planetForDocking = planetsInCurrentSystem[nearestPlanetIndex];
-        const effectiveDockingDistanceSq =
-            DOCKING_DISTANCE_SQUARED *
-            Math.pow(planetForDocking?.planetImageScale || 1.0, 2) *
-            2.5;
-
-        if (nearestDistSq < effectiveDockingDistanceSq) {
-            Network.requestDock(gameState.myShip.system, nearestPlanetIndex);
+            line = testLine;
         }
     }
-}
-
-function cycleWeaponAction(direction) {
-    if (
-        !gameState.myShip ||
-        !gameState.myShip.weapons ||
-        gameState.myShip.weapons.length === 0
-    )
-        return;
-    gameState.weaponCycleIdx =
-        (gameState.weaponCycleIdx +
-            direction +
-            gameState.myShip.weapons.length) %
-        gameState.myShip.weapons.length;
-    const weaponName = gameState.myShip.weapons[gameState.weaponCycleIdx];
-    Network.equipWeapon(weaponName);
-}
-
-function handleMenuKeyDown(keyLower) {
-    if (!gameState.docked || !gameState.myShip) {
-        return;
-    }
-    if (!gameState.activeSubMenu) {
-        switch (keyLower) {
-            case "t":
-                gameState.activeSubMenu = "trade";
-                gameState.selectedTradeIndex = 0;
-                UIManager.renderTradeMenu();
-                break;
-            case "y":
-                gameState.activeSubMenu = "shipyard";
-                gameState.selectedShipIndex = 0;
-                UIManager.renderShipyardMenu();
-                break;
-            case "o":
-                gameState.activeSubMenu = "outfitter";
-                const weaponKeysList = Object.keys(
-                    gameState.clientGameData.weapons,
-                );
-                if (
-                    !gameState.selectedWeaponKey ||
-                    !weaponKeysList.includes(gameState.selectedWeaponKey)
-                ) {
-                    gameState.selectedWeaponKey = weaponKeysList[0] || null;
-                }
-                UIManager.renderOutfitterMenu();
-                break;
-            case "m": 
-                gameState.activeSubMenu = "missions";
-                gameState.selectedMissionIndex = 0;
-                gameState.availableMissionsForCurrentPlanet = [];
-                UIManager.renderMissionsMenu();
-                if (gameState.dockedAtDetails) {
-                    Network.requestMissions(
-                        gameState.dockedAtDetails.systemIndex,
-                        gameState.dockedAtDetails.planetIndex,
-                    );
-                }
-                break;
-            case "u":
-                Network.undock();
-                break;
-        }
-    } else {
-        if (keyLower === "escape") {
-            gameState.activeSubMenu = null;
-            UIManager.renderDockedStationInterface();
-            return;
-        }
-        switch (gameState.activeSubMenu) {
-            case "trade":
-                const numTradeGoods =
-                    gameState.clientGameData.tradeGoods.length;
-                if (keyLower === "arrowup")
-                    gameState.selectedTradeIndex = Math.max(
-                        0,
-                        gameState.selectedTradeIndex - 1,
-                    );
-                else if (keyLower === "arrowdown")
-                    gameState.selectedTradeIndex = Math.min(
-                        numTradeGoods - 1,
-                        gameState.selectedTradeIndex + 1,
-                    );
-                else if (keyLower === "b" && numTradeGoods > 0)
-                    Network.buyGood(gameState.selectedTradeIndex);
-                else if (keyLower === "s" && numTradeGoods > 0)
-                    Network.sellGood(gameState.selectedTradeIndex);
-                UIManager.renderTradeMenu();
-                break;
-            case "outfitter":
-                const weaponKeys = Object.keys(
-                    gameState.clientGameData.weapons,
-                );
-                if (weaponKeys.length > 0) {
-                    let currentWKeyIndex = weaponKeys.indexOf(
-                        gameState.selectedWeaponKey,
-                    );
-                    if (currentWKeyIndex === -1 && weaponKeys.length > 0)
-                        currentWKeyIndex = 0;
-                    if (keyLower === "arrowup")
-                        currentWKeyIndex = Math.max(0, currentWKeyIndex - 1);
-                    else if (keyLower === "arrowdown")
-                        currentWKeyIndex = Math.min(
-                            weaponKeys.length - 1,
-                            currentWKeyIndex + 1,
-                        );
-                    gameState.selectedWeaponKey = weaponKeys[currentWKeyIndex];
-                }
-                if (keyLower === "b" && gameState.selectedWeaponKey)
-                    Network.equipWeapon(gameState.selectedWeaponKey);
-                UIManager.renderOutfitterMenu();
-                break;
-            case "shipyard":
-                const numShipTypes = gameState.clientGameData.shipTypes.length;
-                if (keyLower === "arrowup")
-                    gameState.selectedShipIndex = Math.max(
-                        0,
-                        gameState.selectedShipIndex - 1,
-                    );
-                else if (keyLower === "arrowdown")
-                    gameState.selectedShipIndex = Math.min(
-                        numShipTypes - 1,
-                        gameState.selectedShipIndex + 1,
-                    );
-                else if (keyLower === "b" && numShipTypes > 0)
-                    Network.buyShip(gameState.selectedShipIndex);
-                UIManager.renderShipyardMenu();
-                break;
-            case "missions":
-                const numMissions =
-                    gameState.availableMissionsForCurrentPlanet.length;
-                if (keyLower === "arrowup")
-                    gameState.selectedMissionIndex = Math.max(
-                        0,
-                        gameState.selectedMissionIndex - 1,
-                    );
-                else if (keyLower === "arrowdown")
-                    gameState.selectedMissionIndex = Math.min(
-                        numMissions - 1,
-                        gameState.selectedMissionIndex + 1,
-                    );
-                else if (
-                    keyLower === "a" &&
-                    numMissions > 0 &&
-                    gameState.availableMissionsForCurrentPlanet[
-                        gameState.selectedMissionIndex
-                    ]
-                ) {
-                    const missionToAccept =
-                        gameState.availableMissionsForCurrentPlanet[
-                            gameState.selectedMissionIndex
-                        ];
-                    Network.acceptMission(
-                        missionToAccept.id,
-                        gameState.dockedAtDetails.systemIndex,
-                        gameState.dockedAtDetails.planetIndex,
-                    );
-                }
-                UIManager.renderMissionsMenu();
-                break;
-        }
-    }
-}
-
-export function processInputs() {
-    if (gameState.isMapOpen) {
-        if (
-            gameState.myShip &&
-            !gameState.myShip.destroyed &&
-            !gameState.docked
-        ) {
-            const myShip = gameState.myShip;
-            myShip.vx *= DAMPING;
-            myShip.vy *= DAMPING;
-            myShip.x += myShip.vx;
-            myShip.y += myShip.vy;
-            // Apply angular damping even if map is open to stop spin
-            myShip.angularVelocity *= ANGULAR_DAMPING;
-            if (Math.abs(myShip.angularVelocity) < 0.0001) myShip.angularVelocity = 0;
-            myShip.angle += myShip.angularVelocity;
-            myShip.angle = wrap(myShip.angle, 2 * Math.PI);
-
-            Network.sendControls();
-        }
-        gameState.controls.accelerating = false;
-        // gameState.controls.decelerating = false; // Removed
-        gameState.controls.rotatingLeft = false;
-        gameState.controls.rotatingRight = false;
-        gameState.controls.firing = false; 
-        return;
+    if (line.trim().length > 0) { // Add remaining line if it's not just whitespace
+        lines.push(line.trim());
     }
 
-    if (!gameState.myShip || gameState.myShip.destroyed || gameState.docked) {
-        if (
-            gameState.myShip &&
-            !gameState.myShip.destroyed &&
-            gameState.isChargingHyperjump &&
-            !gameState.docked
-        ) {
-            const myShip = gameState.myShip;
-            myShip.vx *= DAMPING;
-            myShip.vy *= DAMPING;
-            myShip.x += myShip.vx;
-            myShip.y += myShip.vy;
-            // Apply angular damping if charging hyperjump
-            myShip.angularVelocity *= ANGULAR_DAMPING;
-             if (Math.abs(myShip.angularVelocity) < 0.0001) myShip.angularVelocity = 0;
-            myShip.angle += myShip.angularVelocity;
-            myShip.angle = wrap(myShip.angle, 2 * Math.PI);
-            Network.sendControls();
-        }
-        gameState.controls.accelerating = false;
-        // gameState.controls.decelerating = false; // Removed
-        gameState.controls.rotatingLeft = false;
-        gameState.controls.rotatingRight = false;
-        gameState.controls.firing = false; 
-        return;
+
+    const lineHeight = fontSize * 1.1;
+    const totalTextHeight = lines.length * lineHeight - (lines.length > 0 ? fontSize * 0.1 : 0) ; // Adjust for no trailing space
+    const startY = renderSize / 2 - totalTextHeight / 2 + lineHeight / 2; // Adjust for textBaseline middle
+
+
+    for (let i = 0; i < lines.length; i++) {
+        offCtx.fillText(lines[i], renderSize / 2, startY + i * lineHeight);
     }
     
-    if (gameState.controls.firing && !gameState.isChargingHyperjump) {
-        Network.fireWeapon(); 
-    }
-
-    const myShip = gameState.myShip;
-    if (
-        !myShip ||
-        myShip.type === undefined ||
-        myShip.type === null ||
-        !gameState.clientGameData.shipTypes ||
-        myShip.type >= gameState.clientGameData.shipTypes.length ||
-        !gameState.clientGameData.shipTypes[myShip.type]
-    ) {
-        return;
-    }
-    const shipDef = gameState.clientGameData.shipTypes[myShip.type];
-
-    const thrust = (shipDef.speedMult || 1.0) * 0.1; 
-    // const revThrust = thrust * (shipDef.revMult || 1.0); // revThrust no longer used by player
-
-    // Rotational physics
-    const maxAngVel = (shipDef.rotMult || 1.0) * BASE_ROTATION_SPEED;
-    const angAccel = ANGULAR_ACCELERATION; // Use the new constant
-
-    if (gameState.controls.rotatingLeft) {
-        myShip.angularVelocity -= angAccel;
-    }
-    if (gameState.controls.rotatingRight) {
-        myShip.angularVelocity += angAccel;
-    }
-
-    // Apply angular damping if no rotation input, or simply always apply some damping
-    if (!gameState.controls.rotatingLeft && !gameState.controls.rotatingRight) {
-        myShip.angularVelocity *= ANGULAR_DAMPING;
-    } else {
-         myShip.angularVelocity *= (ANGULAR_DAMPING + ((1-ANGULAR_DAMPING)*0.5) ); // Slightly less damping when accelerating turn
-    }
-    // More aggressive stop if very slow and no input
-    if (Math.abs(myShip.angularVelocity) < 0.001 && !gameState.controls.rotatingLeft && !gameState.controls.rotatingRight) {
-        myShip.angularVelocity = 0;
-    }
-
-
-    myShip.angularVelocity = Math.max(-maxAngVel, Math.min(maxAngVel, myShip.angularVelocity));
-    myShip.angle += myShip.angularVelocity;
-    myShip.angle = wrap(myShip.angle, 2 * Math.PI);
-
-
-    // Linear physics
-    if (gameState.controls.accelerating) {
-        myShip.vx += thrust * Math.cos(myShip.angle);
-        myShip.vy += thrust * Math.sin(myShip.angle);
-    }
-    // Decelerating logic block removed
-    // if (gameState.controls.decelerating) {
-    //     myShip.vx -= revThrust * Math.cos(myShip.angle);
-    //     myShip.vy -= revThrust * Math.sin(myShip.angle);
-    // }
-
-    myShip.vx *= DAMPING;
-    myShip.vy *= DAMPING;
-
-    myShip.x += myShip.vx;
-    myShip.y += myShip.vy;
-
-    Network.sendControls();
+    return offscreenCanvas;
 }
-/* ===== END: hypernova/client/js/input_handler.js ===== */
+
+export const Renderer = {
+    init(mainCanvasElement) {
+        canvas = mainCanvasElement;
+        ctx = canvas.getContext("2d");
+        minimapCanvas = document.getElementById("minimapCanvas");
+        if (minimapCanvas) {
+            minimapCtx = minimapCanvas.getContext("2d");
+            minimapCanvas.width = minimapCanvas.clientWidth;
+            minimapCanvas.height = minimapCanvas.clientHeight;
+        } else {
+            console.warn("Minimap canvas not found!");
+        }
+        gameState.camera.width = canvas.width;
+        gameState.camera.height = canvas.height;
+        generateParallaxStars();
+        initialized = true;
+    },
+
+    isInitialized() { return initialized; },
+
+    updateViewPort(width, height) {
+        generateParallaxStars();
+        if (minimapCanvas) {
+            minimapCanvas.width = minimapCanvas.clientWidth;
+            minimapCanvas.height = minimapCanvas.clientHeight;
+        }
+    },
+
+    drawSystemBackground() {
+        if (!gameState.myShip || gameState.myShip.system === undefined) {
+            ctx.fillStyle = "#000003";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+        const systemData = gameState.clientGameData.systems[gameState.myShip.system];
+        if (systemData && systemData.backgroundFile) {
+            const bgImg = gameState.loadedImages[systemData.backgroundFile];
+            if (bgImg) {
+                const camX = gameState.camera.x; const camY = gameState.camera.y;
+                const parallaxFactor = 0.1; 
+                const imgWidth = bgImg.width; const imgHeight = bgImg.height;
+                const startX = Math.floor((camX * parallaxFactor) / imgWidth) * imgWidth;
+                const startY = Math.floor((camY * parallaxFactor) / imgHeight) * imgHeight;
+                ctx.save();
+                ctx.translate(-(camX * parallaxFactor), -(camY * parallaxFactor));
+                for (let x = startX - imgWidth; x < startX + canvas.width / (1 - parallaxFactor) + imgWidth * 2; x += imgWidth) {
+                    for (let y = startY - imgHeight; y < startY + canvas.height / (1 - parallaxFactor) + imgHeight * 2; y += imgHeight) {
+                        ctx.drawImage(bgImg, x, y, imgWidth, imgHeight);
+                    }
+                }
+                ctx.restore();
+            } else {
+                ctx.fillStyle = systemData.fallbackColor || "#010205"; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        } else {
+            ctx.fillStyle = "#000003";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        this.drawParallaxStars(); 
+    },
+
+    drawParallaxStars() {
+        const camX = gameState.camera.x; const camY = gameState.camera.y;
+        PARALLAX_LAYERS.forEach((layer) => {
+            ctx.beginPath();
+            layer.stars.forEach((star) => {
+                const parallaxX = star.x - camX * layer.speed;
+                const parallaxY = star.y - camY * layer.speed;
+                const wrapWidth = canvas.width + canvas.width / layer.speed; 
+                const wrapHeight = canvas.height + canvas.height / layer.speed;
+                let screenX = parallaxX % wrapWidth; if (screenX < 0) screenX += wrapWidth; screenX %= canvas.width; 
+                let screenY = parallaxY % wrapHeight; if (screenY < 0) screenY += wrapHeight; screenY %= canvas.height;
+                ctx.moveTo(screenX + star.radius, screenY); 
+                ctx.arc(screenX, screenY, star.radius, 0, Math.PI * 2);
+            });
+            ctx.fillStyle = `rgba(255, 255, 240, ${layer.opacity})`;
+            ctx.fill();
+        });
+    },
+
+    draw() {
+        if (!ctx || !initialized || !gameState.myShip) {
+            if(ctx) { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+            return;
+        }
+        this.drawSystemBackground();
+        ctx.save();
+        ctx.translate(-gameState.camera.x, -gameState.camera.y);
+        if (gameState.myShip.system !== undefined) {
+            const currentSystemData = gameState.clientGameData.systems[gameState.myShip.system];
+            if (currentSystemData && currentSystemData.planets) {
+                currentSystemData.planets.forEach((p) => this.drawPlanet(p));
+            }
+            const now = Date.now();
+            gameState.projectiles = gameState.projectiles.filter((p) => now - (p.time || 0) < PROJECTILE_LIFESPAN_MS);
+            gameState.projectiles.forEach((p) => this.drawProjectile(p));
+            for (const id in gameState.allShips) {
+                const ship = gameState.allShips[id];
+                if (!ship || ship.system !== gameState.myShip.system) continue;
+                this.drawShip(ship);
+                if (id !== gameState.myId && !ship.destroyed && ship.type !== undefined) {
+                    const shipDef = gameState.clientGameData.shipTypes[ship.type];
+                    const shipRenderScale = shipDef.scale || 1.0;
+                    const labelOffset = shipDef && shipDef.imgHeight ? (shipDef.imgHeight / 2) * shipRenderScale + 10 : 25;
+                    ctx.fillStyle = ship.color || "#0f0"; ctx.font = "12px monospace"; ctx.textAlign = "center";
+                    const displayName = ship.username || id.substring(0, 6);
+                    ctx.fillText(displayName, ship.x, ship.y - labelOffset);
+                    ctx.textAlign = "left";
+                }
+            }
+        }
+        ctx.restore();
+        this.drawHUD();
+        this.drawMinimap(); // Moved here, was missing in previous provided full gameLoop
+    },
+
+    drawPlanet(planet) {
+        const BASE_PLANET_RENDER_SIZE = 128;
+        const scale = planet.planetImageScale || 1.0;
+        const renderSize = BASE_PLANET_RENDER_SIZE * scale;
+        
+        const filenameOnly = planet.imageFile && planet.imageFile.startsWith("planets/") 
+            ? planet.imageFile.substring("planets/".length) 
+            : planet.imageFile; // Handles cases like "planet_temperate.png"
+
+        let planetImageToDraw = gameState.loadedImages[filenameOnly];
+        
+        if (!planetImageToDraw && planet.imageFile && planet.imageFile.startsWith("planets/")) {
+            const placeholderCacheKey = filenameOnly;
+            if (!gameState.generatedPlanetPlaceholders[placeholderCacheKey]) {
+                // console.log(`Renderer: Generating client-side placeholder for ${planet.name} (key: ${placeholderCacheKey})`);
+                gameState.generatedPlanetPlaceholders[placeholderCacheKey] = 
+                    generatePlanetPlaceholder(planet.name, placeholderCacheKey, renderSize);
+            }
+            planetImageToDraw = gameState.generatedPlanetPlaceholders[placeholderCacheKey];
+        }
+
+        if (planetImageToDraw) { 
+            ctx.save();
+            ctx.drawImage(planetImageToDraw, planet.x - renderSize / 2, planet.y - renderSize / 2, renderSize, renderSize);
+            if (planetImageToDraw instanceof HTMLImageElement) { 
+                ctx.globalCompositeOperation = "lighter"; 
+                const glowRadius = renderSize * 0.65; 
+                const gradient = ctx.createRadialGradient(planet.x, planet.y, renderSize * 0.48, planet.x, planet.y, glowRadius);
+                gradient.addColorStop(0, `rgba(120, 170, 255, 0.25)`); gradient.addColorStop(0.7, `rgba(120, 170, 255, 0.1)`); gradient.addColorStop(1, `rgba(120, 170, 255, 0)`); 
+                ctx.fillStyle = gradient; ctx.beginPath(); ctx.arc(planet.x, planet.y, glowRadius, 0, Math.PI * 2); ctx.fill();
+                ctx.globalCompositeOperation = "source-over"; 
+            }
+            ctx.restore();
+        } else { 
+            ctx.fillStyle = planet.fallbackColor || "#335577";
+            ctx.beginPath(); ctx.arc(planet.x, planet.y, renderSize / 2, 0, Math.PI * 2); ctx.fill();
+        }
+
+        ctx.fillStyle = "#E0E8FF"; ctx.font = `${Math.max(10, 12 * scale)}px monospace`; 
+        ctx.textAlign = "center"; ctx.shadowColor = "black"; ctx.shadowBlur = 2;
+        ctx.fillText(planet.name, planet.x, planet.y + renderSize / 2 + Math.max(12, 15 * scale));
+        ctx.shadowBlur = 0; ctx.textAlign = "left";
+    },
+
+    drawShip(ship) {
+        if (ship.destroyed || ship.type === undefined) return;
+        const shipTypeDefinition = gameState.clientGameData.shipTypes[ship.type];
+        if (!shipTypeDefinition) return;
+        const img = gameState.loadedImages[shipTypeDefinition.imageFile];
+        const shipScale = shipTypeDefinition.scale || 1.0;
+        ctx.save(); ctx.translate(ship.x, ship.y); ctx.rotate(ship.angle);
+        if (img) {
+            const w = (shipTypeDefinition.imgWidth || img.width) * shipScale;
+            const h = (shipTypeDefinition.imgHeight || img.height) * shipScale;
+            ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        } else {
+            ctx.fillStyle = ship.color || "#0f0"; ctx.beginPath();
+            ctx.moveTo(15 * shipScale, 0); ctx.lineTo(-10 * shipScale, 8 * shipScale); ctx.lineTo(-10 * shipScale, -8 * shipScale);
+            ctx.closePath(); ctx.fill();
+        }
+        if (ship.shield > 0 && ship.maxShield > 0) {
+            const shieldRadius = Math.max((shipTypeDefinition.imgWidth || 30) * shipScale * 0.6, (shipTypeDefinition.imgHeight || 30) * shipScale * 0.6);
+            const shieldOpacity = Math.min(0.6, (ship.shield / ship.maxShield) * 0.5 + 0.1);
+            ctx.beginPath(); ctx.arc(0, 0, shieldRadius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(100, 180, 255, ${shieldOpacity})`; ctx.fill();
+        }
+        ctx.restore();
+    },
+
+    drawProjectile(p) {
+        const elapsedTime = (Date.now() - p.time) / 1000.0; 
+        const projectileMuzzleSpeed = p.range / (PROJECTILE_LIFESPAN_MS / 1000.0);
+        const inheritedVelX = (p.shooterVx || 0) * elapsedTime; // Add default for shooterVx/Vy
+        const inheritedVelY = (p.shooterVy || 0) * elapsedTime;
+        const muzzleVelX = Math.cos(p.startAngle) * projectileMuzzleSpeed * elapsedTime;
+        const muzzleVelY = Math.sin(p.startAngle) * projectileMuzzleSpeed * elapsedTime;
+        const currentTipX = p.startX + inheritedVelX + muzzleVelX;
+        const currentTipY = p.startY + inheritedVelY + muzzleVelY;
+        const visualLength = 15; const projectileWidth = 3; 
+        ctx.save(); ctx.translate(currentTipX, currentTipY); ctx.rotate(p.startAngle); 
+        ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 7;
+        ctx.fillRect(-visualLength, -projectileWidth / 2, visualLength, projectileWidth);
+        ctx.restore();
+    },
+
+    drawHUD() {
+        ctx.font = "14px monospace"; ctx.fillStyle = "#00FF00";
+        if (gameState.hyperjumpDeniedMessage && !gameState.isChargingHyperjump) {
+            ctx.fillStyle = "red"; ctx.font = "16px monospace";
+            const messageWidth = ctx.measureText(gameState.hyperjumpDeniedMessage).width;
+            ctx.fillText(gameState.hyperjumpDeniedMessage, canvas.width / 2 - messageWidth / 2, canvas.height - 60);
+            ctx.fillStyle = "#00FF00"; 
+        }
+        if (!gameState.myShip || gameState.myShip.destroyed) {
+            ctx.fillStyle = "red"; ctx.font = "24px monospace";
+            const msg = "SHIP DESTROYED - AWAITING RESPAWN";
+            ctx.textAlign = "center"; ctx.fillText(msg, canvas.width / 2, canvas.height / 2);
+            ctx.textAlign = "left"; return;
+        }
+        const myShip = gameState.myShip;
+        const currentShipDef = gameState.clientGameData.shipTypes[myShip.type || 0];
+        if (!currentShipDef) return; 
+        let cargoCount = myShip.cargo && myShip.cargo.length > 0 ? myShip.cargo.reduce((s, v) => s + v, 0) : 0;
+        const hudPadding = 15; let yOffset = hudPadding + 14;
+        ctx.textAlign = "left";
+        ctx.fillText(`Pilot: ${gameState.currentUser.username}`, hudPadding, yOffset); yOffset += 18;
+        ctx.fillText(`Credits: $${myShip.credits.toLocaleString()}`, hudPadding, yOffset); yOffset += 18;
+        if (myShip.maxShield > 0) {
+            ctx.fillStyle = "#64B4FF"; 
+            ctx.fillText(`Shield: ${Math.round(myShip.shield || 0)}/${myShip.maxShield || 0}`, hudPadding, yOffset); yOffset += 18;
+            ctx.fillStyle = "#00FF00"; 
+        }
+        ctx.fillText(`Health: ${myShip.health || 0}/${myShip.maxHealth || 0}`, hudPadding, yOffset); yOffset += 18;
+        ctx.fillText(`Cargo: ${cargoCount}/${currentShipDef.maxCargo}`, hudPadding, yOffset); yOffset += 18;
+        const systemName = gameState.clientGameData.systems[myShip.system]?.name || "Unknown System";
+        ctx.fillText(`System: ${systemName}`, hudPadding, yOffset); yOffset += 18;
+        if (myShip.activeWeapon) {
+            const weaponDisplayName = gameState.clientGameData.weapons[myShip.activeWeapon]?.name || myShip.activeWeapon;
+            ctx.fillText(`Weapon: ${weaponDisplayName}`, hudPadding, yOffset);
+        }
+        yOffset += 18 + 14; 
+        if (myShip.activeMissions && myShip.activeMissions.length > 0) {
+            ctx.fillText("Active Missions:", hudPadding, yOffset); yOffset += 18;
+            myShip.activeMissions.slice(0, 3).forEach((mission) => {
+                let missionText = mission.title.length > 40 ? mission.title.substring(0, 37) + "..." : mission.title;
+                if (mission.type === gameState.clientGameData.MISSION_TYPES.BOUNTY) {
+                    missionText += ` (${mission.targetsDestroyed || 0}/${mission.targetsRequired})`;
+                }
+                const timeRemainingMin = Math.max(0, Math.round((mission.timeLimit - Date.now()) / 60000));
+                missionText += ` (${timeRemainingMin}m)`;
+                ctx.fillText(`- ${missionText}`, hudPadding + 5, yOffset); yOffset += 18;
+            });
+        }
+        if (gameState.isChargingHyperjump && gameState.hyperjumpChargeStartTime) {
+            const chargeProgress = Math.min(1, (Date.now() - gameState.hyperjumpChargeStartTime) / HYPERJUMP_CHARGE_TIME_MS);
+            ctx.fillStyle = "#0af"; ctx.font = "18px monospace";
+            const chargeText = `Hyperdrive Charging: ${Math.round(chargeProgress * 100)}%`;
+            const textWidth = ctx.measureText(chargeText).width;
+            ctx.textAlign = "center"; ctx.fillText(chargeText, canvas.width / 2, canvas.height - 80);
+            const barWidth = 250; const barHeight = 15;
+            const barX = canvas.width / 2 - barWidth / 2; const barY = canvas.height - 60;
+            ctx.strokeStyle = "#0af"; ctx.lineWidth = 2; ctx.strokeRect(barX, barY, barWidth, barHeight);
+            ctx.fillRect(barX + 2, barY + 2, (barWidth - 4) * chargeProgress, barHeight - 4);
+            ctx.fillStyle = "#00FF00"; ctx.lineWidth = 1; ctx.textAlign = "left"; 
+        }
+        let messageDisplayedAtBottom = false; 
+        if (gameState.plannedRoute.length > 0 && gameState.currentRouteLegIndex !== -1 && !gameState.docked && !gameState.isChargingHyperjump && !gameState.hyperjumpDeniedMessage) {
+            if (gameState.currentRouteLegIndex < gameState.plannedRoute.length) {
+                const nextDestSystemIndex = gameState.plannedRoute[gameState.currentRouteLegIndex];
+                const nextDestSystem = gameState.clientGameData.systems[nextDestSystemIndex];
+                if (nextDestSystem) {
+                    ctx.font = "16px monospace"; ctx.fillStyle = "#FFA500"; 
+                    const routeMsg = `Next Jump (J): ${nextDestSystem.name}`;
+                    ctx.textAlign = "center"; ctx.fillText(routeMsg, canvas.width / 2, canvas.height - 30);
+                    messageDisplayedAtBottom = true;
+                }
+            } else {
+                ctx.font = "16px monospace"; ctx.fillStyle = "#00FF00";
+                const routeMsg = "Route complete. Press J to clear or plot new.";
+                ctx.textAlign = "center"; ctx.fillText(routeMsg, canvas.width / 2, canvas.height - 30);
+                messageDisplayedAtBottom = true;
+            }
+            ctx.textAlign = "left"; ctx.fillStyle = "#00FF00";
+        }
+        if (!messageDisplayedAtBottom && !gameState.docked && !gameState.isChargingHyperjump && !gameState.hyperjumpDeniedMessage) {
+            const planets = gameState.clientGameData.systems[myShip.system]?.planets;
+            let canDock = false, dockPlanetName = "";
+            if (planets) {
+                planets.forEach((p) => {
+                    const interactionRadiusSq = DOCKING_DISTANCE_SQUARED * Math.pow(p.planetImageScale || 1.0, 2) * 2;
+                    if ((myShip.x - p.x) ** 2 + (myShip.y - p.y) ** 2 < interactionRadiusSq) {
+                        canDock = true; dockPlanetName = p.name;
+                    }
+                });
+            }
+            if (canDock) {
+                ctx.font = "16px monospace";
+                const dockMsg = `Press 'D' to dock at ${dockPlanetName}`;
+                ctx.textAlign = "center"; ctx.fillText(dockMsg, canvas.width / 2, canvas.height - 30);
+            }
+            ctx.textAlign = "left"; 
+        }
+    },
+
+    drawMinimap() {
+        if (!minimapCtx || !minimapCanvas || !gameState.myShip || gameState.myShip.system === undefined) {
+            if (minimapCtx) { minimapCtx.fillStyle = "#05080a"; minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height); }
+            return;
+        }
+        minimapCtx.fillStyle = "#05080a"; 
+        minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+        const currentSystemData = gameState.clientGameData.systems[gameState.myShip.system];
+        if (!currentSystemData || !currentSystemData.planets) return;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        currentSystemData.planets.forEach((p) => {
+            if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+        });
+        if (gameState.myShip.x < minX) minX = gameState.myShip.x; if (gameState.myShip.x > maxX) maxX = gameState.myShip.x;
+        if (gameState.myShip.y < minY) minY = gameState.myShip.y; if (gameState.myShip.y > maxY) maxY = gameState.myShip.y;
+        const systemWidth = Math.max(500, maxX - minX); 
+        const systemHeight = Math.max(500, maxY - minY);
+        const systemCenterX = minX + systemWidth / 2; const systemCenterY = minY + systemHeight / 2;
+        const mapPadding = 10; 
+        const mapDrawableWidth = minimapCanvas.width - 2 * mapPadding; const mapDrawableHeight = minimapCanvas.height - 2 * mapPadding;
+        const scaleX = mapDrawableWidth / systemWidth; const scaleY = mapDrawableHeight / systemHeight;
+        const scale = Math.min(scaleX, scaleY) * 0.9; 
+        minimapCtx.save();
+        minimapCtx.translate(minimapCanvas.width / 2, minimapCanvas.height / 2); 
+        currentSystemData.planets.forEach((p) => {
+            const mapX = (p.x - systemCenterX) * scale; const mapY = (p.y - systemCenterY) * scale;
+            const planetRadius = (p.planetImageScale || 1.0) * 3 * scale + 2; 
+            minimapCtx.fillStyle = p.fallbackColor || "#557799"; minimapCtx.beginPath();
+            minimapCtx.arc(mapX, mapY, Math.max(2, planetRadius), 0, Math.PI * 2); minimapCtx.fill();
+            minimapCtx.fillStyle = "#ccc"; minimapCtx.font = `${Math.max(6, 8 * scale)}px monospace`;
+            minimapCtx.textAlign = "center"; minimapCtx.fillText(p.name.substring(0, 3), mapX, mapY + planetRadius + 8 * scale);
+        });
+        const playerMapX = (gameState.myShip.x - systemCenterX) * scale; const playerMapY = (gameState.myShip.y - systemCenterY) * scale;
+        minimapCtx.fillStyle = "#00FF00"; minimapCtx.save();
+        minimapCtx.translate(playerMapX, playerMapY); minimapCtx.rotate(gameState.myShip.angle);
+        const playerSize = Math.max(2, 4 * scale);
+        minimapCtx.beginPath(); minimapCtx.moveTo(playerSize, 0);
+        minimapCtx.lineTo(-playerSize / 2, -playerSize / 1.5); minimapCtx.lineTo(-playerSize / 2, playerSize / 1.5);
+        minimapCtx.closePath(); minimapCtx.fill(); minimapCtx.restore();
+        minimapCtx.restore(); 
+    },
+};
+/* ===== END: hypernova/client/js/renderer.js ===== */
+
+/* ===== START: hypernova/client/js/main.js ===== */
+// hypernova/client/js/main.js
+console.log("main.js script started");
+
+import { gameState } from "./game_state.js";
+window.gameState = gameState; // For debugging
+
+import { initNetwork } from "./network.js";
+import { Renderer } from "./renderer.js";
+import { initInputListeners, processInputs } from "./input_handler.js";
+import { UIManager } from "./ui_manager.js";
+import { UniverseMapManager } from "./universe_map_renderer.js";
+
+// --- DYNAMIC LOGIN BACKGROUND & MUSIC ---
+let loginBgCanvas, loginBgCtx;
+let stars = [];
+let shootingStars = [];
+let loginAnimationId = null;
+
+function getRandom(min, max) {
+    return Math.random() * (max - min) + min;
+}
+class Star {
+    constructor(x, y, radius, opacity) {
+        this.x = x; this.y = y; this.radius = radius; this.opacity = opacity;
+        this.maxOpacity = opacity; this.minOpacity = Math.max(0.1, opacity - 0.5);
+        this.opacitySpeed = getRandom(0.005, 0.015) * (Math.random() > 0.5 ? 1 : -1);
+    }
+    draw(ctx) {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`; ctx.fill();
+    }
+    update() {
+        this.opacity += this.opacitySpeed;
+        if (this.opacity > this.maxOpacity || this.opacity < this.minOpacity) {
+            this.opacitySpeed *= -1;
+            this.opacity = Math.max(this.minOpacity, Math.min(this.maxOpacity, this.opacity));
+        }
+    }
+}
+class ShootingStar {
+    constructor() { this.reset(); }
+    reset() {
+        this.active = true;
+        const canvasWidth = loginBgCanvas?.width || window.innerWidth; // Ensure loginBgCanvas is defined or fallback
+        const canvasHeight = loginBgCanvas?.height || window.innerHeight;
+        this.x = Math.random() * canvasWidth; // Corrected: Use canvasWidth here
+        this.y = 0; // Start at top or side
+        this.length = getRandom(150, 300);
+        this.angle = getRandom(Math.PI * 0.35, Math.PI * 0.65); // Default angle if starting top/bottom
+        this.speed = getRandom(300, 500);
+        this.opacity = 1; this.life = 1;
+        const side = Math.random();
+        if (side < 0.4) { // Start from top
+            this.x = Math.random() * canvasWidth; this.y = -this.length;
+            this.angle = getRandom(Math.PI * 0.4, Math.PI * 0.6);
+        } else if (side < 0.7) { // Start from left
+            this.x = -this.length; this.y = Math.random() * canvasHeight * 0.7;
+            this.angle = getRandom(Math.PI * 0.15, Math.PI * 0.35);
+        } else { // Start from right
+            this.x = canvasWidth + this.length; this.y = Math.random() * canvasHeight * 0.7;
+            this.angle = getRandom(Math.PI * 0.65, Math.PI * 0.85);
+        }
+        this.vx = Math.cos(this.angle) * this.speed; this.vy = Math.sin(this.angle) * this.speed;
+    }
+    update(deltaTime) {
+        if (!this.active) return;
+        this.x += this.vx * deltaTime; this.y += this.vy * deltaTime;
+        this.life -= 0.5 * deltaTime;
+        if (this.life <= 0) this.active = false;
+    }
+    draw(ctx) {
+        if (!this.active || !ctx) return;
+        const tailX = this.x - Math.cos(this.angle) * this.length;
+        const tailY = this.y - Math.sin(this.angle) * this.length;
+        const gradient = ctx.createLinearGradient(this.x, this.y, tailX, tailY);
+        gradient.addColorStop(0, `rgba(220, 220, 255, ${this.opacity * this.life})`);
+        gradient.addColorStop(0.3, `rgba(200, 200, 255, ${this.opacity * this.life * 0.5})`);
+        gradient.addColorStop(1, `rgba(150, 150, 220, 0)`);
+        ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(tailX, tailY);
+        ctx.strokeStyle = gradient; ctx.lineWidth = getRandom(1.5, 3); ctx.stroke();
+    }
+}
+function createStars() {
+    if (!loginBgCanvas) return;
+    stars = [];
+    const numStars = Math.floor((loginBgCanvas.width * loginBgCanvas.height) / 6000);
+    for (let i = 0; i < numStars; i++) {
+        const x = Math.random() * loginBgCanvas.width; const y = Math.random() * loginBgCanvas.height;
+        const radius = getRandom(0.2, 1.2); const opacity = getRandom(0.2, 0.8);
+        stars.push(new Star(x, y, radius, opacity));
+    }
+}
+function animateLoginBackground() {
+    if (!loginBgCtx || !loginBgCanvas) {
+        if (loginAnimationId) cancelAnimationFrame(loginAnimationId); return;
+    }
+    loginAnimationId = requestAnimationFrame(animateLoginBackground);
+    loginBgCtx.fillStyle = "#00000A";
+    loginBgCtx.fillRect(0, 0, loginBgCanvas.width, loginBgCanvas.height);
+    stars.forEach((star) => { star.update(); star.draw(loginBgCtx); });
+    if (Math.random() < 0.015) {
+        let newShootingStar = shootingStars.find((s) => !s.active);
+        if (newShootingStar) newShootingStar.reset();
+        else if (shootingStars.length < 10) shootingStars.push(new ShootingStar());
+    }
+    const now = performance.now();
+    const deltaTime = (now - (animateLoginBackground.lastTime || now)) / 1000;
+    animateLoginBackground.lastTime = now;
+    shootingStars.forEach((ss) => { ss.update(deltaTime); ss.draw(loginBgCtx); });
+}
+function setupLoginMusic() {
+    const music = document.getElementById("login-music");
+    if (music) {
+        music.volume = 0.3;
+        music.play().catch((error) => {
+            console.warn("Login music autoplay was prevented:", error.message);
+            const playMusicOnClick = () => {
+                music.play().catch((e) => console.warn("Still couldn't play music:", e.message));
+                document.body.removeEventListener("click", playMusicOnClick);
+                document.body.removeEventListener("keydown", playMusicOnClick);
+            };
+            document.body.addEventListener("click", playMusicOnClick, { once: true });
+            document.body.addEventListener("keydown", playMusicOnClick, { once: true });
+        });
+    } else console.warn("Login music audio element not found.");
+}
+function stopLoginScreenVisualsAndMusic() {
+    if (loginAnimationId) cancelAnimationFrame(loginAnimationId); loginAnimationId = null;
+    const music = document.getElementById("login-music");
+    if (music) { music.pause(); music.currentTime = 0; }
+    window.removeEventListener("resize", handleLoginResize);
+}
+function handleLoginResize() {
+    if (loginBgCanvas) {
+        loginBgCanvas.width = window.innerWidth; loginBgCanvas.height = window.innerHeight;
+        createStars();
+    }
+}
+function initLoginScreenVisuals() {
+    loginBgCanvas = document.getElementById("login-background-canvas");
+    if (!loginBgCanvas) { console.error("Login background canvas not found!"); return; }
+    loginBgCtx = loginBgCanvas.getContext("2d");
+    handleLoginResize(); animateLoginBackground.lastTime = performance.now();
+    animateLoginBackground(); setupLoginMusic();
+    window.addEventListener("resize", handleLoginResize);
+}
+
+function setupGameCanvasFullscreen() {
+    const canvas = document.getElementById("gameCanvas");
+    if (!canvas) { console.error("Game canvas not found for fullscreen setup!"); return; }
+    function resizeCanvas() {
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        gameState.camera.width = canvas.width; gameState.camera.height = canvas.height;
+        if (Renderer.isInitialized()) Renderer.updateViewPort(canvas.width, canvas.height);
+    }
+    window.addEventListener("resize", resizeCanvas, false); resizeCanvas();
+}
+
+async function loadImages(imagePaths) {
+    const imagePromises = imagePaths.map((path) => {
+        return new Promise((resolve) => { // Changed to always resolve
+            const img = new Image();
+            img.onload = () => {
+                let filename = path.substring(path.lastIndexOf("/") + 1);
+                gameState.loadedImages[filename] = img;
+                // console.log(`Loaded and cached: ${path} as ${filename}`);
+                resolve(img);
+            };
+            img.onerror = (err) => {
+                console.error(`Failed to load image: ${path}`, err);
+                resolve(null); // Resolve with null so Promise.all doesn't fail
+            };
+            img.src = path;
+        });
+    });
+    try {
+        await Promise.all(imagePromises);
+        // console.log("main.js/loadImages: All images processed (attempted).");
+    } catch (error) {
+        console.error("main.js/loadImages: Error during Promise.all (should not happen if resolving with null):", error);
+    }
+}
+
+async function handleLoginSubmit(username, password) {
+    const loginErrorEl = document.getElementById("login-error");
+    const loginMessageEl = document.getElementById("login-message");
+    loginErrorEl.textContent = ""; loginMessageEl.textContent = "";
+    try {
+        const response = await fetch("/login", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+            loginMessageEl.textContent = result.message || "Success!";
+            gameState.currentUser = { username: result.username };
+            stopLoginScreenVisualsAndMusic();
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("game-container").classList.remove("hidden");
+            setupGameCanvasFullscreen();
+            initNetwork(async () => {
+                const systemSpecificImagePaths = new Set();
+                if (gameState.clientGameData.systems) {
+                    gameState.clientGameData.systems.forEach(system => {
+                        if (system.backgroundFile) systemSpecificImagePaths.add(`assets/images/backgrounds/${system.backgroundFile}`);
+                        if (system.planets) {
+                            system.planets.forEach(planet => {
+                                if (planet.imageFile) {
+                                     // imageFile can be "some_planet.png" OR "planets/specific_planet.jpg"
+                                    if (planet.imageFile.includes('/')) { // Assumes "planets/" or other subfolder
+                                        systemSpecificImagePaths.add(`assets/images/${planet.imageFile}`);
+                                    } else { // Older style, directly in assets/images
+                                        systemSpecificImagePaths.add(`assets/images/${planet.imageFile}`);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                if (gameState.clientGameData.shipTypes) {
+                    gameState.clientGameData.shipTypes.forEach(shipType => {
+                        if (shipType.imageFile) systemSpecificImagePaths.add(`assets/images/${shipType.imageFile}`);
+                    });
+                }
+                const allImagePaths = Array.from(new Set([...gameState.imagePathsToLoad, ...systemSpecificImagePaths]));
+                if (allImagePaths.length > 0) await loadImages(allImagePaths);
+                await loadProgress();
+                if (gameState.myId && !gameState.myShip) {
+                    gameState.allShips[gameState.myId] = gameState.allShips[gameState.myId] || {};
+                    gameState.defaultShipProps(gameState.myShip);
+                } else if (gameState.myId && gameState.myShip && (gameState.myShip.type === undefined || gameState.myShip.type === null)) {
+                    gameState.defaultShipProps(gameState.myShip);
+                }
+                const canvasEl = document.getElementById("gameCanvas");
+                if (canvasEl) canvasEl.focus();
+                UIManager.showRightHudPanel();
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            });
+        } else {
+            loginErrorEl.textContent = result.message || "Login/Registration failed.";
+        }
+    } catch (error) {
+        console.error("main.js/handleLoginSubmit: Fetch failed:", error);
+        loginErrorEl.textContent = "Login request error. Check console.";
+    }
+}
+
+async function loadProgress() {
+    if (!gameState.currentUser || !gameState.currentUser.username) return;
+    try {
+        const response = await fetch(`/load-progress?username=${gameState.currentUser.username}`);
+        if (response.ok) {
+            const progress = await response.json();
+            if (progress && progress.shipData) {
+                if (gameState.myId) {
+                    if (!gameState.allShips[gameState.myId]) gameState.allShips[gameState.myId] = {};
+                    gameState.updateShipData(gameState.myId, progress.shipData);
+                    const syncData = {
+                        credits: progress.shipData.credits, cargo: progress.shipData.cargo,
+                        weapons: progress.shipData.weapons, activeWeapon: progress.shipData.activeWeapon,
+                        health: progress.shipData.health, shield: progress.shipData.shield,
+                        type: progress.shipData.type, activeMissions: progress.shipData.activeMissions || [],
+                    };
+                    if (progress.dockedAtDetails) {
+                        gameState.docked = true; gameState.dockedAtDetails = progress.dockedAtDetails;
+                        syncData.dockedAtDetails = gameState.dockedAtDetails;
+                    } else {
+                        gameState.docked = false; gameState.dockedAtDetails = null;
+                        syncData.dockedAtDetails = null; syncData.x = progress.shipData.x; syncData.y = progress.shipData.y;
+                        syncData.angle = progress.shipData.angle; syncData.vx = progress.shipData.vx; syncData.vy = progress.shipData.vy;
+                        syncData.system = progress.shipData.system;
+                    }
+                    if (gameState.socket) gameState.socket.emit("clientLoadedDockedState", syncData);
+                } else {
+                    gameState.pendingProgressToApply = progress;
+                }
+            } else {
+                gameState.docked = false; gameState.dockedAtDetails = null;
+            }
+        } else {
+            gameState.docked = false; gameState.dockedAtDetails = null;
+        }
+    } catch (error) {
+        console.error("main.js/loadProgress: Error during fetch/processing:", error);
+        gameState.docked = false; gameState.dockedAtDetails = null;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const loginScreenElement = document.getElementById("login-screen");
+    if (loginScreenElement && !loginScreenElement.classList.contains("hidden")) {
+        initLoginScreenVisuals();
+    }
+    const canvas = document.getElementById("gameCanvas");
+    const uiContainer = document.getElementById("ui");
+    const gameContainer = document.getElementById("game-container");
+    if (!canvas || !uiContainer || !gameContainer) {
+        console.error("main.js/DOMContentLoaded: Required HTML elements not found!"); return;
+    }
+    if (canvas && !canvas.hasAttribute("tabindex")) canvas.setAttribute("tabindex", "0");
+    Renderer.init(canvas); UIManager.init(uiContainer); UniverseMapManager.init(); initInputListeners(canvas);
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const usernameInput = document.getElementById("username");
+            const passwordInput = document.getElementById("password");
+            if (usernameInput && passwordInput) {
+                await handleLoginSubmit(usernameInput.value, passwordInput.value);
+            }
+        });
+    }
+});
+
+let lastTime = 0;
+function gameLoop(timestamp) {
+    const deltaTime = (timestamp - lastTime) / 1000; lastTime = timestamp;
+    if (gameState.currentUser && gameState.myId && gameState.myShip) {
+        if (gameState.isMapOpen) {
+            if (!gameState.docked) processInputs(); 
+        } else {
+            if (gameState.myShip) {
+                gameState.camera.x = gameState.myShip.x - gameState.camera.width / 2;
+                gameState.camera.y = gameState.myShip.y - gameState.camera.height / 2;
+            }
+            if (!gameState.docked) processInputs();
+            Renderer.draw(); 
+        }
+    }
+    requestAnimationFrame(gameLoop);
+}
+/* ===== END: hypernova/client/js/main.js ===== */
